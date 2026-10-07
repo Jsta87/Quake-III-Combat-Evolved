@@ -1,0 +1,19 @@
+name: Build Quake foundation
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libsdl2-dev
+      - run: ./scripts/test-movement.sh
+      - run: ./scripts/test-shields.sh
+      - run: ./scripts/test-weapons.sh
+      - run: ./scripts/test-melee.sh
+      - run: ./scripts/test-headshots.sh
+      - run: python3 ./tests/profile.py
+      - run: ./scripts/test-grenades.sh
+      - run: ./scripts/test-swap.sh
+      - run: ./scripts/build.sh server
+      - run: ./build/server/RelWithDebInfo/ioq3ded --version
+      - run: ./scripts/build.sh client
