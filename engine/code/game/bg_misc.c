@@ -1621,6 +1621,11 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 }
 
 #include "bg_qce_profile.generated.h"
+const qce_materialdef_t *BG_QceMaterialDef(int weapon,int material) {
+ if(weapon<0 || weapon>=WP_NUM_WEAPONS)weapon=0;if(material<0 || material>=33)material=2;
+ return &qce_materialdefs[weapon][material];
+}
+const qce_movementdef_t *BG_QceMovementDef(void) {return &qce_movementdef;}
 const qce_playerdef_t *BG_QcePlayerDef(void) {return &qce_playerdef;}
 const qce_weapondef_t *BG_QceWeaponDef(int weapon) {
  if(weapon<0 || weapon>=WP_NUM_WEAPONS)weapon=WP_NONE;
@@ -1668,6 +1673,11 @@ qboolean BG_QceAddWeapon(playerState_t *ps, int weapon, int ammo) {
   slot=(ps->stats[STAT_QCE_SLOTS]&15)?1:0;
   ps->stats[STAT_QCE_SLOTS]|=weapon<<(slot*4);
   ps->ammo[weapon]=0;
+  ps->qceOverheatTime[slot]=0;
+  ps->qceRate[slot]=ps->qceRateRemainder[slot]=0;
+  ps->qceBattery[slot]=BG_QceWeaponDef(weapon)->battery_cost>0 && ammo>=1000000/BG_QceWeaponDef(weapon)->battery_cost?1000000:BG_QceWeaponDef(weapon)->battery_cost*ammo;
+  if(ps->qceBattery[slot]>1000000)ps->qceBattery[slot]=1000000;
+  ps->qceError[slot]=ps->qceErrorRemainder[slot]=0;
   ps->qceHeat[slot]=ps->qceHeatRemainder[slot]=0;ps->qceOverheated&=~(1<<slot);
   capacity=BG_QceCapacity(weapon);
   ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=ammo<capacity?ammo:capacity;
@@ -1690,8 +1700,11 @@ void BG_QceReload(playerState_t *ps) {
 int BG_QceRemoveWeapon(playerState_t *ps, int weapon) {
  int slot=BG_QceSlot(ps,weapon),ammo;
  if(slot<0)return 0;
- if(weapon==ps->weapon)ps->qceChargeMs=0;
- ps->qceHeat[slot]=ps->qceHeatRemainder[slot]=0;ps->qceOverheated&=~(1<<slot);
+ if(weapon==ps->weapon) {ps->qceChargeMs=0;ps->qceZoom&=4;}
+ ps->qceOverheatTime[slot]=0;
+ ps->qceBattery[slot]=ps->qceRate[slot]=ps->qceRateRemainder[slot]=0;
+ ps->qceError[slot]=ps->qceErrorRemainder[slot]=0;
+  ps->qceHeat[slot]=ps->qceHeatRemainder[slot]=0;ps->qceOverheated&=~(1<<slot);
  ammo=ps->ammo[weapon];ps->ammo[weapon]=0;
  ps->stats[STAT_QCE_SLOTS]&=~(15<<(slot*4));
  ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=0;
@@ -1728,6 +1741,7 @@ void BG_QceCoolWeapons(playerState_t *ps,int elapsed) {
  int slot,weapon,locked;
  if(!ps->stats[STAT_QCE_COMBAT])return;
  for(slot=0;slot<2;slot++) {
+  ps->qceOverheatTime[slot]-=elapsed;if(ps->qceOverheatTime[slot]<0)ps->qceOverheatTime[slot]=0;
   weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
   if(weapon==ps->weapon && BG_QceWeaponDef(weapon)->charge_ms>0 && ps->qceChargeMs>=BG_QceWeaponDef(weapon)->charge_ms)continue;
   locked=(ps->qceOverheated>>slot)&1;
@@ -1737,7 +1751,7 @@ void BG_QceCoolWeapons(playerState_t *ps,int elapsed) {
 }
 qboolean BG_QceOverheated(const playerState_t *ps,int weapon) {
  int slot=BG_QceSlot(ps,weapon);
- return slot>=0 && (ps->qceOverheated&(1<<slot))?qtrue:qfalse;
+ return slot>=0 && ((ps->qceOverheated&(1<<slot)) || ps->qceOverheatTime[slot]>0)?qtrue:qfalse;
 }
 void BG_QceHeatShot(playerState_t *ps) {
  int slot=BG_QceSlot(ps,ps->weapon);
@@ -1745,5 +1759,95 @@ void BG_QceHeatShot(playerState_t *ps) {
  if(slot<0 || !def->heat_per_shot)return;
  ps->qceHeat[slot]+=def->heat_per_shot;
  if(ps->qceHeat[slot]>10000)ps->qceHeat[slot]=10000;
- if(ps->qceHeat[slot]>=def->heat_overheat)ps->qceOverheated|=1<<slot;
+ if(ps->qceHeat[slot]>=def->heat_overheat) {ps->qceOverheated|=1<<slot;ps->qceOverheatTime[slot]=def->overheat_ms;}
+}
+
+void BG_QceUpdateError(int weapon,int elapsed,int growing,int *error,int *remainder) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ int rate=growing?def->spread_grow:-def->spread_recover;
+ int part,total;
+ if(def->spread_max==def->spread) {*error=*remainder=0;return;}
+ while(elapsed>0) {
+  part=elapsed>1000?1000:elapsed;elapsed-=part;
+  total=rate*part+*remainder;*error+=total/1000;*remainder=total%1000;
+  if(*error>10000 || (*error==10000 && rate>=0)) {*error=10000;*remainder=0;break;}
+  if(*error<0 || (*error==0 && rate<=0)) {*error=0;*remainder=0;break;}
+ }
+}
+void BG_QceUpdateSpread(playerState_t *ps,int elapsed,int buttons) {
+ int slot,weapon,growing;
+ if(!ps->stats[STAT_QCE_COMBAT])return;
+ for(slot=0;slot<2;slot++) {
+  weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
+  growing=weapon==ps->weapon && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0 &&
+   !(ps->pm_flags&PMF_RESPAWNED) && ((buttons&BUTTON_ATTACK) || ps->weaponstate==WEAPON_FIRING);
+  BG_QceUpdateError(weapon,elapsed,growing,&ps->qceError[slot],&ps->qceErrorRemainder[slot]);
+ }
+}
+float BG_QceSpread(int weapon,int fraction) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ float lo,hi,angle;
+ if(fraction<0)fraction=0;if(fraction>127)fraction=127;
+ lo=atan2(def->spread,8192);hi=atan2(def->spread_max,8192);
+ angle=lo+(hi-lo)*fraction/127.0f;
+ return sin(angle)/cos(angle)*8192;
+}
+/* Analytical dry-air approximation of constant deceleration over tagged range. */
+float BG_QceDistanceDamageScale(int weapon,float distance) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ float fraction,speed,initial=def->projectile_speed,final=def->projectile_final_speed;
+ if(initial==final || initial<=0 || def->falloff_end<=def->falloff_start)return 1;
+ fraction=(distance-def->falloff_start)/(def->falloff_end-def->falloff_start);
+ if(fraction<=0)return 1;if(fraction>=1)return 0;
+ speed=sqrt(initial*initial-(initial*initial-final*final)*fraction);
+ return (speed-final)/(initial-final);
+}
+
+/* Fixed-point trigger state is shared by prediction and the authoritative game. */
+void BG_QceUpdateRate(playerState_t *ps,int elapsed,int buttons) {
+ int slot,weapon,rate,total,part,time;
+ if(!ps->stats[STAT_QCE_COMBAT])return;
+ for(slot=0;slot<2;slot++) {
+  weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
+  rate=weapon==ps->weapon && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0 &&
+   !(ps->pm_flags&PMF_RESPAWNED) && (buttons&BUTTON_ATTACK)?
+   BG_QceWeaponDef(weapon)->rate_grow:-BG_QceWeaponDef(weapon)->rate_recover;
+  time=elapsed;
+  while(time>0) {
+   part=time>1000?1000:time;time-=part;
+   total=rate*part+ps->qceRateRemainder[slot];
+   ps->qceRate[slot]+=total/1000;ps->qceRateRemainder[slot]=total%1000;
+   if(ps->qceRate[slot]<=0) {ps->qceRate[slot]=0;ps->qceRateRemainder[slot]=0;break;}
+   if(ps->qceRate[slot]>=10000) {ps->qceRate[slot]=10000;ps->qceRateRemainder[slot]=0;break;}
+  }
+ }
+}
+int BG_QceFireTime(const playerState_t *ps) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(ps->weapon);
+ int slot=BG_QceSlot(ps,ps->weapon);
+ float rate=def->rate_min;
+ if(slot>=0)rate+=(def->rate_max-def->rate_min)*ps->qceRate[slot]/10000.0f;
+ if(rate<=0)return def->fire_ms;
+ return (int)(ceil(30.0f/rate-0.000001f)*1000.0f/30.0f+0.5f);
+}
+/* One million units is a full battery; never round consumption to whole shots. */
+void BG_QceBatteryShot(playerState_t *ps,int charged) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(ps->weapon);
+ int slot=BG_QceSlot(ps,ps->weapon),remaining;
+ if(slot<0 || !def->battery_cost)return;
+ ps->qceBattery[slot]-=charged?def->charged_battery_cost:def->battery_cost;
+ if(ps->qceBattery[slot]<0)ps->qceBattery[slot]=0;
+ remaining=(ps->qceBattery[slot]+def->battery_cost-1)/def->battery_cost;
+ ps->ammo[ps->weapon]=ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=remaining;
+}
+float BG_QceDamage(int weapon,float scale,float fraction) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ if(scale<0)scale=0;if(scale>1)scale=1;
+ if(fraction<0)fraction=0;if(fraction>1)fraction=1;
+ return def->damage_minimum*(1-scale)+(def->damage+(def->damage_maximum-def->damage)*fraction)*scale;
+}
+float BG_QceZoom(int weapon,int level) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ if(level<1 || level>def->zoom_levels)return 1;
+ return level==1?def->zoom_min:def->zoom_max;
 }

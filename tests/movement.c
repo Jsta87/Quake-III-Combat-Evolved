@@ -52,18 +52,18 @@ int main(void) {
  for(i=0;i<250;i++) {step(&server,127,0,0,0);step(&client,127,0,0,0);}
  assert(!memcmp(&server,&client,sizeof(server)));
  speed=sqrtf(server.velocity[0]*server.velocity[0]+server.velocity[1]*server.velocity[1]);
- assert(speed>199 && speed<201);
+ assert(speed>179 && speed<181);
  for(i=0;i<250;i++) step(&server,127,127,0,i%360);
- speed=sqrtf(server.velocity[0]*server.velocity[0]+server.velocity[1]*server.velocity[1]);assert(speed<=201.0f);
+ speed=sqrtf(server.velocity[0]*server.velocity[0]+server.velocity[1]*server.velocity[1]);assert(speed<=181.0f);
  init(&server,1);for(i=0;i<250;i++)step(&server,127,0,-127,0);
- assert(server.velocity[0]>99 && server.velocity[0]<101);
- init(&server,1);step(&server,0,0,127,0);assert(server.velocity[2]>290 && server.velocity[2]<300);
- for(i=0;i<150;i++){step(&server,0,0,127,0);if(server.origin[2]>apex)apex=server.origin[2];}
- fprintf(stderr,"Measured apex: %f\n",apex);assert(apex>78 && apex<87);assert(server.groundEntityNum==ENTITYNUM_WORLD);
+ assert(server.velocity[0]>71 && server.velocity[0]<73);
+ init(&server,1);step(&server,0,0,127,0);assert(server.velocity[2]>164 && server.velocity[2]<168);
+ for(i=0;i<200;i++){step(&server,0,0,127,0);if(server.origin[2]>apex)apex=server.origin[2];}
+ fprintf(stderr,"Measured apex: %f\n",apex);assert(apex>77 && apex<80);assert(server.groundEntityNum==ENTITYNUM_WORLD);
  init(&server,1);init(&client,0);server.origin[2]=client.origin[2]=1000;
  step(&server,127,0,0,0);step(&client,127,0,0,0);
  assert(server.velocity[0]>0 && server.velocity[0]<client.velocity[0]);
- assert(server.velocity[2]==client.velocity[2]);
+ assert(server.velocity[2]>client.velocity[2]);
  init(&server,0);step(&server,0,0,127,0);assert(server.velocity[2]>260 && server.velocity[2]<270);
  printf("PASS: speed cap, turning, crouch speed, jump arc, held-jump landing, deterministic replay, reduced air control, stock jump fallback\n");
  return 0;

@@ -174,6 +174,7 @@ static void PM_Friction( void ) {
 	float	speed, newspeed, control;
 	float	drop;
 	
+	if(pm->ps->pm_type==PM_NORMAL && pm->ps->stats[STAT_QCE_MOVEMENT] && pm->waterlevel<=1)return;
 	vel = pm->ps->velocity;
 	
 	VectorCopy( vel, vec );
@@ -240,7 +241,7 @@ static qboolean PM_QceMovement( void ) {
 	return pm->ps->pm_type == PM_NORMAL && pm->ps->stats[STAT_QCE_MOVEMENT] == 1;
 }
 
-/* Provisional prototype values, not measured retail Halo constants. */
+/* Halo absolute acceleration approaches desired velocity, including braking. */
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 	int i;
 	float addspeed, accelspeed, currentspeed;
@@ -254,7 +255,8 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 		}
 		delta[2] = 0;
 		distance = VectorNormalize( delta );
-		step = accel * pml.frametime * wishspeed;
+		if(!pml.walking && wishspeed==0)return;
+		step = (pml.walking ? ((pm->ps->pm_flags&PMF_DUCKED)?BG_QceMovementDef()->crouch_acceleration:BG_QceMovementDef()->acceleration) : BG_QceMovementDef()->air_acceleration) * pml.frametime;
 		if ( step > distance ) step = distance;
 		for ( i = 0; i < 2; i++ ) pm->ps->velocity[i] += step * delta[i];
 		return;
@@ -376,7 +378,7 @@ static qboolean PM_CheckJump( void ) {
 	pm->ps->pm_flags |= PMF_JUMP_HELD;
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
-	pm->ps->velocity[2] = PM_QceMovement() ? 300.0f : JUMP_VELOCITY;
+	pm->ps->velocity[2] = PM_QceMovement() ? BG_QceMovementDef()->jump : JUMP_VELOCITY;
 	PM_AddEvent( EV_JUMP );
 
 	if ( pm->cmd.forwardmove >= 0 ) {
@@ -630,6 +632,14 @@ static void PM_AirMove( void ) {
 	VectorCopy (wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
 	wishspeed *= scale;
+ if(PM_QceMovement()) {
+  const qce_movementdef_t *m=BG_QceMovementDef();
+  float f=pm->cmd.forwardmove,side=pm->cmd.rightmove,length=sqrt(f*f+side*side);
+  float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
+  float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
+  float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  if(wishspeed>limit)wishspeed=limit;
+ }
 
 	// not on ground, so little effect on velocity
 	PM_Accelerate (wishdir, wishspeed, PM_QceMovement() ? 0.5f : pm_airaccelerate);
@@ -746,11 +756,19 @@ static void PM_WalkMove( void ) {
 	VectorCopy (wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
 	wishspeed *= scale;
+ if(PM_QceMovement()) {
+  const qce_movementdef_t *m=BG_QceMovementDef();
+  float f=pm->cmd.forwardmove,side=pm->cmd.rightmove,length=sqrt(f*f+side*side);
+  float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
+  float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
+  float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  if(wishspeed>limit)wishspeed=limit;
+ }
 
 	// clamp the speed lower if ducking
 	if ( pm->ps->pm_flags & PMF_DUCKED ) {
-		if ( wishspeed > pm->ps->speed * ( PM_QceMovement() ? 0.5f : pm_duckScale ) ) {
-			wishspeed = pm->ps->speed * ( PM_QceMovement() ? 0.5f : pm_duckScale );
+		if ( wishspeed > pm->ps->speed * ( PM_QceMovement() ? 1.0f : pm_duckScale ) ) {
+			wishspeed = pm->ps->speed * ( PM_QceMovement() ? 1.0f : pm_duckScale );
 		}
 	}
 
@@ -773,6 +791,17 @@ static void PM_WalkMove( void ) {
 		accelerate = pm_accelerate;
 	}
 
+ if(PM_QceMovement()) {
+  const qce_movementdef_t *m=BG_QceMovementDef();
+  float sine=wishdir[2],angle,fraction;
+  if(sine>1)sine=1;
+  if(sine< -1)sine=-1;
+  angle=atan2(fabs(sine),sqrt(1-sine*sine));
+  fraction=(angle-m->slope_falloff)/(m->slope_cutoff-m->slope_falloff);
+  if(fraction<0)fraction=0;
+  if(fraction>1)fraction=1;
+  wishspeed*=1+fraction*((sine>=0?m->uphill_scale:m->downhill_scale)-1);
+ }
 	PM_Accelerate (wishdir, wishspeed, accelerate);
 
 	//Com_Printf("velocity = %1.1f %1.1f %1.1f\n", pm->ps->velocity[0], pm->ps->velocity[1], pm->ps->velocity[2]);
@@ -885,6 +914,14 @@ static void PM_NoclipMove( void ) {
 	VectorCopy (wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
 	wishspeed *= scale;
+ if(PM_QceMovement()) {
+  const qce_movementdef_t *m=BG_QceMovementDef();
+  float f=pm->cmd.forwardmove,side=pm->cmd.rightmove,length=sqrt(f*f+side*side);
+  float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
+  float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
+  float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  if(wishspeed>limit)wishspeed=limit;
+ }
 
 	PM_Accelerate( wishdir, wishspeed, pm_accelerate );
 
@@ -1264,11 +1301,11 @@ static void PM_CheckDuck (void)
 	}
 	pm->ps->pm_flags &= ~PMF_INVULEXPAND;
 
-	pm->mins[0] = -PLAYER_WIDTH;
-	pm->mins[1] = -PLAYER_WIDTH;
+	pm->mins[0] = PM_QceMovement()?-BG_QceMovementDef()->radius:-PLAYER_WIDTH;
+	pm->mins[1] = pm->mins[0];
 
-	pm->maxs[0] = PLAYER_WIDTH;
-	pm->maxs[1] = PLAYER_WIDTH;
+	pm->maxs[0] = -pm->mins[0];
+	pm->maxs[1] = -pm->mins[1];
 
 	pm->mins[2] = MINS_Z;
 
@@ -1297,7 +1334,7 @@ static void PM_CheckDuck (void)
 
 	if (pm->ps->pm_flags & PMF_DUCKED)
 	{
-		pm->maxs[2] = CROUCH_HEIGHT;
+		pm->maxs[2] = PM_QceMovement()?BG_QceMovementDef()->crouch_height+MINS_Z:CROUCH_HEIGHT;
 		pm->ps->viewheight = CROUCH_VIEWHEIGHT;
 	}
 	else
@@ -1305,6 +1342,14 @@ static void PM_CheckDuck (void)
 		pm->maxs[2] = DEFAULT_HEIGHT;
 		pm->ps->viewheight = DEFAULT_VIEWHEIGHT;
 	}
+ if(PM_QceMovement()) {
+  const qce_movementdef_t *m=BG_QceMovementDef();
+  int delta=(int)(10000*pml.msec/m->crouch_ms+0.5f);
+  pm->ps->qceCrouch+=(pm->ps->pm_flags&PMF_DUCKED)?delta:-delta;
+  if(pm->ps->qceCrouch<0)pm->ps->qceCrouch=0;
+  if(pm->ps->qceCrouch>10000)pm->ps->qceCrouch=10000;
+  pm->ps->viewheight=(int)(MINS_Z+m->standing_view+(m->crouch_view-m->standing_view)*pm->ps->qceCrouch/10000.0f+0.5f);
+ }
 }
 
 
@@ -1479,7 +1524,8 @@ static void PM_BeginWeaponChange( int weapon ) {
 
 	PM_AddEvent( EV_CHANGE_WEAPON );
 	pm->ps->weaponstate = WEAPON_DROPPING;
-	pm->ps->weaponTime += 200;
+	pm->ps->weaponTime += pm->ps->stats[STAT_QCE_COMBAT]?233:200;
+ pm->ps->qceZoom&=4;
 	PM_StartTorsoAnim( TORSO_DROP );
 }
 
@@ -1503,7 +1549,7 @@ static void PM_FinishWeaponChange( void ) {
 
 	pm->ps->weapon = weapon;
 	pm->ps->weaponstate = WEAPON_RAISING;
-	pm->ps->weaponTime += 250;
+	pm->ps->weaponTime += pm->ps->stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(weapon)->ready_ms:250;
 	PM_StartTorsoAnim( TORSO_RAISE );
 }
 
@@ -1544,6 +1590,16 @@ static void PM_Weapon( void ) {
     pm->ps->pm_type!=PM_NORMAL || pm->ps->stats[STAT_HEALTH]<=0 || (pm->ps->pm_flags&PMF_RESPAWNED) ||
     (pm->cmd.buttons&(BUTTON_QCE_MELEE|BUTTON_QCE_GRENADE)))pm->ps->qceChargeMs=0;
  BG_QceCoolWeapons(pm->ps,pml.msec);
+ BG_QceUpdateSpread(pm->ps,pml.msec,pm->cmd.buttons);
+ BG_QceUpdateRate(pm->ps,pml.msec,pm->cmd.buttons);
+ if(pm->ps->stats[STAT_QCE_COMBAT]) {
+  const qce_weapondef_t *def=BG_QceWeaponDef(pm->ps->weapon);
+  if((pm->cmd.buttons&BUTTON_QCE_ZOOM) && !(pm->ps->qceZoom&4))
+   pm->ps->qceZoom=4+((pm->ps->qceZoom&3)+1)%(def->zoom_levels+1);
+  if(!(pm->cmd.buttons&BUTTON_QCE_ZOOM))pm->ps->qceZoom&=3;
+  if(pm->ps->pm_type!=PM_NORMAL || pm->cmd.weapon!=pm->ps->weapon || pm->ps->stats[STAT_HEALTH]<=0 ||
+    (pm->cmd.buttons&(BUTTON_QCE_RELOAD|BUTTON_QCE_GRENADE|BUTTON_QCE_MELEE)))pm->ps->qceZoom&=4;
+ }
 
 	// don't allow attack until all buttons are up
 	if ( pm->ps->pm_flags & PMF_RESPAWNED ) {
@@ -1652,7 +1708,8 @@ static void PM_Weapon( void ) {
     VectorScale(dir,def->lunge_speed,pm->ps->velocity);
     pm->ps->pm_time=def->melee_impact_ms;pm->ps->pm_flags|=PMF_TIME_KNOCKBACK;
     pm->ps->stats[STAT_QCE_GRENADES]|=32;
-   } else PM_AddEvent(EV_QCE_MELEE_STRIKE);
+   }
+   pm->ps->stats[STAT_QCE_GRENADES]|=32;
 			pm->ps->weaponstate=WEAPON_MELEEING;
 			pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->melee_ms;
 			pm->ps->eFlags &= ~EF_FIRING;
@@ -1670,7 +1727,8 @@ static void PM_Weapon( void ) {
 		}
 		if (BG_QceCanReload(pm->ps) && ((pm->cmd.buttons & BUTTON_QCE_RELOAD) || ((pm->cmd.buttons & BUTTON_ATTACK) && !BG_QceMagazine(pm->ps,pm->ps->weapon)))) {
 			pm->ps->weaponstate=WEAPON_RELOADING;
-			pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_ms;
+			pm->ps->weaponTime=BG_QceMagazine(pm->ps,pm->ps->weapon)>0?BG_QceWeaponDef(pm->ps->weapon)->reload_ms:BG_QceWeaponDef(pm->ps->weapon)->reload_empty_ms;
+   pm->ps->qceZoom&=4;
 			pm->ps->eFlags &= ~EF_FIRING;
 			return;
 		}
@@ -1740,13 +1798,14 @@ static void PM_Weapon( void ) {
 
 	// fire weapon
  if(pm->ps->stats[STAT_QCE_COMBAT]) {
+  BG_QceBatteryShot(pm->ps,qceChargedShot);
   BG_QceHeatShot(pm->ps);
   if(qceChargedShot && slot>=0) {
    pm->ps->qceHeat[slot]=BG_QceWeaponDef(pm->ps->weapon)->charged_heat;
-   if(pm->ps->qceHeat[slot]>=BG_QceWeaponDef(pm->ps->weapon)->heat_overheat)pm->ps->qceOverheated|=1<<slot;
+   if(pm->ps->qceHeat[slot]>=BG_QceWeaponDef(pm->ps->weapon)->heat_overheat) {pm->ps->qceOverheated|=1<<slot;pm->ps->qceOverheatTime[slot]=BG_QceWeaponDef(pm->ps->weapon)->overheat_ms;}
   }
  }
- BG_AddPredictableEventToPlayerstate(EV_FIRE_WEAPON,qceChargedShot,pm->ps);
+ BG_AddPredictableEventToPlayerstate(EV_FIRE_WEAPON,qceChargedShot | ((pm->ps->stats[STAT_QCE_COMBAT] && BG_QceSlot(pm->ps,pm->ps->weapon)>=0?(BG_QceWeaponDef(pm->ps->weapon)->scoped_error && (pm->ps->qceZoom&3)?127:pm->ps->qceError[BG_QceSlot(pm->ps,pm->ps->weapon)]*(BG_QceWeaponDef(pm->ps->weapon)->scoped_error?126:127)/10000):0)<<1),pm->ps);
 
 	switch( pm->ps->weapon ) {
 	default:
@@ -1809,7 +1868,8 @@ static void PM_Weapon( void ) {
 
 	if(pm->ps->stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(pm->ps->weapon);
-  addTime=def->fire_ms;
+  addTime=BG_QceFireTime(pm->ps);
+
   pm->ps->delta_angles[PITCH]-=ANGLE2SHORT(def->recoil_degrees);
  }
 	pm->ps->weaponTime += addTime;
@@ -2068,6 +2128,7 @@ void PmoveSingle (pmove_t *pmove) {
 	PM_SetWaterLevel();
 	pml.previous_waterlevel = pmove->waterlevel;
 
+	if(PM_QceMovement()) {pm->ps->gravity=(int)(BG_QceMovementDef()->gravity+0.5f);pm->ps->speed=(int)(BG_QceMovementDef()->forward+0.5f);}
 	// set mins, maxs, and viewheight
 	PM_CheckDuck ();
 
@@ -2124,7 +2185,7 @@ void PmoveSingle (pmove_t *pmove) {
 	PM_WaterEvents();
 
 	// snap some parts of playerstate to save network bandwidth
-	trap_SnapVector( pm->ps->velocity );
+	if(!PM_QceMovement())trap_SnapVector( pm->ps->velocity );
 }
 
 

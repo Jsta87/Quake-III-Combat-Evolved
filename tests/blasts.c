@@ -1,0 +1,25 @@
+#define main existing_headshot_suite
+#include "headshots.c"
+#undef main
+static int blocked;
+void trap_Trace(trace_t *t,const vec3_t start,const vec3_t mins,const vec3_t maxs,const vec3_t end,int pass,int mask) {
+ (void)start;(void)mins;(void)maxs;(void)end;(void)pass;(void)mask;memset(t,0,sizeof(*t));t->fraction=blocked?0:1;t->entityNum=ENTITYNUM_WORLD;
+}
+int trap_EntitiesInBox(const vec3_t mins,const vec3_t maxs,int *list,int max) {(void)mins;(void)maxs;(void)max;list[0]=1;return 1;}
+qboolean LogAccuracyHit(gentity_t *a,gentity_t *b) {(void)a;(void)b;return qtrue;}
+static void blast(float distance) {
+ vec3_t origin={0,0,0};reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,distance,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],100,20,100,40,160,NULL,MOD_ROCKET_SPLASH);
+}
+int main(void) {
+ vec3_t point,entry={84,200,330},dir={1,0,0},origin={0,0,0};
+ blast(39);assert(g_entities[1].health==900);blast(100);assert(g_entities[1].health==940);
+ blast(159);assert(g_entities[1].health==979);blast(160);assert(g_entities[1].health==1000);
+ blocked=1;blast(30);assert(g_entities[1].health==1000);blocked=0;
+ reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],100,20,100,40,160,&g_entities[1],MOD_ROCKET_SPLASH);assert(g_entities[1].health==1000);
+ reset(0,100);G_QceResolveHeadPoint(&g_entities[1],entry,dir,point);assert(point[0]>90 && point[0]<100 && G_QceHeadshot(&g_entities[1],point,MOD_BFG,0));
+ entry[1]=213;G_QceResolveHeadPoint(&g_entities[1],entry,dir,point);assert(!G_QceHeadshot(&g_entities[1],point,MOD_BFG,0));
+ clients[1].ps.qceZoom=2;shoot((vec3_t){100,200,300},MOD_MACHINEGUN,10,0);assert(!clients[1].ps.qceZoom);
+ puts("PASS: actual radial damage inner/full strength, minimum-damage falloff, outer cutoff, wall occlusion, direct-hit exclusion, precision ray/head intersection and damage dezoom");return 0;
+}

@@ -30,8 +30,12 @@ int main(void) {
  memset(&grenade,0,sizeof(grenade));grenade.qceGrenadeType=2;G_QceGrenadeImpact(&grenade,&hit);
  target->qceEntitySerial++;G_QceRunStuckGrenade(&grenade);assert(grenade.qceAttachEntity==ENTITYNUM_WORLD);
  memset(&grenade,0,sizeof(grenade));grenade.qceGrenadeType=2;hit.entityNum=ENTITYNUM_WORLD;
- G_QceGrenadeImpact(&grenade,&hit);G_QceRunStuckGrenade(&grenade);assert(grenade.qceAttachEntity==ENTITYNUM_WORLD);
+ VectorSet(hit.plane.normal,0,0,1);VectorSet(grenade.s.pos.trDelta,100,0,-100);
+ G_QceGrenadeImpact(&grenade,&hit);assert(!grenade.qceStuck && !grenade.qceFuseArmed && grenade.s.pos.trType==TR_LINEAR);
+ memset(&grenade,0,sizeof(grenade));grenade.qceGrenadeType=2;G_QceGrenadeImpact(&grenade,&hit);assert(grenade.qceFuseArmed && grenade.nextthink==2100);
  memset(&grenade,0,sizeof(grenade));assert(!G_QceGrenadeImpact(&grenade,&hit) && !G_QceRunStuckGrenade(&grenade));
+ memset(&grenade,0,sizeof(grenade));grenade.qceGrenadeType=1;VectorSet(grenade.s.pos.trDelta,100,0,-100);VectorSet(hit.plane.normal,0,0,1);
+ G_QceGrenadeImpact(&grenade,&hit);assert(fabs(grenade.s.pos.trDelta[0]-20)<0.01 && fabs(grenade.s.pos.trDelta[2]-30)<0.01);
  assert(links>0 && thinks>0);puts("PASS: hand-frag body bounce, sticky plasma arming, moving/rotating attachment, world contact, respawn/entity-reuse detachment and stock fallback");
  return 0;
 }

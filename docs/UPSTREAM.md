@@ -15,9 +15,13 @@ in this foundation. Numeric combat scalars are now extracted from the user's
 build 2276 maps; see HALO-IMPORT.md. Neither game's commercial maps, models, textures, sounds,
 or binary tags are bundled.
 
-Local changes add shared provisional movement and a generated gameplay profile,
+Behavior work also uses reference commit `76b1898ee14e6fb58e0412acc183da509c10e001`
+(build2342); build differences and adaptations are recorded in HALO-IMPORT.md.
+
+Local changes add shared tag-driven movement and a generated gameplay profile,
 shield/damage rules, two-slot inventory/reload/replacement, grenade selection
-and attachment, melee lunge/backsmacks and precision exceptions. Native and QVM
+and attachment, melee lunge/backsmacks, precision/zoom, finite projectile motion,
+material/damage curves, trigger ramps and fractional battery state. Native and QVM
 modules share definitions; CMake tracks headers and gameplay profile inputs.
 SDL2 development source is pinned to release 2.32.8
 (`98d1f3a45aae568ccd6ed5fec179330f47d4d356`) and installed locally under

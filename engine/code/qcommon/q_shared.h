@@ -1146,6 +1146,9 @@ typedef struct playerState_s {
 	vec3_t		velocity;
 	int			weaponTime;
  int qceHeat[2], qceHeatRemainder[2], qceOverheated, qceChargeMs;
+ int qceError[2], qceErrorRemainder[2];
+ int qceRate[2], qceRateRemainder[2], qceBattery[2];
+ int qceZoom, qceCrouch, qceOverheatTime[2];
 	int			gravity;
 	int			speed;
 	int			delta_angles[3];	// add to command angles to get view direction
@@ -1215,6 +1218,7 @@ typedef struct playerState_s {
 //
 #define BUTTON_QCE_RELOAD 4096
 #define BUTTON_QCE_GRENADE 8192
+#define BUTTON_QCE_ZOOM 32768
 #define BUTTON_QCE_MELEE 16384
 #define	BUTTON_ATTACK		1
 #define	BUTTON_TALK			2			// displays talk balloon and disables actions

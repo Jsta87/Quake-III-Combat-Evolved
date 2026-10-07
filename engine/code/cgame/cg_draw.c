@@ -564,7 +564,8 @@ static void CG_DrawStatusBar( void ) {
 		CG_DrawStringExt(0, 398, va("%s %d / %d", BG_QceGrenadeType(ps)?"PLASMA":"FRAG", BG_QceGrenadeCount(ps,BG_QceGrenadeType(ps)), BG_QceGrenadeCount(ps,!BG_QceGrenadeType(ps))), colorWhite, qfalse, qtrue, 8, 12, 0);
 		if (ps->weaponstate==WEAPON_MELEEING) CG_DrawStringExt(0,380,"MELEE",colorWhite,qfalse,qtrue,8,12,0);
 		if (BG_QceCapacity(ps->weapon)) {
-			CG_DrawStringExt(0, 416, va("MAG %d / RES %d",mag,ps->ammo[ps->weapon]-mag),colorWhite,qfalse,qtrue,8,12,0);
+			if(slot>=0 && BG_QceWeaponDef(ps->weapon)->battery_cost)CG_DrawStringExt(0,416,va("BATTERY %.1f%%",ps->qceBattery[slot]/10000.0f),colorWhite,qfalse,qtrue,8,12,0);
+   else CG_DrawStringExt(0, 416, va("MAG %d / RES %d",mag,ps->ammo[ps->weapon]-mag),colorWhite,qfalse,qtrue,8,12,0);
 			if (ps->weaponstate==WEAPON_RELOADING) CG_DrawStringExt(0,380,"RELOADING",colorWhite,qfalse,qtrue,8,12,0);
 		}
 	}

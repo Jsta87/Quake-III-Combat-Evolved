@@ -64,14 +64,14 @@ int main(void) {
   g_entities[0].s.number=0;g_entities[0].qceEntitySerial=10;
   ent=fire_plasma(&g_entities[0],start,dir);
   assert(ent->qceNeedle && ent->qceTrackEntity==1 && ent->qceTrackSerial==20);
-  assert(ent->nextthink>=level.time+4999 && ent->nextthink<=level.time+5000 && ent->think==G_QceNeedleThink);
+  assert(ent->nextthink==level.time+60000 && ent->think==G_QceNeedleThink);
   blocked=1;ent=fire_plasma(&g_entities[0],start,dir);assert(ent->qceTrackEntity==ENTITYNUM_NONE);blocked=0;
   VectorSet(target->r.currentOrigin,100,0,0);ent=fire_plasma(&g_entities[0],start,dir);assert(ent->qceTrackEntity==ENTITYNUM_NONE);
   shooter.ps.weapon=WP_LIGHTNING;VectorSet(target->r.currentOrigin,0,100,0);
   ent=fire_qce_overcharge(&g_entities[0],start,dir);
   assert(ent->qceCharged && !ent->qceNeedle && ent->qceTrackEntity==1 && ent->methodOfDeath==MOD_QCE_OVERCHARGE && ent->damage==70 && !ent->splashDamage);
   assert(ent->qceOwnerSerial==10 && fabs(VectorLength(ent->s.pos.trDelta)-1200)<0.01);
-  assert(ent->nextthink>=level.time+2666 && ent->nextthink<=level.time+2667);
+  assert(ent->nextthink==level.time+60000);
   ent->qceTrackTime=level.time;level.previousTime=level.time;level.time+=100;
   VectorSet(target->r.currentOrigin,100,0,0);G_QceTrackNeedle(ent);
   assert(fabs(atan2(ent->s.pos.trDelta[0],ent->s.pos.trDelta[1])-BG_QceWeaponDef(WP_LIGHTNING)->charged_tracking_radians/10)<0.0001);
@@ -80,3 +80,5 @@ int main(void) {
  }
  puts("PASS: delayed needle damage, seven-needle combine, consumed groups, world contacts, respawn/owner reuse safety, bounded homing and blocked sightlines");return 0;
 }
+
+qboolean G_QceRadiusDamage(vec3_t origin,gentity_t *attacker,float damage,float minimum,float maximum,float inner,float outer,gentity_t *ignore,int mod) {(void)minimum;(void)maximum;(void)inner;return G_RadiusDamage(origin,attacker,damage,outer,ignore,mod);}

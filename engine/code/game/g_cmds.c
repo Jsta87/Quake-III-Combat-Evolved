@@ -1714,6 +1714,9 @@ static void QceDropWeapon(gentity_t *ent, qboolean notify) {
  drop=Drop_Item(ent,BG_FindItemForWeapon(weapon),0);
  if(!drop)return;
  slot=BG_QceSlot(ps,weapon);
+ drop->qceDroppedOverheatTime=ps->qceOverheatTime[slot];
+ drop->qceDroppedBattery=ps->qceBattery[slot];drop->qceDroppedRate=ps->qceRate[slot];drop->qceDroppedRateRemainder=ps->qceRateRemainder[slot];
+ drop->qceDroppedError=ps->qceError[slot];drop->qceDroppedErrorRemainder=ps->qceErrorRemainder[slot];
  drop->qceDroppedHeat=ps->qceHeat[slot];drop->qceDroppedHeatRemainder=ps->qceHeatRemainder[slot];
  drop->qceDroppedOverheated=(ps->qceOverheated>>slot)&1;drop->qceDroppedHeatTime=level.time;
  ammo=BG_QceRemoveWeapon(ps,weapon);
@@ -1764,7 +1767,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  }
  Touch_Item(best,ent,NULL);
  if(BG_QceSlot(ps,weapon)>=0) {
-  ps->weapon=weapon;ps->weaponstate=WEAPON_RAISING;ps->weaponTime=250;
+  ps->weapon=weapon;ps->weaponstate=WEAPON_RAISING;ps->weaponTime=BG_QceWeaponDef(weapon)->ready_ms;ps->qceZoom&=4;
   trap_SendServerCommand(ent-g_entities,va("qce_select %d",weapon));
  }
 }
@@ -1850,9 +1853,9 @@ void ClientCommand( int clientNum ) {
 
 	if (Q_stricmp(cmd,"qce_status")==0) {
 		playerState_t *ps=&ent->client->ps;
-		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d profile=%s\n\"",
+		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d error=%d,%d rate=%d,%d battery=%d,%d zoom=%d crouch=%d recovery=%d,%d profile=%s\n\"",
 			ps->stats[STAT_QCE_COMBAT],ps->weapon,BG_QceWeaponName(ps->weapon),ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,
-			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,ps->qceHeat[0],ps->qceHeat[1],ps->qceOverheated,ps->qceChargeMs,BG_QceProfileHash()));
+			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,ps->qceHeat[0],ps->qceHeat[1],ps->qceOverheated,ps->qceChargeMs,ps->qceError[0],ps->qceError[1],ps->qceRate[0],ps->qceRate[1],ps->qceBattery[0],ps->qceBattery[1],ps->qceZoom&3,ps->qceCrouch,ps->qceOverheatTime[0],ps->qceOverheatTime[1],BG_QceProfileHash()));
 	}
 	else if (Q_stricmp(cmd,"qce_swap")==0)
   G_QceSwapWeapon(ent);

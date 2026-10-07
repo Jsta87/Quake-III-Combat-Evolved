@@ -777,6 +777,14 @@ typedef struct {
  int heat_per_shot, heat_loss_per_second, heat_recovery, heat_overheat, heat_age_penalty;
  int charge_ms, charged_ammo, charged_heat, charged_damage;
  float charged_speed, charged_range, charged_tracking_radians, charged_health_multiplier, charged_shield_multiplier;
+ float spread_max;
+ int spread_grow, spread_recover;
+ float projectile_final_speed, falloff_start, falloff_end;
+ float damage_minimum, damage_maximum, splash_inner, projectile_gravity, water_gravity, water_falloff_start, water_falloff_end;
+ float rate_min, rate_max;
+ int rate_grow, rate_recover, ready_ms, reload_empty_ms, overheat_ms, battery_cost, charged_battery_cost, zoom_levels;
+ float zoom_min, zoom_max;
+ int scoped_error;
 } qce_weapondef_t;
 typedef struct {
  int spawn_count, max_count;
@@ -784,9 +792,23 @@ typedef struct {
  int fuse_ms, sticky, splash_damage;
  float splash_radius, shield_multiplier, health_multiplier;
  int timer_start, max_flight_ms;
+ float damage_minimum, damage_maximum, splash_inner, gravity, bounce_parallel, bounce_perpendicular, metal_parallel, metal_perpendicular;
 } qce_grenadedef_t;
 typedef struct { int health, shield, shield_delay_ms, shield_recharge_ms; } qce_playerdef_t;
+typedef struct { float forward, backward, sideways, crouch_forward, crouch_backward, crouch_sideways, acceleration, crouch_acceleration, air_acceleration, jump, gravity, radius, standing_height, crouch_height, standing_view, crouch_view, crouch_ms, slope_falloff, slope_cutoff, uphill_scale, downhill_scale, grenade_up; } qce_movementdef_t;
+const qce_movementdef_t *BG_QceMovementDef(void);
+void BG_QceUpdateRate(playerState_t *ps,int elapsed,int buttons);
+int BG_QceFireTime(const playerState_t *ps);
+void BG_QceBatteryShot(playerState_t *ps,int charged);
+float BG_QceDamage(int weapon,float scale,float random_fraction);
+float BG_QceZoom(int weapon,int level);
+typedef struct {int response,potential,flags;float skip,angle_min,angle_max,velocity_min,velocity_max,initial,parallel,perpendicular,angular_noise,velocity_noise;} qce_materialdef_t;
+const qce_materialdef_t *BG_QceMaterialDef(int weapon,int material);
 const qce_playerdef_t *BG_QcePlayerDef(void);
+void BG_QceUpdateError(int weapon,int elapsed,int growing,int *error,int *remainder);
+void BG_QceUpdateSpread(playerState_t *ps,int elapsed,int buttons);
+float BG_QceSpread(int weapon,int fraction);
+float BG_QceDistanceDamageScale(int weapon,float distance);
 void BG_QceCoolWeapon(int weapon,int ammo,int elapsed,int *heat,int *remainder,int *locked);
 void BG_QceCoolWeapons(playerState_t *ps,int elapsed);
 qboolean BG_QceOverheated(const playerState_t *ps,int weapon);

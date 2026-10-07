@@ -449,7 +449,9 @@ void CG_ZoomDown_f( void ) {
 }
 
 void CG_ZoomUp_f( void ) { 
-	if ( !cg.zoomed ) {
+	if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
+  cg.zoomSensitivity=1/BG_QceZoom(cg.predictedPlayerState.weapon,cg.predictedPlayerState.qceZoom&3);
+ } else if ( !cg.zoomed ) {
 		return;
 	}
 	cg.zoomed = qfalse;
@@ -494,6 +496,10 @@ static int CG_CalcFov( void ) {
 			}
 		}
 
+  if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
+   float magnification=BG_QceZoom(cg.predictedPlayerState.weapon,cg.predictedPlayerState.qceZoom&3);
+   fov_x=atan2(tan(fov_x*M_PI/360),magnification)*360/M_PI;
+  }
 		// account for zooms
 		zoomFov = cg_zoomFov.value;
 		if ( zoomFov < 1 ) {
@@ -502,14 +508,14 @@ static int CG_CalcFov( void ) {
 			zoomFov = 160;
 		}
 
-		if ( cg.zoomed ) {
+		if ( !cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && cg.zoomed ) {
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 			if ( f > 1.0 ) {
 				fov_x = zoomFov;
 			} else {
 				fov_x = fov_x + f * ( zoomFov - fov_x );
 			}
-		} else {
+		} else if(!cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
 			if ( f <= 1.0 ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
@@ -539,7 +545,9 @@ static int CG_CalcFov( void ) {
 	cg.refdef.fov_x = fov_x;
 	cg.refdef.fov_y = fov_y;
 
-	if ( !cg.zoomed ) {
+	if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
+  cg.zoomSensitivity=1/BG_QceZoom(cg.predictedPlayerState.weapon,cg.predictedPlayerState.qceZoom&3);
+ } else if ( !cg.zoomed ) {
 		cg.zoomSensitivity = 1;
 	} else {
 		cg.zoomSensitivity = cg.refdef.fov_y / 75.0;

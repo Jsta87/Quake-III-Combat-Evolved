@@ -3876,6 +3876,98 @@
           "size": 20
         }
       }
+    },
+    "ProjectileMaterialResponse": {
+      "size": 160,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "type": "uint16",
+          "size": 2
+        },
+        "default response": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "default effect": {
+          "offset": 4,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "potential response": {
+          "offset": 36,
+          "type": "uint16",
+          "size": 2
+        },
+        "potential flags": {
+          "offset": 38,
+          "type": "uint16",
+          "size": 2
+        },
+        "potential skip fraction": {
+          "offset": 40,
+          "type": "Fraction",
+          "size": 4
+        },
+        "potential between": {
+          "offset": 44,
+          "type": "Angle",
+          "size": 8,
+          "bounds": true
+        },
+        "potential and": {
+          "offset": 52,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "potential effect": {
+          "offset": 60,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "scale effects by": {
+          "offset": 92,
+          "type": "uint16",
+          "size": 2
+        },
+        "angular noise": {
+          "offset": 96,
+          "type": "Angle",
+          "size": 4
+        },
+        "velocity noise": {
+          "offset": 100,
+          "type": "float",
+          "size": 4
+        },
+        "detonation effect": {
+          "offset": 104,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "initial friction": {
+          "offset": 144,
+          "type": "float",
+          "size": 4
+        },
+        "maximum distance": {
+          "offset": 148,
+          "type": "float",
+          "size": 4
+        },
+        "parallel friction": {
+          "offset": 152,
+          "type": "float",
+          "size": 4
+        },
+        "perpendicular friction": {
+          "offset": 156,
+          "type": "float",
+          "size": 4
+        }
+      }
     }
   }
 }

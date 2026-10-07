@@ -266,8 +266,20 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 		if (previousSlot<0 && ent->qceDroppedMagazine && BG_QceSlot(&other->client->ps, ent->item->giTag)>=0) {
 			int slot = BG_QceSlot(&other->client->ps, ent->item->giTag);
 			int clip = ent->qceDroppedMagazine-1;
+   int error=ent->qceDroppedError,errorRemainder=ent->qceDroppedErrorRemainder;
    int heat=ent->qceDroppedHeat,remainder=ent->qceDroppedHeatRemainder,locked=ent->qceDroppedOverheated;
+   BG_QceUpdateError(ent->item->giTag,level.time-ent->qceDroppedHeatTime,0,&error,&errorRemainder);
+   other->client->ps.qceError[slot]=error;other->client->ps.qceErrorRemainder[slot]=errorRemainder;
    BG_QceCoolWeapon(ent->item->giTag,other->client->ps.ammo[ent->item->giTag],level.time-ent->qceDroppedHeatTime,&heat,&remainder,&locked);
+   other->client->ps.qceOverheatTime[slot]=ent->qceDroppedOverheatTime-(level.time-ent->qceDroppedHeatTime);
+   if(other->client->ps.qceOverheatTime[slot]<0)other->client->ps.qceOverheatTime[slot]=0;
+   other->client->ps.qceBattery[slot]=ent->qceDroppedBattery;
+   other->client->ps.qceRate[slot]=ent->qceDroppedRate;other->client->ps.qceRateRemainder[slot]=ent->qceDroppedRateRemainder;
+   {
+    playerState_t cooled=other->client->ps;
+    BG_QceUpdateRate(&cooled,level.time-ent->qceDroppedHeatTime,0);
+    other->client->ps.qceRate[slot]=cooled.qceRate[slot];other->client->ps.qceRateRemainder[slot]=cooled.qceRateRemainder[slot];
+   }
    other->client->ps.qceHeat[slot]=heat;other->client->ps.qceHeatRemainder[slot]=remainder;
    other->client->ps.qceOverheated=(other->client->ps.qceOverheated&~(1<<slot))|(locked<<slot);
 			if (clip > other->client->ps.ammo[ent->item->giTag]) clip = other->client->ps.ammo[ent->item->giTag];

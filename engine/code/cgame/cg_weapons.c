@@ -2031,12 +2031,13 @@ Perform the same traces the server did to locate the
 hit splashes
 ================
 */
-static void CG_ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, int otherEntNum, int qceWeapon ) {
+static void CG_ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, int otherEntNum, int qceWeapon,int fraction ) {
 	int			i;
 	float		r, u;
 	vec3_t		end;
 	vec3_t		forward, right, up;
 
+	qceWeapon&=15;
 	// derive the right and up vectors from the forward vector, because
 	// the client won't have any other information
 	VectorNormalize2( origin2, forward );
@@ -2045,14 +2046,14 @@ static void CG_ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, int othe
 
 	// generate the "random" spread pattern
 	for ( i = 0 ; i < (qceWeapon?BG_QceWeaponDef(qceWeapon)->pellets:DEFAULT_SHOTGUN_COUNT) ; i++ ) {
-		r = Q_crandom( &seed ) * (qceWeapon?BG_QceWeaponDef(qceWeapon)->spread:DEFAULT_SHOTGUN_SPREAD) * 16;
-		u = Q_crandom( &seed ) * (qceWeapon?BG_QceWeaponDef(qceWeapon)->spread:DEFAULT_SHOTGUN_SPREAD) * 16;
+		r = Q_crandom( &seed ) * (qceWeapon?BG_QceSpread(qceWeapon,fraction):DEFAULT_SHOTGUN_SPREAD) * 16;
+		u = Q_crandom( &seed ) * (qceWeapon?BG_QceSpread(qceWeapon,fraction):DEFAULT_SHOTGUN_SPREAD) * 16;
 		VectorMA( origin, 8192 * 16, forward, end);
 		VectorMA (end, r, right, end);
 		VectorMA (end, u, up, end);
   if(qceWeapon)BG_QceRayEnd(origin,end,qceWeapon);
 
-		CG_ShotgunPellet( origin, end, otherEntNum, qceWeapon );
+		if(!qceWeapon)CG_ShotgunPellet( origin, end, otherEntNum, qceWeapon );
 	}
 }
 
@@ -2079,7 +2080,7 @@ void CG_ShotgunFire( entityState_t *es ) {
 			CG_SmokePuff( v, up, 32, 1, 1, 1, 0.33f, 900, cg.time, 0, LEF_PUFF_DONT_SCALE, cgs.media.shotgunSmokePuffShader );
 		}
 	}
-	CG_ShotgunPattern( es->pos.trBase, es->origin2, es->eventParm, es->otherEntityNum, es->generic1 );
+	CG_ShotgunPattern( es->pos.trBase, es->origin2, es->eventParm, es->otherEntityNum, es->generic1, es->time2 );
 }
 
 /*

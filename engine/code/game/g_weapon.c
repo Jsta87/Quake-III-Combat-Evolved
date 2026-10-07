@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "g_local.h"
 
 static	float	s_quadFactor;
+static float s_qceSpread;
+static int s_qceError;
 static	vec3_t	forward, right, up;
 static	vec3_t	muzzle;
 
@@ -293,6 +295,12 @@ qboolean ShotgunPellet( vec3_t start, vec3_t end, gentity_t *ent ) {
 
 		if ( traceEnt->takedamage) {
 			damage = (ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(ent->s.weapon)->damage:DEFAULT_SHOTGUN_DAMAGE) * s_quadFactor;
+   if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+    vec3_t traveled;
+    VectorSubtract(tr.endpos,start,traveled);
+    damage=(int)ceil(BG_QceDamage(ent->s.weapon,BG_QceDistanceDamageScale(ent->s.weapon,VectorLength(traveled)),random())*s_quadFactor);
+    if(damage<=0)return qfalse;
+   }
 #ifdef MISSIONPACK
 			if ( traceEnt->client && traceEnt->client->invulnerabilityTime > level.time ) {
 				if (G_InvulnerabilityEffect( traceEnt, forward, tr.endpos, impactpoint, bouncedir )) {
@@ -335,12 +343,15 @@ void ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 
 	// generate the "random" spread pattern
 	for ( i = 0 ; i < (ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(ent->s.weapon)->pellets:DEFAULT_SHOTGUN_COUNT) ; i++ ) {
-		r = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(ent->s.weapon)->spread:DEFAULT_SHOTGUN_SPREAD) * 16;
-		u = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(ent->s.weapon)->spread:DEFAULT_SHOTGUN_SPREAD) * 16;
+		r = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?s_qceSpread:DEFAULT_SHOTGUN_SPREAD) * 16;
+		u = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?s_qceSpread:DEFAULT_SHOTGUN_SPREAD) * 16;
 		VectorMA( origin, 8192 * 16, localForward, end);
 		VectorMA (end, r, localRight, end);
 		VectorMA (end, u, localUp, end);
-  if(ent->client->ps.stats[STAT_QCE_COMBAT])BG_QceRayEnd(origin,end,ent->s.weapon);
+  if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+   BG_QceRayEnd(origin,end,ent->s.weapon);
+   G_QceFireBullet(ent,origin,end,ent->s.weapon,MOD_SHOTGUN,s_quadFactor);continue;
+  }
 		if( ShotgunPellet( origin, end, ent ) && !hitClient ) {
 			hitClient = qtrue;
 			ent->client->accuracy_hits++;
@@ -357,6 +368,7 @@ void weapon_supershotgun_fire (gentity_t *ent) {
 	VectorScale( forward, 4096, tent->s.origin2 );
 	SnapVector( tent->s.origin2 );
 	tent->s.generic1 = ent->client->ps.stats[STAT_QCE_COMBAT]?ent->s.weapon:0;
+ tent->s.time2=ent->client->ps.stats[STAT_QCE_COMBAT]?s_qceError:0;
 	tent->s.eventParm = rand() & 255;		// seed for spread pattern
 	tent->s.otherEntityNum = ent->s.number;
 
@@ -804,7 +816,7 @@ void CalcMuzzlePointOrigin ( gentity_t *ent, vec3_t origin, vec3_t localForward,
 FireWeapon
 ===============
 */
-void FireWeapon( gentity_t *ent ) {
+void FireWeapon( gentity_t *ent,int eventParm ) {
 	if (ent->client->ps.powerups[PW_QUAD] ) {
 		s_quadFactor = g_quadfactor.value;
 	} else {
@@ -836,14 +848,27 @@ void FireWeapon( gentity_t *ent ) {
 
  if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(ent->s.weapon);
+  s_qceError=(eventParm>>1)&127;s_qceSpread=BG_QceWeaponDef(ent->s.weapon)->scoped_error && s_qceError==127?0:BG_QceSpread(ent->s.weapon,s_qceError);
+  if(def->fire_kind==QCE_FIRE_PLASMA || def->fire_kind==QCE_FIRE_RAIL || def->fire_kind==QCE_FIRE_ROCKET) {
+   VectorMA(forward,crandom()*s_qceSpread/8192,right,forward);
+   VectorMA(forward,crandom()*s_qceSpread/8192,up,forward);VectorNormalize(forward);
+  }
   switch(def->fire_kind) {
   case QCE_FIRE_MELEE: Weapon_Gauntlet(ent);break;
-  case QCE_FIRE_BULLET: Bullet_Fire(ent,def->spread,def->damage,def->headshot_mode==2?MOD_QCE_SNIPER:(def->headshot_mode==1?MOD_BFG:MOD_MACHINEGUN));break;
+  case QCE_FIRE_BULLET: {
+   vec3_t end,dir;
+   VectorMA(forward,crandom()*s_qceSpread/8192,right,dir);VectorMA(dir,crandom()*s_qceSpread/8192,up,dir);VectorNormalize(dir);
+   VectorMA(muzzle,def->projectile_range,dir,end);
+   G_QceFireBullet(ent,muzzle,end,ent->s.weapon,def->headshot_mode==1?MOD_BFG:MOD_MACHINEGUN,s_quadFactor);break;
+  }
   case QCE_FIRE_SHOTGUN: weapon_supershotgun_fire(ent);break;
   case QCE_FIRE_GRENADE: weapon_grenadelauncher_fire(ent);break;
   case QCE_FIRE_ROCKET: Weapon_RocketLauncher_Fire(ent);break;
   case QCE_FIRE_LIGHTNING: Weapon_LightningFire(ent);break;
-  case QCE_FIRE_RAIL: weapon_railgun_fire(ent);break;
+  case QCE_FIRE_RAIL: {
+   vec3_t end;VectorMA(muzzle,def->projectile_range,forward,end);
+   G_QceFireBullet(ent,muzzle,end,ent->s.weapon,MOD_QCE_SNIPER,s_quadFactor);break;
+  }
   case QCE_FIRE_PLASMA: Weapon_Plasmagun_Fire(ent);break;
   }
   return;
@@ -1157,11 +1182,16 @@ void G_StartKamikaze( gentity_t *ent ) {
 void G_QceThrowGrenade(gentity_t *ent, int type) {
  vec3_t dir,side,vertical,start;
  gentity_t *grenade;
+ trace_t trace;
  const qce_grenadedef_t *def=BG_QceGrenadeDef(type);
  AngleVectors(ent->client->ps.viewangles,dir,side,vertical);
  CalcMuzzlePoint(ent,dir,side,vertical,start);
- dir[2]+=0.2f;VectorNormalize(dir);
+ VectorCopy(ent->client->ps.origin,start);start[2]+=ent->client->ps.viewheight;
+ VectorMA(start,BG_QceMovementDef()->grenade_up,vertical,start);
+ trap_Trace(&trace,ent->client->ps.origin,NULL,NULL,start,ent->s.number,MASK_SHOT);
+ VectorCopy(trace.endpos,start);
  grenade=fire_grenade(ent,start,dir);
+ grenade->qceProjectileWeapon=0;grenade->qceProjectileTime=level.time;grenade->s.pos.trType=TR_LINEAR;
  grenade->qceGrenadeType=type==1?2:1;
  grenade->damage=0;grenade->splashDamage=def->splash_damage;grenade->splashRadius=def->splash_radius;
  grenade->methodOfDeath=grenade->splashMethodOfDeath=type==1?MOD_QCE_PLASMA_GRENADE:MOD_QCE_FRAG;

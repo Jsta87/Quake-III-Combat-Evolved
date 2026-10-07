@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "g_local.h"
+static gentity_t *QceNeedleOwner(gentity_t *ent);
 
 #define	MISSILE_PRESTEP_TIME	50
 
@@ -64,10 +65,22 @@ G_ExplodeMissile
 Explode a missile without an impact
 ================
 */
+static qboolean G_QceMissileSplash(gentity_t *ent,gentity_t *ignore) {
+ if(ent->qceGrenadeType) {
+  const qce_grenadedef_t *g=BG_QceGrenadeDef(ent->qceGrenadeType-1);
+  return G_QceRadiusDamage(ent->r.currentOrigin,ent->parent,ent->splashDamage,g->damage_minimum,g->damage_maximum,g->splash_inner,ent->splashRadius,ignore,ent->splashMethodOfDeath);
+ }
+ if(ent->qceProjectileWeapon==WP_ROCKET_LAUNCHER) {
+  const qce_weapondef_t *w=BG_QceWeaponDef(ent->qceProjectileWeapon);
+  return G_QceRadiusDamage(ent->r.currentOrigin,ent->parent,ent->splashDamage,w->damage_minimum,w->damage_maximum,w->splash_inner,ent->splashRadius,ignore,ent->splashMethodOfDeath);
+ }
+ return G_RadiusDamage(ent->r.currentOrigin,ent->parent,ent->splashDamage,ent->splashRadius,ignore,ent->splashMethodOfDeath);
+}
 void G_ExplodeMissile( gentity_t *ent ) {
 	vec3_t		dir;
 	vec3_t		origin;
 
+ if(ent->qceProjectileWeapon || ent->qceGrenadeType)ent->parent=QceNeedleOwner(ent);
 	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
 	SnapVector( origin );
 	G_SetOrigin( ent, origin );
@@ -83,10 +96,9 @@ void G_ExplodeMissile( gentity_t *ent ) {
 
 	// splash damage
 	if ( ent->splashDamage ) {
-		if( G_RadiusDamage( ent->r.currentOrigin, ent->parent, ent->splashDamage, ent->splashRadius, ent
-			, ent->splashMethodOfDeath ) ) {
+		if( G_QceMissileSplash(ent,ent) ) {
 			if(ent->r.ownerNum>=0 && ent->r.ownerNum<level.maxclients && g_entities[ent->r.ownerNum].client &&
-               (!ent->qceNeedle || g_entities[ent->r.ownerNum].qceEntitySerial==ent->qceOwnerSerial))
+               (!(ent->qceNeedle || ent->qceProjectileWeapon || ent->qceGrenadeType) || g_entities[ent->r.ownerNum].qceEntitySerial==ent->qceOwnerSerial))
                 g_entities[ent->r.ownerNum].client->accuracy_hits++;
 		}
 	}
@@ -271,12 +283,57 @@ G_MissileImpact
 */
 #include "g_qce_needle.h"
 
+static int G_QceMaterialResponse(gentity_t *ent,trace_t *trace,gentity_t *other) {
+ int material=other->client?(other->client->ps.stats[STAT_QCE_SHIELD]>0?22:21):((trace->surfaceFlags&SURF_METALSTEPS)?7:2);
+ const qce_materialdef_t *m=BG_QceMaterialDef(ent->qceProjectileWeapon,material);
+ vec3_t direction;
+ float speed=VectorNormalize2(ent->s.pos.trDelta,direction),dot=-DotProduct(direction,trace->plane.normal);
+ float angle,velocity;
+ if(dot<0)dot=0;
+ if(dot>1)dot=1;
+ angle=atan2(dot,sqrt(1-dot*dot))+crandom()*m->angular_noise;
+ velocity=speed*dot-random()*m->velocity_noise;
+ if(m->potential && (!m->angle_max || (angle>=m->angle_min && angle<=m->angle_max)) &&
+   (!m->velocity_max || (velocity>=m->velocity_min && velocity<=m->velocity_max)) &&
+   (!(m->flags&1) || other->client) && (!(m->flags&2) || !other->client) && random()>=m->skip)return m->potential;
+ return m->response;
+}
+static qboolean G_QceContinueProjectile(gentity_t *ent,trace_t *trace,gentity_t *other,int response) {
+ int material=other->client?(other->client->ps.stats[STAT_QCE_SHIELD]>0?22:21):((trace->surfaceFlags&SURF_METALSTEPS)?7:2),i;
+ const qce_materialdef_t *m=BG_QceMaterialDef(ent->qceProjectileWeapon,material);
+ float dot;
+ if(response==3 && other->client) {
+  ent->target_ent=other;VectorScale(ent->s.pos.trDelta,1-m->initial,ent->s.pos.trDelta);
+  VectorCopy(trace->endpos,ent->r.currentOrigin);return qtrue;
+ }
+ if(response==2) {
+  dot=DotProduct(ent->s.pos.trDelta,trace->plane.normal);
+  for(i=0;i<3;i++)ent->s.pos.trDelta[i]=(ent->s.pos.trDelta[i]-dot*trace->plane.normal[i])*(1-m->perpendicular)-dot*trace->plane.normal[i]*(1-m->parallel);
+  VectorMA(trace->endpos,0.08f,trace->plane.normal,ent->r.currentOrigin);
+  return qtrue;
+ }
+ return qfalse;
+}
+
+static void G_QceBounceGrenade(gentity_t *ent,trace_t *trace) {
+ const qce_grenadedef_t *g=BG_QceGrenadeDef(ent->qceGrenadeType-1);
+ float dot=DotProduct(ent->s.pos.trDelta,trace->plane.normal);
+ float parallel=(trace->surfaceFlags&SURF_METALSTEPS)?g->metal_parallel:g->bounce_parallel;
+ float perpendicular=(trace->surfaceFlags&SURF_METALSTEPS)?g->metal_perpendicular:g->bounce_perpendicular;
+ int i;
+ for(i=0;i<3;i++)ent->s.pos.trDelta[i]=(ent->s.pos.trDelta[i]-dot*trace->plane.normal[i])*(1-perpendicular)-dot*trace->plane.normal[i]*(1-parallel);
+ if(trace->plane.normal[2]>0.7f && VectorLength(ent->s.pos.trDelta)<8)G_SetOrigin(ent,trace->endpos);
+ else {
+  VectorMA(trace->endpos,0.08f,trace->plane.normal,ent->r.currentOrigin);
+  VectorCopy(ent->r.currentOrigin,ent->s.pos.trBase);ent->s.pos.trTime=level.time;ent->s.pos.trType=TR_LINEAR;
+ }
+}
 qboolean G_QceGrenadeImpact(gentity_t *ent,trace_t *trace) {
  gentity_t *other=&g_entities[trace->entityNum];
  /* Hand frags bounce off bodies too; plasma arms its fuse on first contact. */
- if(ent->qceGrenadeType>0 && !BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky) {
+ if(ent->qceGrenadeType>0 && (!BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky || !other->client)) {
   const qce_grenadedef_t *def=BG_QceGrenadeDef(ent->qceGrenadeType-1);
-  G_BounceMissile(ent,trace);
+  G_QceBounceGrenade(ent,trace);
   if(!ent->qceFuseArmed && (def->timer_start==1 || (def->timer_start==2 && ent->s.pos.trType==TR_STATIONARY))) {
    ent->qceFuseArmed=1;ent->nextthink=level.time+def->fuse_ms;
   }
@@ -331,11 +388,34 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 	int				eFlags;
 #endif
 	other = &g_entities[trace->entityNum];
- if(ent->qceCharged)ent->parent=QceNeedleOwner(ent);
+ if(ent->qceProjectileWeapon || ent->qceGrenadeType)ent->parent=QceNeedleOwner(ent);
 
+ if(ent->qceNeedle && G_QceContinueProjectile(ent,trace,other,G_QceMaterialResponse(ent,trace,other)))return;
  if(G_QceNeedleImpact(ent,trace))return;
  if(G_QceGrenadeImpact(ent,trace))return;
 
+ if(ent->qceBullet) {
+  gentity_t *owner=QceNeedleOwner(ent);
+  gentity_t *event;
+  vec3_t damagePoint;
+  int amount=(int)ceil(BG_QceDamage(ent->qceProjectileWeapon,ent->qceDamageScale,random())*ent->count);
+  VectorCopy(trace->endpos,damagePoint);
+  if(BG_QceWeaponDef(ent->qceProjectileWeapon)->headshot_mode)G_QceResolveHeadPoint(other,trace->endpos,ent->s.pos.trDelta,damagePoint);
+  if(other->takedamage && owner) {
+   if(owner->client && LogAccuracyHit(other,owner))owner->client->accuracy_hits++;
+   G_Damage(other,ent,owner,ent->s.pos.trDelta,damagePoint,amount,0,ent->methodOfDeath);
+  }
+  if(ent->qceProjectileWeapon==WP_RAILGUN) {
+   event=G_TempEntity(trace->endpos,EV_RAILTRAIL);VectorCopy(ent->s.origin2,event->s.origin2);event->s.clientNum=ent->r.ownerNum;
+  } else {
+   event=G_TempEntity(trace->endpos,other->client?EV_BULLET_HIT_FLESH:EV_BULLET_HIT_WALL);
+   event->s.eventParm=other->client?other->s.number:DirToByte(trace->plane.normal);event->s.otherEntityNum=ent->r.ownerNum;
+  }
+  if(G_QceContinueProjectile(ent,trace,other,G_QceMaterialResponse(ent,trace,other))) {
+   VectorCopy(trace->endpos,ent->s.origin2);return;
+  }
+  G_FreeEntity(ent);return;
+ }
 	// check for bounce
 	if ( !other->takedamage &&
 		( ent->s.eFlags & ( EF_BOUNCE | EF_BOUNCE_HALF ) ) ) {
@@ -370,7 +450,7 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 		if ( ent->damage ) {
 			vec3_t	velocity;
 
-			if( LogAccuracyHit( other, &g_entities[ent->r.ownerNum] ) ) {
+			if( ent->parent && ent->parent->client && LogAccuracyHit( other, ent->parent ) ) {
 				g_entities[ent->r.ownerNum].client->accuracy_hits++;
 				hitClient = qtrue;
 			}
@@ -378,8 +458,10 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 			if ( VectorLength( velocity ) == 0 ) {
 				velocity[2] = 1;	// stepped on a grenade
 			}
-			G_Damage (other, ent, &g_entities[ent->r.ownerNum], velocity,
-				ent->s.origin, ent->damage, 
+   if(ent->qceProjectileWeapon && !ent->qceNeedle && !ent->qceCharged)
+    ent->damage=(int)ceil(BG_QceDamage(ent->qceProjectileWeapon,ent->qceDamageScale,random()));
+			G_Damage (other, ent, ent->parent, velocity,
+				trace->endpos, ent->damage,
 				0, ent->methodOfDeath);
 		}
 	}
@@ -489,10 +571,9 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 
 	// splash damage (doesn't apply to person directly hit)
 	if ( ent->splashDamage ) {
-		if( G_RadiusDamage( trace->endpos, ent->parent, ent->splashDamage, ent->splashRadius, 
-			other, ent->splashMethodOfDeath ) ) {
-			if( !hitClient ) {
-				g_entities[ent->r.ownerNum].client->accuracy_hits++;
+		if( G_QceMissileSplash(ent,other) ) {
+			if( !hitClient && ent->parent && ent->parent->client ) {
+				ent->parent->client->accuracy_hits++;
 			}
 		}
 	}
@@ -505,6 +586,8 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 G_RunMissile
 ================
 */
+#include "g_qce_projectile.h"
+
 void G_RunMissile( gentity_t *ent ) {
 	vec3_t		origin;
 	trace_t		tr;
@@ -512,6 +595,7 @@ void G_RunMissile( gentity_t *ent ) {
 
  if(G_QceRunStuckGrenade(ent))return;
  G_QceTrackNeedle(ent);
+ if(ent->qceProjectileWeapon || ent->qceGrenadeType) {G_QceRunProjectile(ent);return;}
 
 	// get current position
 	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
@@ -628,16 +712,17 @@ gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t dir) {
 
  if(self->client && self->client->ps.stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(self->client->ps.weapon);
+  G_QceInitProjectile(bolt,self,self->client->ps.weapon);
   bolt->methodOfDeath=QceProjectileMod(self->client->ps.weapon,qfalse);
   bolt->splashMethodOfDeath=QceProjectileMod(self->client->ps.weapon,qtrue);
   bolt->damage=def->damage;bolt->splashDamage=def->splash_damage;bolt->splashRadius=def->splash_radius;
-  bolt->nextthink=level.time+def->fuse_ms;
-  if(def->projectile_range>0 && def->projectile_speed>0)bolt->nextthink=level.time+(int)(1000*def->projectile_range/def->projectile_speed);
+  bolt->nextthink=level.time+60000;
+  bolt->nextthink=level.time+60000;
   VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);SnapVector(bolt->s.pos.trDelta);
   if(def->attachment_ms>0) {
    bolt->qceNeedle=1;bolt->qceOwnerSerial=self->qceEntitySerial;
    bolt->think=G_QceNeedleThink;bolt->s.weapon=WP_PLASMAGUN;
-   bolt->nextthink=level.time+(int)(1000*def->projectile_range/def->projectile_speed);
+   bolt->nextthink=level.time+60000;
    QceAcquireNeedle(bolt,dir,def->projectile_range);
   }
  }
@@ -686,10 +771,11 @@ gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t dir) {
 
  if(self->client && self->client->ps.stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(self->client->ps.weapon);
+  G_QceInitProjectile(bolt,self,self->client->ps.weapon);
   bolt->methodOfDeath=QceProjectileMod(self->client->ps.weapon,qfalse);
   bolt->splashMethodOfDeath=QceProjectileMod(self->client->ps.weapon,qtrue);
   bolt->damage=def->damage;bolt->splashDamage=def->splash_damage;bolt->splashRadius=def->splash_radius;
-  bolt->nextthink=level.time+def->fuse_ms;
+  bolt->nextthink=level.time+60000;
   VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);SnapVector(bolt->s.pos.trDelta);
  }
 
@@ -775,10 +861,11 @@ gentity_t *fire_rocket (gentity_t *self, vec3_t start, vec3_t dir) {
 
  if(self->client && self->client->ps.stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(self->client->ps.weapon);
+  G_QceInitProjectile(bolt,self,self->client->ps.weapon);
   bolt->methodOfDeath=QceProjectileMod(self->client->ps.weapon,qfalse);
   bolt->splashMethodOfDeath=QceProjectileMod(self->client->ps.weapon,qtrue);
   bolt->damage=def->damage;bolt->splashDamage=def->splash_damage;bolt->splashRadius=def->splash_radius;
-  bolt->nextthink=level.time+def->fuse_ms;
+  bolt->nextthink=level.time+60000;
   VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);SnapVector(bolt->s.pos.trDelta);
  }
 
@@ -925,7 +1012,7 @@ gentity_t *fire_qce_overcharge(gentity_t *self,vec3_t start,vec3_t dir) {
  bolt->qceCharged=1;bolt->qceOwnerSerial=self->qceEntitySerial;bolt->damage=def->charged_damage;
  bolt->methodOfDeath=MOD_QCE_OVERCHARGE;bolt->splashDamage=0;
  VectorScale(dir,def->charged_speed,bolt->s.pos.trDelta);
- bolt->nextthink=level.time+(int)(1000*def->charged_range/def->charged_speed);
+ bolt->nextthink=level.time+60000;
  QceAcquireNeedle(bolt,dir,def->charged_range);
  return bolt;
 }

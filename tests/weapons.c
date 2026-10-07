@@ -69,9 +69,9 @@ int main(void) {
  action(&ps,BUTTON_QCE_MELEE|BUTTON_ATTACK,WP_MACHINEGUN,16);
  assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_MELEEING);
  assert(!(ps.eFlags&EF_FIRING) && ps.ammo[WP_MACHINEGUN]==60);
- assert(ps.events[seq&(MAX_PS_EVENTS-1)]==EV_QCE_MELEE && ps.eventSequence==seq+2);
+ assert(ps.events[seq&(MAX_PS_EVENTS-1)]==EV_QCE_MELEE && ps.eventSequence==seq+1);
  action(&ps,BUTTON_QCE_MELEE|BUTTON_QCE_RELOAD|BUTTON_ATTACK,WP_SHOTGUN,16);
- assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_MELEEING && ps.eventSequence==seq+2);
+ assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_MELEEING && ps.eventSequence==seq+1);
  advance(&ps,BUTTON_QCE_MELEE,100);
  assert(ps.weaponstate==WEAPON_READY && ps.eventSequence==seq+2);
  assert((ps.stats[STAT_QCE_GRENADES]&7)==2 && BG_QceMagazine(&ps,WP_MACHINEGUN)==60);
@@ -80,7 +80,7 @@ int main(void) {
  advance(&ps,BUTTON_QCE_MELEE|BUTTON_QCE_GRENADE,100);
  assert(ps.eventSequence==seq+3); /* grenade must not clear the held melee latch */
  action(&ps,0,WP_MACHINEGUN,16);action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
- assert(ps.eventSequence==seq+5);
+ assert(ps.eventSequence==seq+4);
  init(&ps,0);seq=ps.eventSequence;action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
  assert(ps.eventSequence==seq); /* disabled profile preserves stock behavior */
  ps.stats[STAT_QCE_COMBAT]=1;ps.stats[STAT_HEALTH]=0;action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
@@ -97,14 +97,14 @@ int main(void) {
  meleeTarget=100;seq=ps.eventSequence;predicted=ps;
  action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);action(&predicted,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
  assert(!memcmp(&ps,&predicted,sizeof(ps)) && ps.velocity[0]>490 && ps.eventSequence==seq+1);
- for(i=0;i<6;i++)action(&ps,0,WP_MACHINEGUN,16);
+ for(i=0;i<5;i++)action(&ps,0,WP_MACHINEGUN,16);
  assert(ps.eventSequence==seq+1);
  for(i=0;i<3;i++)action(&ps,0,WP_MACHINEGUN,16);
  assert(ps.eventSequence==seq+2 && ps.events[(seq+1)&(MAX_PS_EVENTS-1)]==EV_QCE_MELEE_STRIKE);
  assert(ps.ammo[WP_MACHINEGUN]==60 && !(ps.stats[STAT_QCE_GRENADES]&32));
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;BG_QceAddWeapon(&ps,WP_MACHINEGUN,60);
  meleeWall=40;seq=ps.eventSequence;action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
- assert(ps.velocity[0]<1 && ps.eventSequence==seq+2);meleeTarget=meleeWall=10000;
+ assert(ps.velocity[0]<1 && ps.eventSequence==seq+1);meleeTarget=meleeWall=10000;
 
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_SHOTGUN;
  BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=0;

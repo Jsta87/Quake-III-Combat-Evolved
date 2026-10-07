@@ -53,9 +53,12 @@ int main(void) {
  setup();BG_QceRemoveWeapon(&client.ps,WP_MACHINEGUN);BG_QceAddWeapon(&client.ps,WP_PLASMAGUN,100);client.ps.weapon=WP_PLASMAGUN;
  g_entities[MAX_CLIENTS].item=BG_FindItemForWeapon(WP_PLASMAGUN);g_entities[MAX_CLIENTS].s.modelindex=g_entities[MAX_CLIENTS].item-bg_itemlist;
  assert(!BG_CanItemBeGrabbed(GT_FFA,&g_entities[MAX_CLIENTS].s,&client.ps));
- client.ps.qceHeat[0]=10000;client.ps.qceHeatRemainder[0]=321;client.ps.qceOverheated=1;
+ client.ps.qceError[0]=7000;client.ps.qceErrorRemainder[0]=-432;client.ps.qceHeat[0]=10000;client.ps.qceHeatRemainder[0]=321;client.ps.qceOverheated=1;
+ client.ps.qceBattery[0]=499123;client.ps.qceRate[0]=5678;client.ps.qceRateRemainder[0]=-321;client.ps.qceOverheatTime[0]=1234;
  expectedWeapon=WP_PLASMAGUN;G_QceSwapWeapon(&g_entities[0]);
  assert(drops==1 && pickups==1 && client.ps.weapon==WP_PLASMAGUN && drop.count==100 && client.ps.ammo[WP_PLASMAGUN]==10);
+ assert(drop.qceDroppedBattery==499123 && drop.qceDroppedRate==5678 && drop.qceDroppedRateRemainder==-321 && drop.qceDroppedOverheatTime==1234);
+ assert(drop.qceDroppedError==7000 && drop.qceDroppedErrorRemainder==-432);
  assert(drop.qceDroppedHeat==10000 && drop.qceDroppedHeatRemainder==321 && drop.qceDroppedOverheated==1 && drop.qceDroppedHeatTime==level.time);
  puts("PASS: nearby weapon replacement, loaded/total ammo preservation, select feedback, free slot, facing/range/LOS, owner lock and action guards");return 0;
 }

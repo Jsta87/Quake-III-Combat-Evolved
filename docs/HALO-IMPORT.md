@@ -1,166 +1,170 @@
-# Xbox map import: build 01.10.12.2276
+# Xbox gameplay import: build 01.10.12.2276
 
-Both uploaded maps have Xbox cache version 5, build `01.10.12.2276`, matching
-Invader's Xbox NTSC-US build identifier. Blood Gulch contains 1,806 tags and UI
-983. The offline reader validates header/footer, bounded zlib decompression,
-tag identities, dependency IDs and accessed pointers/reflexives. The zlib
-stream checksum is checked by decompression; the cache-header CRC is recorded
-but not independently verified. Files remain under ignored `assets/halo/`.
+The owned Xbox UI and Blood Gulch maps are version-5 compressed caches, build
+`01.10.12.2276` (NTSC-US build identifier), containing 983 and 1,806 tags.
+The offline reader checks header/footer, bounded zlib decompression, identities,
+dependencies and accessed pointers/reflexives. Zlib validates its checksum;
+cache-header CRC is recorded but is not independently verified. Map files and
+full extracted manifests remain ignored under `assets/halo/`.
 
-## Applied in the game
+The committed schema-3 profile contains extracted numeric values and converted
+animation metadata. It contains no converted art. `data/halo-import-report.json`
+records source map/hash, root tag hashes, source trigger/magazine/damage values,
+converted fields and remaining adaptations. Root hashes cover root structures;
+map hashes cover the source file, including reflexive data.
 
-| Quake slot | Halo weapon | Magazine | Maximum reserve | Fire interval used | Reload interval used |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Machinegun | Assault rifle | 60 | 600 | 67 ms | 3,400 ms |
-| Shotgun | Shotgun | 12 | 60 | 1,000 ms | 400 ms per shell |
-| Rocket launcher | Rocket launcher | 2 | 8 | 2,000 ms | 5,000 ms |
-| Railgun | Sniper rifle | 4 | 24 | 500 ms | 3,133 ms, provisional animation-derived fallback |
-| Plasma gun | Plasma rifle | Battery | None | 100 ms, final rate | No magazine reload |
-| Lightning gun | Plasma pistol | Battery | None | 33 ms rate cap; charging still pending | No magazine reload |
-| BFG | Magnum | 12 | 120 | 300 ms | 2,170 ms |
-| Grenade launcher | Needler | 20 | 80 | 100 ms, final rate | 1,000 ms |
+## Mapping and timings
 
-Capacities, initial ammunition and nonzero reload times come from magazine
-fields. Reserve limits exclude the loaded magazine, including partially loaded
-magazines. Full-ammo pickups do not consume weapons. Battery weapons cannot
-recharge from Quake ammo boxes or automatic duplicate pickups; E replaces the
-selected battery weapon and drops its remaining energy. The current battery
-representation is shot equivalents (plasma rifle 200, plasma pistol 500) from
-trigger age-per-round. Heat and charged consumption are implemented; exact
-fractional battery age and Halo battery presentation remain pending.
-Quake grenade-launcher ammo boxes now supply Needler ammunition.
+| Quake slot | Halo weapon | Clip / full battery normal shots | Fire interval at maximum rate | Full / empty reload duration | Ready duration | Melee impact / duration |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| WP_MACHINEGUN | assault rifle | 60 | 67 ms | 2900 / 2900 | 1300 ms | 100 / 1233 ms |
+| WP_SHOTGUN | shotgun | 12 | 1000 ms | 400 / 400 | 767 ms | 133 / 1200 ms |
+| WP_ROCKET_LAUNCHER | rocket launcher | 2 | 2000 ms | 3700 / 4167 | 733 ms | 133 / 1733 ms |
+| WP_RAILGUN | sniper rifle | 4 | 500 ms | 2767 / 3133 | 967 ms | 200 / 1200 ms |
+| WP_PLASMAGUN | plasma rifle | 200 | 100 ms | none | 967 ms | 200 / 1200 ms |
+| WP_LIGHTNING | plasma pistol | 500 | 33 ms | none | 467 ms | 133 / 1100 ms |
+| WP_BFG | pistol | 12 | 300 ms | 2167 / 2233 | 1167 ms | 133 / 1500 ms |
+| WP_GRENADE_LAUNCHER | needler | 20 | 100 ms | 2333 / 2333 | 767 ms | 200 / 1600 ms |
 
-Fire intervals convert the final rate to whole 30 Hz ticks, then integer
-milliseconds. They are rate caps, not proof of exact trigger/animation behavior.
-Fire-rate ramps still need simulation. Plasma pistol tap/charge release is implemented. Shotgun reload adds one
-shell at a time and permits firing to interrupt once a shell is available.
-The sniper's magazine reload time is zero: its 94-frame empty reload animation
-provides a provisional 30 frames/s fallback rather than an instant reload.
-Full-versus-empty timings and animation event interpretation are not yet matched.
+Shotgun reload values are per-shell. Plasma-pistol firing is release-driven;
+its zero rate-of-fire tag uses a 33-ms minimum interval. Needler ramps 3→10
+shots/s over approximately 500 ms; plasma rifle ramps 7→10 over 1,800 ms.
+Rate intervals quantize to 30-Hz ticks. Trigger progress carries fractional
+remainders and recovers when released or holstered.
 
-The imported multiplayer unit is `characters\cyborg_mp\cyborg_mp`, not the
-single-player cyborg. Its collision tag provides 75 body vitality, 75 shield
-vitality, a six-second stun/recharge delay and four seconds for full recharge.
-Fractional regeneration carries remainders across frames so 75/4 seconds does
-not drift with frame cadence. Displayed shield points remain integers.
+Reload/ready/melee metadata is resolved by extracted animation names. Full and
+empty reload durations are distinct; melee impact uses the first keyframe.
+The build2342 reference uses animation-channel lookups and additional reload,
+chamber and cancellation states; exact build2276 event timing still needs
+validation and converted animation channels. Frame counts are timing inputs,
+not evidence that the rendered Quake animation matches Halo.
 
-Magnum damage is 25 before material modifiers, with shield multiplier 1 and
-cyborg-armor multiplier 1.5. Its headshot bonus requires shields to be zero
-after that same shot. Regression tests verify two body shots leave 25 shields,
-then a third headshot kills on exact depletion. A third body shot removes the
-remaining shields without the headshot bonus. The sniper uses 101 damage and
-its shielded-headshot policy. Classification still uses Quake collision-box
-head zones, not Halo animated hitboxes.
+## Units and behavior evidence
 
-Shotgun uses 15 projectiles, initial angular spread and the first damage upper
-bound (18), with shield multiplier 0.5. Other ranged damage/material scalars,
-initial projectile velocities, explosion damage/radius and melee damage scalars
-are imported where supported. Quake integer health/shield damage rounding remains an adaptation.
-Variable damage ranges, distance falloff and
-material-response behavior remain in the extraction/report for future work.
+One Halo world unit maps to 80 Quake units: the .7-WU standing hull becomes 56
+Quake units. This is a chosen arena adaptation, not an official conversion.
+Cached projectile/jump velocities are WU per 30-Hz tick, so multiply by 30×80.
+Directional movement speeds are WU/s; multiply by 80. Reference biped code
+converts absolute acceleration to per-tick velocity increments, requiring
+30×80 when expressing acceleration in Quake units/s².
 
-Frag uses the tag's 500 ms timer after the first bounce, without resetting it
-on later bounces. Sticky plasma uses two seconds after coming to rest. Grenade
-explosion damage is 120; outer radii are converted from tags. Throw impulses,
-bounce material responses, inner-radius falloff, attached damage and spawn
-counts remain incomplete. A ten-second airborne safety expiry is an explicit
-engine adaptation rather than a Halo tag value.
+| Movement quantity | Applied value |
+| --- | ---: |
+| Forward / backward / sideways | 180 / 160 / 160 units/s |
+| Crouched forward / backward / sideways | 72 / 52 / 48 units/s |
+| Ground / crouched / airborne acceleration | 768 / 384 / 84 units/s² |
+| Jump impulse | 168 units/s |
+| Gravity | 256.6929 projectile; 257 player units/s² |
+| Collision radius; standing / crouched height | 16; 56 / 40 units |
+| Standing / crouched eye height above feet | 49.6 / 28 units |
+| Crouch camera transition | 200 ms |
+| Slope falloff / cutoff | 20° / 45° |
+| Uphill / downhill terminal scale | .65 / 1.25 |
 
-## Reproduce and audit
+Ground acceleration approaches the desired vector and also brakes to rest;
+Quake ground friction and velocity snapping are bypassed in Halo movement.
+No input in the air preserves horizontal momentum. Collision sweeps, stepping,
+water movement, hazards, damage impulses, fall/landing behavior and some camera
+smoothing still belong to Quake. A controlled jump fixture measures about
+54.91 units above standing origin; retail comparison is still required.
+
+Runtime formulas were checked against
+[halo-ce-universal](https://github.com/cybersecurity/halo-ce-universal/tree/76b1898ee14e6fb58e0412acc183da509c10e001),
+commit `76b1898ee14e6fb58e0412acc183da509c10e001`, **build2342**, which differs from
+the uploaded build2276. Reference source is CC0; ioquake3 remains GPL2-or-later.
+Factual binary layouts derive from Invader commit
+`696830ff80af227e84e7237c2ef26eb2301ed110`; retained layout attribution/license
+is under `data/halo-layout/`. The extractor is GPL3-only.
+
+## Projectile and damage model
+
+Bullets, pellets, rockets and plasma use authoritative finite travel. Curved
+sweeps use up to eight-ms substeps, gravity and constant deceleration between
+the tagged initial/final speeds. Air/water select their own damage ranges and
+gravity. Maximum range is cumulative path distance, rather than a timeout
+estimated from launch speed. The plasma rifle's zero maximum range expires at
+the end of its slowdown. A 60-second safety lifetime remains for other weapon
+projectiles. Bounce remainder within a substep is approximate.
+
+Impact damage uses normalized speed when initial/final velocities differ.
+Damage-effect **minimum** is the low-scale damage, while the two upper-bound
+values are the random full-strength bounds:
+
+`minimum × (1−scale) + random(lower, upper) × scale`.
+
+This corrects the old zero-damage shotgun interpretation: near pellets randomize
+18–25, and at the end of the 120–240-unit slowdown they approach **8**, not zero.
+The build2342 source preserves an air/water maximum-damage-distance bug. This
+implementation uses tagged air values and does not assert that bug exists in2276.
+Integer damage rounding remains a Quake adaptation.
+
+Rocket/hand-grenade blasts give full-strength random damage inside the inner
+radius, interpolate to minimum damage over the outer band and stop at the
+outer cutoff. Quake hull center substitutes for Halo's animated bounding
+sphere. Arena wall occlusion and direct-hit exclusion are retained. Needle
+supercombine keeps the earlier fixed group blast model pending further parity
+work. Quake self-damage and knockback rules are not yet fully replaced.
+
+All 33 weapon projectile material responses are extracted. Arena world surfaces
+map to stone (2), `SURF_METALSTEPS` to thick metal (7), players to cyborg armor
+(21) or energy shield (22), after damage. Potential response angle/speed bounds,
+flags and skip fraction select reflect/penetrate/attach behavior. Bullet
+penetration applies initial friction; Needler grazing ricochet uses normal and
+tangential loss. Arena surfaces do not expose every Halo material. Water is
+selected as a medium during travel; collision/media entry effects, angular
+ricochet noise, charged-specific responses and shield-hit-material subtleties
+still need validation.
+
+## Batteries, precision and grenade behavior
+
+Battery state uses millionth-age units. Primary costs are 5,000 for plasma rifle
+and 2,000 for plasma pistol; charged pistol costs 110,000. Partial battery
+remainder survives shots, manual/death drops and pickup. Ammo counts derive
+from remaining energy for compatibility; the HUD displays battery percentage.
+There is no magazine reload or ammo-box refill. Cooling retains fixed-point
+heat and permille battery-age approximation. Fully charged hold pauses cooling;
+release fires the EMP secondary. Overheat heat thresholds and imported recovery
+animation duration gate firing while melee/grenades remain available.
+
+Right-click cycles authoritative zoom. Magnum/rocket use 2×, sniper 2×/8×.
+Scoped sniper error is zero according to its trigger flag; shot events capture
+that decision so later zoom changes cannot affect a shot. Damage and actions
+clear zoom. Rendered FOV/sensitivity use magnification, with user base FOV retained.
+
+Precision rays intersect a temporary ellipsoid in the upper hull. This avoids
+counting the entire upper-body width as head and resolves the coarse hull entry
+point to a head point. It remains an approximation: actual animated head nodes,
+pose geometry and model collision belong to the asset-conversion milestone.
+Magnum shield-break/exact-depletion and sniper exception rules are preserved.
+
+Both hand grenades launch at the biped's 10-WU/s (800 units/s), in the aim
+direction, from the camera plus the imported .05-WU upward origin offset.
+The old upward velocity bias is removed. Stone/metal bounce coefficients use
+extracted material normal/tangential friction. Frag's 500-ms timer starts on
+first bounce. Plasma bounces on arena surfaces, sticks to players or settles
+on the floor, then starts its 2,000-ms timer. Moving/rotating attachments remain
+serial/spawn-safe. Grenade release keyframes, two-of-each spawn adaptation and
+the ten-second unarmed safety expiry still need retail validation.
+
+## Reproduce and verify
 
 ```sh
 python3 scripts/extract-halo.py assets/halo/bloodgulch.map --output assets/halo/bloodgulch-values.json
 python3 scripts/extract-halo.py assets/halo/ui.map --index-only --output assets/halo/ui-index.json
 python3 scripts/import-halo-profile.py assets/halo/bloodgulch-values.json --ui-index assets/halo/ui-index.json
 python3 scripts/generate-profile.py
+python3 tests/profile.py
+python3 tests/halo-extraction.py
 ```
 
-`data/halo-import-report.json` records applied fields, raw numeric values,
-assumptions and parity gaps. The profile records source map SHA-256 and root
-structure hashes for referenced tags; a root hash does not cover its reflexive
-arrays/resources, which remain covered by the map hash. Extraction manifests
-with full decoded numeric structures stay local. UI is indexed for later
-presentation work; its resources have not been converted into Quake art.
+Project protocol **93** carries heat, charge, spread, rate, battery, zoom, camera
+transition and recovery timers. Rebuild engines and native/QVM modules together.
+The fourteen shell test suites and two Python suites cover controlled shared
+prediction, server damage/travel/materials/blasts, drop/pickup conservation,
+network serialization and malformed input. Builds and offscreen startup do not
+establish remote multiplayer or retail parity.
 
-A scale of 80 Quake units per Halo world unit maps the tag's 0.7-unit standing
-hull to the existing 56-unit Quake hull. This is a chosen arena adaptation,
-not an official conversion. Cached projectile velocity is per tick and is
-multiplied by 30 and by the scale. Angular spread is converted from radians
-into Quake ray offsets. Imported maximum ranges now bound bullet/shotgun rays
-and plasma/needle flight lifetimes. Bullet travel, projectile acceleration, gravity,
-random spread distribution and simulation cadence are not yet Halo-equivalent.
-
-## Remaining work before claiming parity
-
-The profile deliberately has `status: mixed`. The next behavior work is
-exact plasma/Needler acquisition/material response and animation events, damage ranges
-and falloff, sustained spread/recovery, finite projectile behavior, reload and
-melee animation events, and movement/camera/collision calibration. Quake models, animations, icons and sounds
-remain. Retail comparison and human/network validation are still required.
-Vehicles and arena adaptations remain deferred as agreed. No additional map
-files are needed for the current weapon dependency pass.
-
-## Needler behavior pass
-
-Needles acquire a visible living opponent at launch, turn at the imported
-90 degrees/second while sightlines remain clear, and expire after the imported
-20-world-unit range at their current constant speed. On contact they attach
-without immediate damage, follow translation and rotation, then deal the
-10-damage attached effect after 750 ms. Respawn and entity serial checks stop
-an old attachment or tracking lock from affecting a replacement player.
-
-Seven live needles attached to the same target trigger one 60-damage,
-80-Quake-unit outer-radius supercombine. Attachments count across shooters.
-Consumed groups cannot combine twice. Remaining needles still apply their
-individual attached damage through the normal shield/protection rules.
-
-The seven-needle threshold follows `MAXIMUM_COMBINING_PROJECTILES = 6` and
-its seventh-attachment check in the build-2342 reference:
-[projectiles.c](https://github.com/cybersecurity/halo-ce-universal/blob/76b1898ee14e6fb58e0412acc183da509c10e001/source/items/projectiles.c).
-This is behavior evidence from a different build, not proof of retail-2276
-parity. The 0.95 acquisition dot-product cone, world-contact attachment,
-constant projectile speed, and grouped detonation on the next server frame
-are explicit adaptations. Halo material reflections and randomized scheduling
-of remaining attached needles are pending. Quake plasma visuals remain.
-
-Run `./scripts/test-needles.sh` for attachment damage, grouping, launch
-acquisition, turn bounds, walls, lifetime and target/owner reuse regression tests.
-
-## Plasma heat and charging
-
-The uploaded tags set rifle heat to 8% per shot and base cooling to 30%/second;
-pistol heat is 16% per normal shot with 65%/second cooling. Both overheat at
-100% and recover only below 25%. Rifle cooling slows by up to 20% as its
-battery drains. Cooling runs on both carried weapons and heat survives
-manual/death drops; a world pickup accounts for elapsed cooling time.
-Heat is fixed-point in 0.01-percent units, with a fractional cooling remainder.
-Battery age for the recovery penalty is derived from shot-equivalent ammo
-and quantized to 0.1%. Animation-state recovery delays remain pending.
-
-A short plasma-pistol press fires its primary bolt on release. Holding for
-at least 600 ms then releasing fires the secondary bolt: raw damage70,
-health multiplier0.6, shield multiplier1, initial speed1200 Quake units/second,
-range3200, and tagged guided turn rate29 degrees/second. It consumes55 normal
-shot equivalents (11% battery), capped at the remaining energy, and adds100%
-heat. Holding a full charge pauses cooling. Swapping, melee, grenade input,
-death or leaving normal player movement cancels charge. Charge animation,
-45-second overcharge state transitions and exact input timing need retail
-comparison. Constant velocity and the current acquisition cone remain
-adaptations shared with the Needler tracker.
-
-The charged damage tag has EMP side effect3. The build-2342 reference
-[damage.c](https://github.com/cybersecurity/halo-ce-universal/blob/76b1898ee14e6fb58e0412acc183da509c10e001/source/objects/damage.c)
-clears remaining shields even when the bolt's normal damage would leave
-shields up. Normal shield absorption still determines health overflow: a
-70-damage charged bolt clears75 shields without damaging health; with30
-shields it applies the unabsorbed40 base damage at the armor multiplier.
-God mode, friendly-fire rules and armor-bypass behavior are preserved.
-Integer vitality and float-to-integer damage rounding remain parity gaps.
-
-Heat, remainders, overheat locks and active charge time replicate in player
-state. The engine therefore uses **QCE protocol91** and disables legacy
-connections/old-demo decoding. Rebuild both engines and game modules together,
-including for stock-combat mode. This is a project protocol number, not an
-ioquake3 compatibility version. `scripts/test-network-state.sh` exercises
-actual delta encoding/decoding through charged, cooling and reset states.
-`test-heat.sh` exercises real Pmove release firing and actual weapon pickups.
+The next milestone can focus on converted models, animations, textures, HUD and
+sound. Animation channels and animated collision are dependencies for the
+remaining presentation/event/hitbox work. No additional upload is needed to
+begin inspecting the already supplied UI and Blood Gulch asset dependencies.

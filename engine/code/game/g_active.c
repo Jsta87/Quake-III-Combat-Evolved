@@ -580,8 +580,8 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 			break;
 
 		case EV_FIRE_WEAPON:
-   if(client->ps.stats[STAT_QCE_COMBAT] && client->ps.eventParms[i & (MAX_PS_EVENTS-1)]==1 && ent->s.weapon==WP_LIGHTNING)G_QceFireCharged(ent);
-   else FireWeapon(ent);
+   if(client->ps.stats[STAT_QCE_COMBAT] && (client->ps.eventParms[i & (MAX_PS_EVENTS-1)]&1) && ent->s.weapon==WP_LIGHTNING)G_QceFireCharged(ent);
+   else FireWeapon(ent,client->ps.eventParms[i & (MAX_PS_EVENTS-1)]);
 			break;
 
 		case EV_USE_ITEM1:		// teleporter
@@ -851,7 +851,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// set speed
 	client->ps.stats[STAT_QCE_MOVEMENT] = g_qceMovement.integer == 1;
-	client->ps.speed = client->ps.stats[STAT_QCE_MOVEMENT] ? 200 : g_speed.value;
+	client->ps.speed = client->ps.stats[STAT_QCE_MOVEMENT] ? (int)BG_QceMovementDef()->forward : g_speed.value;
 
 #ifdef MISSIONPACK
 	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT ) {

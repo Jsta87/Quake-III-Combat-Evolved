@@ -17,6 +17,10 @@ jobs:
       - run: ./scripts/test-needles.sh
       - run: ./scripts/test-heat.sh
       - run: ./scripts/test-network-state.sh
+      - run: ./scripts/test-systems.sh
+      - run: ./scripts/test-projectiles.sh
+      - run: ./scripts/test-blasts.sh
+      - run: ./scripts/test-spread.sh
       - run: ./scripts/test-swap.sh
       - run: ./scripts/build.sh server
       - run: ./build/server/RelWithDebInfo/ioq3ded --version

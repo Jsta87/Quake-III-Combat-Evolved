@@ -79,8 +79,13 @@ struct gentity_s {
 
 	qboolean	inuse;
 
-	int qceDroppedMagazine;
+	int qceProjectileWeapon, qceProjectileTime, qceBullet;
+ float qceTravelled, qceGravity, qceDamageScale;
+ int qceDroppedMagazine;
+ int qceDroppedOverheatTime;
+ int qceDroppedBattery, qceDroppedRate, qceDroppedRateRemainder;
  int qceDroppedHeat, qceDroppedHeatRemainder, qceDroppedOverheated, qceDroppedHeatTime;
+ int qceDroppedError,qceDroppedErrorRemainder;
  int qceEntitySerial, qceGrenadeType, qceStuck, qceFuseArmed;
  int qceCharged, qceNeedle, qceNeedleSpent, qceTrackEntity, qceTrackSerial, qceTrackSpawn;
  int qceTrackTime, qceOwnerSerial;
@@ -523,6 +528,9 @@ void TossClientCubes( gentity_t *self );
 //
 void G_RunMissile( gentity_t *ent );
 
+void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon);
+void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad);
+qboolean G_QceRadiusDamage(vec3_t origin,gentity_t *attacker,float damage,float minimum,float maximum,float inner,float outer,gentity_t *ignore,int mod);
 gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t aimdir);
 gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t aimdir);
 qboolean G_QceNeedleImpact(gentity_t *ent, trace_t *trace);
@@ -535,6 +543,7 @@ qboolean G_QceRunStuckGrenade(gentity_t *ent);
 void G_QceSwapWeapon(gentity_t *ent);
 void G_QceThrowGrenade(gentity_t *ent, int type);
 qboolean G_QceMelee(gentity_t *ent);
+void G_QceResolveHeadPoint(gentity_t *target,const vec3_t entry,const vec3_t velocity,vec3_t point);
 qboolean G_QceHeadshot(gentity_t *target, const vec3_t point, int mod, int flags);
 gentity_t *fire_rocket (gentity_t *self, vec3_t start, vec3_t dir);
 gentity_t *fire_bfg (gentity_t *self, vec3_t start, vec3_t dir);
@@ -606,7 +615,7 @@ qboolean G_FilterPacket (char *from);
 //
 // g_weapon.c
 //
-void FireWeapon( gentity_t *ent );
+void FireWeapon( gentity_t *ent,int eventParm );
 #ifdef MISSIONPACK
 void G_StartKamikaze( gentity_t *ent );
 #endif

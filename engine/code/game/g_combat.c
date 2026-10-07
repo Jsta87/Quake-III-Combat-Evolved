@@ -104,6 +104,9 @@ void TossClientItems( gentity_t *self ) {
 			drop=Drop_Item(self,BG_FindItemForWeapon(held),i*90);
 			drop->count=self->client->ps.ammo[held]?self->client->ps.ammo[held]:-1;
 			drop->qceDroppedMagazine=BG_QceMagazine(&self->client->ps,held)+1;
+   drop->qceDroppedOverheatTime=self->client->ps.qceOverheatTime[i];
+   drop->qceDroppedBattery=self->client->ps.qceBattery[i];drop->qceDroppedRate=self->client->ps.qceRate[i];drop->qceDroppedRateRemainder=self->client->ps.qceRateRemainder[i];
+   drop->qceDroppedError=self->client->ps.qceError[i];drop->qceDroppedErrorRemainder=self->client->ps.qceErrorRemainder[i];
    drop->qceDroppedHeat=self->client->ps.qceHeat[i];drop->qceDroppedHeatRemainder=self->client->ps.qceHeatRemainder[i];
    drop->qceDroppedOverheated=(self->client->ps.qceOverheated>>i)&1;drop->qceDroppedHeatTime=level.time;
 		}
@@ -998,12 +1001,14 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	}
 	take = damage;
  qceHeadDef=BG_QceWeaponDef(mod==MOD_BFG?WP_BFG:WP_RAILGUN);
- if(attacker->client && attacker->client->ps.stats[STAT_QCE_COMBAT] &&
+ if(inflictor && inflictor!=attacker && inflictor->qceProjectileWeapon)qceHeadDef=BG_QceWeaponDef(inflictor->qceProjectileWeapon);
+ if(inflictor==attacker && attacker->client && attacker->client->ps.stats[STAT_QCE_COMBAT] &&
     (mod==MOD_RAILGUN || mod==MOD_QCE_SNIPER || mod==MOD_BFG)) {
   const qce_weapondef_t *source=BG_QceWeaponDef(attacker->client->ps.weapon);
   if(source->fire_kind==QCE_FIRE_RAIL || source->fire_kind==QCE_FIRE_BULLET)qceHeadDef=source;
  }
 	if (client && client->ps.stats[STAT_QCE_COMBAT]) {
+		client->ps.qceZoom&=4;
 		client->qceShieldNextTick = level.time + QCE_SHIELD_DELAY;
   client->qceShieldRemainder=0;
 		/* Classify the hit now; evaluate shields after this hit is absorbed.
@@ -1319,7 +1324,7 @@ void QCE_ShieldRecharge(int *shield,int *nextTick,int *remainder,int now,int ali
 
 /* Geometric prototype, not model/bone-based Halo head collision. */
 qboolean G_QceHeadshot(gentity_t *target, const vec3_t point, int mod, int flags) {
- float lower,upper;
+ float lower,upper,dx,dy,dz,radius,height;
  int i;
  if(!target || !target->client || target->health<=0 || !point ||
     !target->client->ps.stats[STAT_QCE_COMBAT] || (mod!=MOD_RAILGUN && mod!=MOD_QCE_SNIPER && mod!=MOD_BFG) ||
@@ -1331,5 +1336,58 @@ qboolean G_QceHeadshot(gentity_t *target, const vec3_t point, int mod, int flags
  }
  lower=target->r.currentOrigin[2]+target->r.mins[2];
  upper=target->r.currentOrigin[2]+target->r.maxs[2];
- return point[2] >= upper-(upper-lower)*QCE_HEAD_ZONE_FRACTION;
+ height=(upper-lower)*QCE_HEAD_ZONE_FRACTION*0.5f;
+ radius=(target->r.maxs[0]-target->r.mins[0])*0.27f;
+ dx=(point[0]-target->r.currentOrigin[0])/radius;
+ dy=(point[1]-target->r.currentOrigin[1])/radius;
+ dz=(point[2]-(upper-height))/height;
+ return dx*dx+dy*dy+dz*dz<=1.00001f;
+}
+
+qboolean G_QceRadiusDamage(vec3_t origin,gentity_t *attacker,float damage,float minimum,float maximum,float inner,float outer,gentity_t *ignore,int mod) {
+ int list[MAX_GENTITIES],count,e,i;
+ vec3_t mins,maxs,delta,dir;
+ float distance,scale,points;
+ qboolean hit=qfalse;
+ if(outer<=0)return qfalse;
+ for(i=0;i<3;i++) {mins[i]=origin[i]-outer;maxs[i]=origin[i]+outer;}
+ count=trap_EntitiesInBox(mins,maxs,list,MAX_GENTITIES);
+ for(e=0;e<count;e++) {
+  gentity_t *target=&g_entities[list[e]];
+  if(target==ignore || !target->takedamage)continue;
+  /* Arena hull center substitutes for Halo's animated bounding sphere. */
+  for(i=0;i<3;i++)delta[i]=target->r.currentOrigin[i]+(target->r.mins[i]+target->r.maxs[i])*0.5f-origin[i];
+  distance=VectorLength(delta);
+  if(distance>=outer || !CanDamage(target,origin))continue;
+  scale=outer>inner?1-(distance-inner)/(outer-inner):1;
+  if(scale>1)scale=1;if(scale<0)scale=0;
+  points=minimum*(1-scale)+(damage+(maximum-damage)*random())*scale;
+  if(points<=0)continue;
+  if(LogAccuracyHit(target,attacker))hit=qtrue;
+  VectorCopy(delta,dir);
+  G_Damage(target,NULL,attacker,dir,origin,(int)ceil(points),DAMAGE_RADIUS,mod);
+ }
+ return hit;
+}
+
+/* Resolve a precision ray through the coarse arena hull against the temporary
+ * head ellipsoid. Converted animated collision nodes will replace this shape. */
+void G_QceResolveHeadPoint(gentity_t *target,const vec3_t entry,const vec3_t velocity,vec3_t point) {
+ vec3_t dir,offset,radius,center;
+ float a=0,b=0,c=-1,d,t;
+ int i;
+ VectorCopy(entry,point);
+ if(!target || !target->client)return;
+ VectorNormalize2(velocity,dir);
+ radius[0]=radius[1]=(target->r.maxs[0]-target->r.mins[0])*0.27f;
+ radius[2]=(target->r.maxs[2]-target->r.mins[2])*QCE_HEAD_ZONE_FRACTION*0.5f;
+ VectorCopy(target->r.currentOrigin,center);center[2]+=target->r.maxs[2]-radius[2];
+ VectorSubtract(entry,center,offset);
+ for(i=0;i<3;i++) {
+  if(radius[i]<=0)return;
+  a+=dir[i]*dir[i]/(radius[i]*radius[i]);b+=2*offset[i]*dir[i]/(radius[i]*radius[i]);c+=offset[i]*offset[i]/(radius[i]*radius[i]);
+ }
+ d=b*b-4*a*c;if(a<=0 || d<0)return;
+ t=(-b-sqrt(d))/(2*a);if(t<0)t=(-b+sqrt(d))/(2*a);
+ if(t>=0 && t<=64)VectorMA(entry,t,dir,point);
 }
