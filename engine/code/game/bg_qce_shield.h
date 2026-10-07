@@ -1,10 +1,8 @@
-/* Experimental shield rules; provisional values, not retail Halo parity. */
+/* Vitality/recharge parameters come from the generated shared player profile. */
 #ifndef BG_QCE_SHIELD_H
 #define BG_QCE_SHIELD_H
-#define QCE_SHIELD_MAX 100
-#define QCE_SHIELD_DELAY 5000
-#define QCE_SHIELD_TICK 100
-#define QCE_SHIELD_STEP 2
+#define QCE_SHIELD_MAX (BG_QcePlayerDef()->shield)
+#define QCE_SHIELD_DELAY (BG_QcePlayerDef()->shield_delay_ms)
 int QCE_ShieldAbsorb(int *shield, int damage);
-void QCE_ShieldRecharge(int *shield, int *nextTick, int now, int alive);
+void QCE_ShieldRecharge(int *shield, int *nextTick, int *remainder, int now, int alive);
 #endif

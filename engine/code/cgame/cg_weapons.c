@@ -1454,7 +1454,7 @@ void CG_DrawWeaponSelect( void ) {
 	int		bits;
 	int		count;
 	int		x, y, w;
-	char	*name;
+	const char	*name;
 	float	*color;
 
 	// don't display if dead
@@ -1508,7 +1508,7 @@ void CG_DrawWeaponSelect( void ) {
 
 	// draw the selected name
 	if ( cg_weapons[ cg.weaponSelect ].item ) {
-		name = cg_weapons[ cg.weaponSelect ].item->pickup_name;
+		name = cg.snap->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponName(cg.weaponSelect):cg_weapons[ cg.weaponSelect ].item->pickup_name;
 		if ( name ) {
 			w = CG_DrawStrlen( name ) * BIGCHAR_WIDTH;
 			x = ( SCREEN_WIDTH - w ) / 2;
@@ -1977,11 +1977,12 @@ SHOTGUN TRACING
 CG_ShotgunPellet
 ================
 */
-static void CG_ShotgunPellet( vec3_t start, vec3_t end, int skipNum ) {
+static void CG_ShotgunPellet( vec3_t start, vec3_t end, int skipNum, int qceWeapon ) {
 	trace_t		tr;
 	int sourceContentType, destContentType;
 
 	CG_Trace( &tr, start, NULL, NULL, end, skipNum, MASK_SHOT );
+ if(qceWeapon && tr.fraction==1)return;
 
 	sourceContentType = CG_PointContents( start, 0 );
 	destContentType = CG_PointContents( tr.endpos, 0 );
@@ -2049,8 +2050,9 @@ static void CG_ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, int othe
 		VectorMA( origin, 8192 * 16, forward, end);
 		VectorMA (end, r, right, end);
 		VectorMA (end, u, up, end);
+  if(qceWeapon)BG_QceRayEnd(origin,end,qceWeapon);
 
-		CG_ShotgunPellet( origin, end, otherEntNum );
+		CG_ShotgunPellet( origin, end, otherEntNum, qceWeapon );
 	}
 }
 

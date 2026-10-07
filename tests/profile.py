@@ -7,12 +7,22 @@ spec=importlib.util.spec_from_file_location('profile_generator',root/'scripts/ge
 generator=importlib.util.module_from_spec(spec);spec.loader.exec_module(generator)
 profile=json.loads((root/'data/gameplay-profile.json').read_text())
 generator.validate(profile)
-for field,value in [('magazine',201),('reload_ms',0),('damage',float('nan')),('damage',1000001),('fire_kind','unknown'),('headshot_mode',3),('shield_multiplier',0),('melee_impact_ms',800),('pellets',65)]:
+for field,value in [('magazine',10001),('reload_ms',0),('damage',float('nan')),('damage',1000001),('fire_kind','unknown'),('headshot_mode',3),('shield_multiplier',0),('melee_impact_ms',800),('pellets',65),('tracking_radians',7),('combine_count',65),('attachment_ms',750)]:
  bad=copy.deepcopy(profile);bad['weapons']['WP_MACHINEGUN'][field]=value
  try:generator.validate(bad)
  except ValueError:pass
  else:raise AssertionError(f'Accepted invalid {field}={value}')
-bad=copy.deepcopy(profile);bad['status']='reference'
+for field,value in [('tracking_radians',7),('combine_count',65),('attachment_ms',600001),('projectile_speed',0),('combine_radius',0)]:
+ bad=copy.deepcopy(profile);bad['weapons']['WP_GRENADE_LAUNCHER'][field]=value
+ try:generator.validate(bad)
+ except ValueError:pass
+ else:raise AssertionError(f'Accepted invalid needle {field}={value}')
+for weapon,field,value in [('WP_PLASMAGUN','heat_per_shot',10001),('WP_PLASMAGUN','heat_recovery',10000),('WP_PLASMAGUN','heat_loss_per_second',0),('WP_PLASMAGUN','heat_age_penalty',1000),('WP_LIGHTNING','charge_ms',600001),('WP_LIGHTNING','charged_speed',0),('WP_LIGHTNING','charged_ammo',501),('WP_LIGHTNING','charged_shield_multiplier',0)]:
+ bad=copy.deepcopy(profile);bad['weapons'][weapon][field]=value
+ try:generator.validate(bad)
+ except ValueError:pass
+ else:raise AssertionError(f'Accepted invalid {weapon}.{field}={value}')
+bad=copy.deepcopy(profile);bad['status']='reference';bad['provenance']['source_maps']=[]
 try:generator.validate(bad)
 except ValueError:pass
 else:raise AssertionError('Missing provenance accepted')

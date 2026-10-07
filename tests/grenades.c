@@ -17,6 +17,9 @@ int main(void) {
  target->inuse=qtrue;target->takedamage=qtrue;target->client=&client;target->qceEntitySerial=42;
  client.ps.persistant[PERS_SPAWN_COUNT]=3;VectorSet(target->r.currentOrigin,10,20,30);level.time=100;
  grenade.qceGrenadeType=1;assert(G_QceGrenadeImpact(&grenade,&hit));assert(bounces==1 && !grenade.qceStuck);
+ assert(grenade.qceFuseArmed && grenade.nextthink==600);
+ level.time=200;G_QceGrenadeImpact(&grenade,&hit);assert(grenade.nextthink==600);
+ memset(&grenade,0,sizeof(grenade));level.time=100;
  grenade.qceGrenadeType=2;assert(G_QceGrenadeImpact(&grenade,&hit));
  assert(grenade.qceStuck && grenade.nextthink==2100 && grenade.s.pos.trType==TR_STATIONARY);
  target->r.currentOrigin[0]=20;assert(G_QceRunStuckGrenade(&grenade));assert(fabs(grenade.r.currentOrigin[0]-22)<0.01);

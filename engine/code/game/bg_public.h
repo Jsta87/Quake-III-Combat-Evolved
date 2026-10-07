@@ -619,7 +619,7 @@ typedef enum {
 	MOD_JUICED,
 #endif
 	MOD_GRAPPLE,
- MOD_QCE_SNIPER, MOD_QCE_FRAG, MOD_QCE_PLASMA_GRENADE
+ MOD_QCE_SNIPER, MOD_QCE_FRAG, MOD_QCE_PLASMA_GRENADE, MOD_QCE_OVERCHARGE
 } meansOfDeath_t;
 
 
@@ -770,16 +770,32 @@ typedef struct {
  int headshot_mode, melee_damage;
  float melee_reach, lunge_reach, lunge_speed;
  int melee_impact_ms, melee_ms, pellets;
+ int ammo_initial, ammo_max, reload_rounds;
+ float tracking_radians, projectile_range;
+ int attachment_ms, combine_count, combine_damage;
+ float combine_radius;
+ int heat_per_shot, heat_loss_per_second, heat_recovery, heat_overheat, heat_age_penalty;
+ int charge_ms, charged_ammo, charged_heat, charged_damage;
+ float charged_speed, charged_range, charged_tracking_radians, charged_health_multiplier, charged_shield_multiplier;
 } qce_weapondef_t;
 typedef struct {
  int spawn_count, max_count;
  float throw_speed;
  int fuse_ms, sticky, splash_damage;
  float splash_radius, shield_multiplier, health_multiplier;
+ int timer_start, max_flight_ms;
 } qce_grenadedef_t;
+typedef struct { int health, shield, shield_delay_ms, shield_recharge_ms; } qce_playerdef_t;
+const qce_playerdef_t *BG_QcePlayerDef(void);
+void BG_QceCoolWeapon(int weapon,int ammo,int elapsed,int *heat,int *remainder,int *locked);
+void BG_QceCoolWeapons(playerState_t *ps,int elapsed);
+qboolean BG_QceOverheated(const playerState_t *ps,int weapon);
+void BG_QceHeatShot(playerState_t *ps);
+void BG_QceRayEnd(const vec3_t start, vec3_t end, int weapon);
 const qce_weapondef_t *BG_QceWeaponDef(int weapon);
 const qce_grenadedef_t *BG_QceGrenadeDef(int type);
 const char *BG_QceProfileHash(void);
+const char *BG_QceWeaponName(int weapon);
 int BG_QceGrenadeType(const playerState_t *ps);
 int BG_QceGrenadeCount(const playerState_t *ps, int type);
 void BG_QceSetGrenadeCount(playerState_t *ps, int type, int count);
@@ -790,6 +806,7 @@ int BG_QceCapacity(int weapon);
 qboolean BG_QceCanCarry(const playerState_t *ps, int weapon);
 qboolean BG_QceAddWeapon(playerState_t *ps, int weapon, int ammo);
 int BG_QceMagazine(const playerState_t *ps, int weapon);
+int BG_QceAmmoLimit(const playerState_t *ps, int weapon);
 qboolean BG_QceCanReload(const playerState_t *ps);
 void BG_QceReload(playerState_t *ps);
 int BG_QceRemoveWeapon(playerState_t *ps, int weapon);

@@ -556,6 +556,11 @@ static void CG_DrawStatusBar( void ) {
 
 	if (ps->stats[STAT_QCE_COMBAT]) {
 		int mag=BG_QceMagazine(ps,ps->weapon);
+  int slot=BG_QceSlot(ps,ps->weapon);
+  if(slot>=0 && BG_QceWeaponDef(ps->weapon)->heat_per_shot)
+   CG_DrawStringExt(0,344,va("HEAT %d%% %s",ps->qceHeat[slot]/100,BG_QceOverheated(ps,ps->weapon)?"OVERHEATED":""),colorWhite,qfalse,qtrue,8,12,0);
+  if(ps->qceChargeMs>0)CG_DrawStringExt(0,380,ps->qceChargeMs>=BG_QceWeaponDef(ps->weapon)->charge_ms?"CHARGED":"CHARGING",colorWhite,qfalse,qtrue,8,12,0);
+  CG_DrawStringExt(0,362,BG_QceWeaponName(ps->weapon),colorWhite,qfalse,qtrue,8,12,0);
 		CG_DrawStringExt(0, 398, va("%s %d / %d", BG_QceGrenadeType(ps)?"PLASMA":"FRAG", BG_QceGrenadeCount(ps,BG_QceGrenadeType(ps)), BG_QceGrenadeCount(ps,!BG_QceGrenadeType(ps))), colorWhite, qfalse, qtrue, 8, 12, 0);
 		if (ps->weaponstate==WEAPON_MELEEING) CG_DrawStringExt(0,380,"MELEE",colorWhite,qfalse,qtrue,8,12,0);
 		if (BG_QceCapacity(ps->weapon)) {
@@ -1327,7 +1332,7 @@ static int CG_DrawPickupItem( int y ) {
 			CG_RegisterItemVisuals( value );
 			trap_R_SetColor( fadeColor );
 			CG_DrawPic( 8, y, ICON_SIZE, ICON_SIZE, cg_items[ value ].icon );
-			CG_DrawBigString( ICON_SIZE + 16, y + (ICON_SIZE/2 - BIGCHAR_HEIGHT/2), bg_itemlist[ value ].pickup_name, fadeColor[0] );
+			CG_DrawBigString( ICON_SIZE + 16, y + (ICON_SIZE/2 - BIGCHAR_HEIGHT/2), (cg.snap->ps.stats[STAT_QCE_COMBAT] && bg_itemlist[value].giType==IT_WEAPON)?BG_QceWeaponName(bg_itemlist[value].giTag):bg_itemlist[value].pickup_name, fadeColor[0] );
 			trap_R_SetColor( NULL );
 		}
 	}

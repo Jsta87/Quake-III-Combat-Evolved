@@ -80,7 +80,10 @@ struct gentity_s {
 	qboolean	inuse;
 
 	int qceDroppedMagazine;
- int qceEntitySerial, qceGrenadeType, qceStuck;
+ int qceDroppedHeat, qceDroppedHeatRemainder, qceDroppedOverheated, qceDroppedHeatTime;
+ int qceEntitySerial, qceGrenadeType, qceStuck, qceFuseArmed;
+ int qceCharged, qceNeedle, qceNeedleSpent, qceTrackEntity, qceTrackSerial, qceTrackSpawn;
+ int qceTrackTime, qceOwnerSerial;
  int qceAttachEntity, qceAttachSerial, qceAttachSpawn;
  vec3_t qceAttachOffset;
 	char		*classname;			// set in QuakeEd
@@ -279,6 +282,7 @@ struct gclient_s {
 	// sum up damage over an entire frame, so
 	// shotgun blasts give a single big kick
 	int qceShieldNextTick;
+ int qceShieldRemainder;
 	int			damage_armor;		// damage absorbed by armor
 	int			damage_blood;		// damage taken out of health
 	int			damage_knockback;	// impact damage
@@ -521,6 +525,11 @@ void G_RunMissile( gentity_t *ent );
 
 gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t aimdir);
 gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t aimdir);
+qboolean G_QceNeedleImpact(gentity_t *ent, trace_t *trace);
+gentity_t *fire_qce_overcharge(gentity_t *self,vec3_t start,vec3_t dir);
+void G_QceFireCharged(gentity_t *ent);
+void G_QceNeedleThink(gentity_t *ent);
+void G_QceTrackNeedle(gentity_t *ent);
 qboolean G_QceGrenadeImpact(gentity_t *ent, trace_t *trace);
 qboolean G_QceRunStuckGrenade(gentity_t *ent);
 void G_QceSwapWeapon(gentity_t *ent);

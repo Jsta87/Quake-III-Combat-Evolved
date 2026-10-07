@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 int demo_protocols[] =
-{ 67, 66, 0 };
+{ 0 }; /* QCE only: old demos use incompatible player-state layouts. */
 
 #define MAX_NUM_ARGVS	50
 

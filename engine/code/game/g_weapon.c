@@ -181,11 +181,13 @@ void Bullet_Fire (gentity_t *ent, float spread, int damage, int mod ) {
 	VectorMA (muzzle, 8192*16, forward, end);
 	VectorMA (end, r, right, end);
 	VectorMA (end, u, up, end);
+ if(ent->client->ps.stats[STAT_QCE_COMBAT])BG_QceRayEnd(muzzle,end,ent->client->ps.weapon);
 
 	passent = ent->s.number;
 	for (i = 0; i < 10; i++) {
 
 		trap_Trace (&tr, muzzle, NULL, NULL, end, passent, MASK_SHOT);
+  if(ent->client->ps.stats[STAT_QCE_COMBAT] && tr.fraction==1)return;
 		if ( tr.surfaceFlags & SURF_NOIMPACT ) {
 			return;
 		}
@@ -338,6 +340,7 @@ void ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 		VectorMA( origin, 8192 * 16, localForward, end);
 		VectorMA (end, r, localRight, end);
 		VectorMA (end, u, localUp, end);
+  if(ent->client->ps.stats[STAT_QCE_COMBAT])BG_QceRayEnd(origin,end,ent->s.weapon);
 		if( ShotgunPellet( origin, end, ent ) && !hitClient ) {
 			hitClient = qtrue;
 			ent->client->accuracy_hits++;
@@ -453,6 +456,7 @@ void weapon_railgun_fire (gentity_t *ent) {
 	damage = (ent->client->ps.stats[STAT_QCE_COMBAT] ? BG_QceWeaponDef(ent->s.weapon)->damage : 100) * s_quadFactor;
 
 	VectorMA (muzzle, 8192, forward, end);
+ if(ent->client->ps.stats[STAT_QCE_COMBAT])BG_QceRayEnd(muzzle,end,ent->client->ps.weapon);
 
 	// trace only against the solids, so the railgun will go through people
 	unlinked = 0;
@@ -834,7 +838,7 @@ void FireWeapon( gentity_t *ent ) {
   const qce_weapondef_t *def=BG_QceWeaponDef(ent->s.weapon);
   switch(def->fire_kind) {
   case QCE_FIRE_MELEE: Weapon_Gauntlet(ent);break;
-  case QCE_FIRE_BULLET: Bullet_Fire(ent,def->spread,def->damage,def->headshot_mode==2?MOD_QCE_SNIPER:(def->headshot_mode==1?MOD_RAILGUN:MOD_MACHINEGUN));break;
+  case QCE_FIRE_BULLET: Bullet_Fire(ent,def->spread,def->damage,def->headshot_mode==2?MOD_QCE_SNIPER:(def->headshot_mode==1?MOD_BFG:MOD_MACHINEGUN));break;
   case QCE_FIRE_SHOTGUN: weapon_supershotgun_fire(ent);break;
   case QCE_FIRE_GRENADE: weapon_grenadelauncher_fire(ent);break;
   case QCE_FIRE_ROCKET: Weapon_RocketLauncher_Fire(ent);break;
@@ -1161,7 +1165,8 @@ void G_QceThrowGrenade(gentity_t *ent, int type) {
  grenade->qceGrenadeType=type==1?2:1;
  grenade->damage=0;grenade->splashDamage=def->splash_damage;grenade->splashRadius=def->splash_radius;
  grenade->methodOfDeath=grenade->splashMethodOfDeath=type==1?MOD_QCE_PLASMA_GRENADE:MOD_QCE_FRAG;
- grenade->nextthink=level.time+def->fuse_ms;
+ grenade->qceFuseArmed=def->timer_start==0;
+ grenade->nextthink=level.time+(grenade->qceFuseArmed?def->fuse_ms:def->max_flight_ms);
  grenade->s.weapon=type==1?WP_PLASMAGUN:WP_GRENADE_LAUNCHER;
  grenade->s.eFlags=def->sticky?0:EF_BOUNCE_HALF;
  VectorScale(dir,def->throw_speed,grenade->s.pos.trDelta);SnapVector(grenade->s.pos.trDelta);
@@ -1199,4 +1204,14 @@ qboolean G_QceMelee(gentity_t *ent) {
   impact->s.weapon=WP_GAUNTLET;
  }
  return qtrue;
+}
+
+void G_QceFireCharged(gentity_t *ent) {
+ gentity_t *bolt;
+ if(!ent->client || !ent->client->ps.stats[STAT_QCE_COMBAT] || ent->s.weapon!=WP_LIGHTNING)return;
+ AngleVectors(ent->client->ps.viewangles,forward,right,up);
+ CalcMuzzlePointOrigin(ent,ent->client->oldOrigin,forward,right,up,muzzle);
+ ent->client->accuracy_shots++;
+ bolt=fire_qce_overcharge(ent,muzzle,forward);
+ if(ent->client->ps.powerups[PW_QUAD])bolt->damage*=g_quadfactor.value;
 }

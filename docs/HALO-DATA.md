@@ -38,12 +38,11 @@ formats during a Quake match. The planned data pipeline is:
 6. Compare resulting behavior with the chosen retail release, then lock a
    reviewed reference profile. Retain extraction provenance for later updates.
 
-The extractor and asset converters will be built after examining the uploaded
-retail format. The present profile contains **no extracted Halo values** and
-has `status: provisional`. Its schema, validation, generator and engine use
-are implemented now. `status: reference` requires build, map and tag provenance.
-The generated header carries a canonical profile hash; `qce_status` prints it.
-Changing the JSON and rebuilding changes both native and QVM gameplay modules.
+The offline Xbox reader and supported scalar import are now implemented for
+the uploaded build 2276 maps. See [HALO-IMPORT.md](HALO-IMPORT.md) for applied
+values, reproducible commands, hashes, conversion assumptions and remaining
+behavior/art work. The profile is mixed, not a validated reference profile.
+Both supplied maps contain the dependencies needed for the current weapon pass.
 
 ## What is needed to convert accurately
 

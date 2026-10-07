@@ -12,15 +12,15 @@ static void advance(playerState_t *ps,int buttons,int frames) {
 int main(void) {
  playerState_t ps,predicted;entityState_t item;int seq,i;
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;
- assert(BG_QceAddWeapon(&ps,WP_MACHINEGUN,60));
+ assert(BG_QceAddWeapon(&ps,WP_MACHINEGUN,120));
  assert(BG_QceAddWeapon(&ps,WP_SHOTGUN,10));
  assert(!BG_QceAddWeapon(&ps,WP_ROCKET_LAUNCHER,2));
- assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==30 && ps.ammo[WP_MACHINEGUN]==60);
+ assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==60 && ps.ammo[WP_MACHINEGUN]==120);
  predicted=ps;
  action(&ps,BUTTON_ATTACK,WP_MACHINEGUN,16);
  action(&predicted,BUTTON_ATTACK,WP_MACHINEGUN,16);
  assert(!memcmp(&ps,&predicted,sizeof(ps)));
- assert(ps.ammo[WP_MACHINEGUN]==59 && BG_QceMagazine(&ps,WP_MACHINEGUN)==29);
+ assert(ps.ammo[WP_MACHINEGUN]==119 && BG_QceMagazine(&ps,WP_MACHINEGUN)==59);
  advance(&ps,0,10);
  action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);
  assert(ps.weaponstate==WEAPON_RELOADING);
@@ -32,13 +32,13 @@ int main(void) {
  action(&ps,BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);
  assert((ps.stats[STAT_QCE_GRENADES]&7)==2);
  advance(&ps,BUTTON_ATTACK,60);
- assert(ps.eventSequence==seq && ps.ammo[WP_MACHINEGUN]==59);
- advance(&ps,0,60);
- assert(ps.weaponstate==WEAPON_READY && BG_QceMagazine(&ps,WP_MACHINEGUN)==30);
- assert(ps.ammo[WP_MACHINEGUN]==59); /* reload must not mint ammo */
+ assert(ps.eventSequence==seq && ps.ammo[WP_MACHINEGUN]==119);
+ advance(&ps,0,160);
+ assert(ps.weaponstate==WEAPON_READY && BG_QceMagazine(&ps,WP_MACHINEGUN)==60);
+ assert(ps.ammo[WP_MACHINEGUN]==119); /* reload must not mint ammo */
  ps.stats[STAT_QCE_MAG0]=0;ps.ammo[WP_MACHINEGUN]=3;
  action(&ps,BUTTON_ATTACK,WP_MACHINEGUN,16);assert(ps.weaponstate==WEAPON_RELOADING);
- advance(&ps,0,110);assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==3);
+ advance(&ps,0,240);assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==3);
  ps.stats[STAT_QCE_GRENADES]=2;seq=ps.eventSequence;
  action(&ps,BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);
  assert((ps.stats[STAT_QCE_GRENADES]&7)==1 && ps.eventSequence==seq+1);
@@ -74,7 +74,7 @@ int main(void) {
  assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_MELEEING && ps.eventSequence==seq+2);
  advance(&ps,BUTTON_QCE_MELEE,100);
  assert(ps.weaponstate==WEAPON_READY && ps.eventSequence==seq+2);
- assert((ps.stats[STAT_QCE_GRENADES]&7)==2 && BG_QceMagazine(&ps,WP_MACHINEGUN)==30);
+ assert((ps.stats[STAT_QCE_GRENADES]&7)==2 && BG_QceMagazine(&ps,WP_MACHINEGUN)==60);
  action(&ps,BUTTON_QCE_MELEE|BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);
  assert((ps.stats[STAT_QCE_GRENADES]&QCE_MELEE_HELD) && (ps.stats[STAT_QCE_GRENADES]&7)==1);
  advance(&ps,BUTTON_QCE_MELEE|BUTTON_QCE_GRENADE,100);
@@ -105,6 +105,32 @@ int main(void) {
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;BG_QceAddWeapon(&ps,WP_MACHINEGUN,60);
  meleeWall=40;seq=ps.eventSequence;action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
  assert(ps.velocity[0]<1 && ps.eventSequence==seq+2);meleeTarget=meleeWall=10000;
+
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_SHOTGUN;
+ BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=0;
+ action(&ps,BUTTON_QCE_RELOAD,WP_SHOTGUN,16);
+ for(i=0;i<26;i++)action(&ps,0,WP_SHOTGUN,16);
+ assert(BG_QceMagazine(&ps,WP_SHOTGUN)==1 && ps.weaponstate==WEAPON_RELOADING && ps.ammo[WP_SHOTGUN]==24);
+ action(&ps,BUTTON_ATTACK,WP_SHOTGUN,16);
+ assert(BG_QceMagazine(&ps,WP_SHOTGUN)==0 && ps.ammo[WP_SHOTGUN]==23 && ps.weaponstate==WEAPON_FIRING);
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_PLASMAGUN;
+ BG_QceAddWeapon(&ps,WP_PLASMAGUN,200);ps.stats[STAT_QCE_MAG0]=150;
+ assert(!BG_QceCanReload(&ps));action(&ps,BUTTON_QCE_RELOAD,WP_PLASMAGUN,16);
+ assert(ps.weaponstate!=WEAPON_RELOADING && ps.ammo[WP_PLASMAGUN]==200);
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;BG_QceAddWeapon(&ps,WP_MACHINEGUN,1000);
+ assert(ps.ammo[WP_MACHINEGUN]==660 && BG_QceMagazine(&ps,WP_MACHINEGUN)==60);
+ action(&ps,BUTTON_ATTACK,WP_MACHINEGUN,16);assert(BG_QceAmmoLimit(&ps,WP_MACHINEGUN)==659);
+ BG_QceAddWeapon(&ps,WP_MACHINEGUN,20);assert(ps.ammo[WP_MACHINEGUN]==659);
+ item.modelindex=BG_FindItemForWeapon(WP_MACHINEGUN)-bg_itemlist;item.time=0;
+ assert(!BG_CanItemBeGrabbed(GT_FFA,&item,&ps));
+ assert(BG_QceWeaponDef(WP_RAILGUN)->headshot_mode==2 && BG_QceWeaponDef(WP_BFG)->headshot_mode==1);
+ {
+  vec3_t start={10,20,30},end={10010,10020,30},direction;
+  BG_QceRayEnd(start,end,WP_MACHINEGUN);VectorSubtract(end,start,direction);
+  assert(fabs(VectorLength(direction)-3200)<0.01 && fabs(direction[0]-direction[1])<0.01);
+  BG_QceRayEnd(start,end,WP_RAILGUN);VectorSubtract(end,start,direction);assert(fabs(VectorLength(direction)-80000)<0.1);
+  VectorCopy(start,end);BG_QceRayEnd(start,end,WP_SHOTGUN);assert(VectorCompare(start,end));
+ }
  puts("PASS: two-slot capacity, magazine/total ammo, reload timing and conservation, automatic reload, grenade press latch/count/events, slot removal, owner pickup delay, reload action lock, stock fallback, empty-ammo handling melee input/cooldown/action locks, delayed predicted lunge, blocked lunge and independent grenade types");
  return 0;
 }

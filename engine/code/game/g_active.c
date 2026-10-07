@@ -580,7 +580,8 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 			break;
 
 		case EV_FIRE_WEAPON:
-			FireWeapon( ent );
+   if(client->ps.stats[STAT_QCE_COMBAT] && client->ps.eventParms[i & (MAX_PS_EVENTS-1)]==1 && ent->s.weapon==WP_LIGHTNING)G_QceFireCharged(ent);
+   else FireWeapon(ent);
 			break;
 
 		case EV_USE_ITEM1:		// teleporter
@@ -1174,7 +1175,7 @@ void ClientEndFrame( gentity_t *ent ) {
 	P_DamageFeedback (ent);
 	if (ent->client->ps.stats[STAT_QCE_COMBAT]) {
 		QCE_ShieldRecharge(&ent->client->ps.stats[STAT_QCE_SHIELD],
-			&ent->client->qceShieldNextTick, level.time, ent->health > 0);
+			&ent->client->qceShieldNextTick, &ent->client->qceShieldRemainder, level.time, ent->health > 0);
 	}
 
 	// add the EF_CONNECTION flag if we haven't gotten commands recently

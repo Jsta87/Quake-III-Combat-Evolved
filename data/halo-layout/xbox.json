@@ -1,0 +1,3881 @@
+{
+  "source": "https://github.com/SnowyMouse/invader",
+  "commit": "696830ff80af227e84e7237c2ef26eb2301ed110",
+  "structs": {
+    "Object": {
+      "size": 380,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        }
+      }
+    },
+    "Item": {
+      "size": 776,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "item flags": {
+          "offset": 380,
+          "type": "uint32",
+          "size": 4
+        },
+        "pickup text index": {
+          "offset": 384,
+          "type": "Index",
+          "size": 2
+        },
+        "sort order": {
+          "offset": 386,
+          "type": "int16",
+          "size": 2
+        },
+        "scale": {
+          "offset": 388,
+          "type": "float",
+          "size": 4
+        },
+        "hud message value scale": {
+          "offset": 392,
+          "type": "int16",
+          "size": 2
+        },
+        "item a in": {
+          "offset": 412,
+          "type": "int16",
+          "size": 2
+        },
+        "item b in": {
+          "offset": 414,
+          "type": "int16",
+          "size": 2
+        },
+        "item c in": {
+          "offset": 416,
+          "type": "int16",
+          "size": 2
+        },
+        "item d in": {
+          "offset": 418,
+          "type": "int16",
+          "size": 2
+        },
+        "material effects": {
+          "offset": 584,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision sound": {
+          "offset": 600,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "detonation delay": {
+          "offset": 736,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "detonating effect": {
+          "offset": 744,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "detonation effect": {
+          "offset": 760,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "Weapon": {
+      "size": 1288,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "item flags": {
+          "offset": 380,
+          "type": "uint32",
+          "size": 4
+        },
+        "pickup text index": {
+          "offset": 384,
+          "type": "Index",
+          "size": 2
+        },
+        "sort order": {
+          "offset": 386,
+          "type": "int16",
+          "size": 2
+        },
+        "scale": {
+          "offset": 388,
+          "type": "float",
+          "size": 4
+        },
+        "hud message value scale": {
+          "offset": 392,
+          "type": "int16",
+          "size": 2
+        },
+        "item a in": {
+          "offset": 412,
+          "type": "int16",
+          "size": 2
+        },
+        "item b in": {
+          "offset": 414,
+          "type": "int16",
+          "size": 2
+        },
+        "item c in": {
+          "offset": 416,
+          "type": "int16",
+          "size": 2
+        },
+        "item d in": {
+          "offset": 418,
+          "type": "int16",
+          "size": 2
+        },
+        "material effects": {
+          "offset": 584,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision sound": {
+          "offset": 600,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "detonation delay": {
+          "offset": 736,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "detonating effect": {
+          "offset": 744,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "detonation effect": {
+          "offset": 760,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "weapon flags": {
+          "offset": 776,
+          "type": "uint32",
+          "size": 4
+        },
+        "label": {
+          "offset": 780,
+          "type": "TagString",
+          "size": 32
+        },
+        "secondary trigger mode": {
+          "offset": 812,
+          "type": "int16",
+          "size": 2
+        },
+        "maximum alternate shots loaded": {
+          "offset": 814,
+          "type": "int16",
+          "size": 2
+        },
+        "weapon a in": {
+          "offset": 816,
+          "type": "int16",
+          "size": 2
+        },
+        "weapon b in": {
+          "offset": 818,
+          "type": "int16",
+          "size": 2
+        },
+        "weapon c in": {
+          "offset": 820,
+          "type": "int16",
+          "size": 2
+        },
+        "weapon d in": {
+          "offset": 822,
+          "type": "int16",
+          "size": 2
+        },
+        "ready time": {
+          "offset": 824,
+          "type": "float",
+          "size": 4
+        },
+        "ready effect": {
+          "offset": 828,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "heat recovery threshold": {
+          "offset": 844,
+          "type": "Fraction",
+          "size": 4
+        },
+        "overheated threshold": {
+          "offset": 848,
+          "type": "Fraction",
+          "size": 4
+        },
+        "heat detonation threshold": {
+          "offset": 852,
+          "type": "Fraction",
+          "size": 4
+        },
+        "heat detonation fraction": {
+          "offset": 856,
+          "type": "Fraction",
+          "size": 4
+        },
+        "heat loss rate": {
+          "offset": 860,
+          "type": "Fraction",
+          "size": 4,
+          "unit": "per second"
+        },
+        "heat illumination": {
+          "offset": 864,
+          "type": "Fraction",
+          "size": 4
+        },
+        "overheated": {
+          "offset": 884,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "overheat detonation": {
+          "offset": 900,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "player melee damage": {
+          "offset": 916,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "player melee response": {
+          "offset": 932,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "actor firing parameters": {
+          "offset": 956,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "near reticle range": {
+          "offset": 972,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "far reticle range": {
+          "offset": 976,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "intersection reticle range": {
+          "offset": 980,
+          "type": "float",
+          "size": 4
+        },
+        "zoom levels": {
+          "offset": 986,
+          "type": "int16",
+          "size": 2
+        },
+        "zoom magnification range": {
+          "offset": 988,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "autoaim angle": {
+          "offset": 996,
+          "type": "Angle",
+          "size": 4
+        },
+        "autoaim range": {
+          "offset": 1000,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "magnetism angle": {
+          "offset": 1004,
+          "type": "Angle",
+          "size": 4
+        },
+        "magnetism range": {
+          "offset": 1008,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "deviation angle": {
+          "offset": 1012,
+          "type": "Angle",
+          "size": 4
+        },
+        "movement penalized": {
+          "offset": 1020,
+          "type": "int16",
+          "size": 2
+        },
+        "forward movement penalty": {
+          "offset": 1024,
+          "type": "Fraction",
+          "size": 4
+        },
+        "sideways movement penalty": {
+          "offset": 1028,
+          "type": "Fraction",
+          "size": 4
+        },
+        "minimum target range": {
+          "offset": 1036,
+          "type": "float",
+          "size": 4
+        },
+        "looking time modifier": {
+          "offset": 1040,
+          "type": "float",
+          "size": 4
+        },
+        "light power on time": {
+          "offset": 1048,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "light power off time": {
+          "offset": 1052,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "light power on effect": {
+          "offset": 1056,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "light power off effect": {
+          "offset": 1072,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "age heat recovery penalty": {
+          "offset": 1088,
+          "type": "float",
+          "size": 4
+        },
+        "age rate of fire penalty": {
+          "offset": 1092,
+          "type": "float",
+          "size": 4
+        },
+        "age misfire start": {
+          "offset": 1096,
+          "type": "Fraction",
+          "size": 4
+        },
+        "age misfire chance": {
+          "offset": 1100,
+          "type": "Fraction",
+          "size": 4
+        },
+        "first person model": {
+          "offset": 1116,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "first person animations": {
+          "offset": 1132,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "hud interface": {
+          "offset": 1152,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "pickup sound": {
+          "offset": 1168,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "zoom in sound": {
+          "offset": 1184,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "zoom out sound": {
+          "offset": 1200,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "active camo ding": {
+          "offset": 1228,
+          "type": "float",
+          "size": 4
+        },
+        "active camo regrowth rate": {
+          "offset": 1232,
+          "type": "float",
+          "size": 4
+        },
+        "weapon type": {
+          "offset": 1250,
+          "type": "int16",
+          "size": 2
+        },
+        "more predicted resources": {
+          "offset": 1252,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "magazines": {
+          "offset": 1264,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "WeaponMagazine"
+        },
+        "triggers": {
+          "offset": 1276,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "WeaponTrigger"
+        }
+      }
+    },
+    "WeaponMagazine": {
+      "size": 112,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "type": "uint32",
+          "size": 4
+        },
+        "rounds recharged": {
+          "offset": 4,
+          "type": "int16",
+          "size": 2
+        },
+        "rounds total initial": {
+          "offset": 6,
+          "type": "int16",
+          "size": 2
+        },
+        "rounds reserved maximum": {
+          "offset": 8,
+          "type": "int16",
+          "size": 2
+        },
+        "rounds loaded maximum": {
+          "offset": 10,
+          "type": "int16",
+          "size": 2
+        },
+        "reload time": {
+          "offset": 20,
+          "type": "float",
+          "size": 4
+        },
+        "rounds reloaded": {
+          "offset": 24,
+          "type": "int16",
+          "size": 2
+        },
+        "chamber time": {
+          "offset": 28,
+          "type": "float",
+          "size": 4
+        },
+        "reloading effect": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "chambering effect": {
+          "offset": 72,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "magazine objects": {
+          "offset": 100,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "WeaponMagazineObject"
+        }
+      }
+    },
+    "WeaponTrigger": {
+      "size": 276,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "type": "uint32",
+          "size": 4
+        },
+        "maximum rate of fire": {
+          "offset": 4,
+          "type": "float",
+          "size": 8,
+          "unit": "shots per second",
+          "bounds": true
+        },
+        "acceleration time": {
+          "offset": 12,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "deceleration time": {
+          "offset": 16,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "blurred rate of fire": {
+          "offset": 20,
+          "type": "Fraction",
+          "size": 4
+        },
+        "magazine": {
+          "offset": 32,
+          "type": "Index",
+          "size": 2,
+          "struct": "Weapon"
+        },
+        "rounds per shot": {
+          "offset": 34,
+          "type": "int16",
+          "size": 2
+        },
+        "minimum rounds loaded": {
+          "offset": 36,
+          "type": "int16",
+          "size": 2
+        },
+        "projectiles between contrails": {
+          "offset": 38,
+          "type": "int16",
+          "size": 2
+        },
+        "prediction type": {
+          "offset": 44,
+          "type": "int16",
+          "size": 2
+        },
+        "firing noise": {
+          "offset": 46,
+          "type": "int16",
+          "size": 2
+        },
+        "error": {
+          "offset": 48,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "error acceleration time": {
+          "offset": 56,
+          "type": "float",
+          "size": 4
+        },
+        "error deceleration time": {
+          "offset": 60,
+          "type": "float",
+          "size": 4
+        },
+        "charging time": {
+          "offset": 72,
+          "type": "float",
+          "size": 4
+        },
+        "charged time": {
+          "offset": 76,
+          "type": "float",
+          "size": 4
+        },
+        "overcharged action": {
+          "offset": 80,
+          "type": "int16",
+          "size": 2
+        },
+        "charged illumination": {
+          "offset": 84,
+          "type": "float",
+          "size": 4
+        },
+        "spew time": {
+          "offset": 88,
+          "type": "float",
+          "size": 4
+        },
+        "charging effect": {
+          "offset": 92,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "distribution function": {
+          "offset": 108,
+          "type": "int16",
+          "size": 2
+        },
+        "projectiles per shot": {
+          "offset": 110,
+          "type": "int16",
+          "size": 2
+        },
+        "distribution angle": {
+          "offset": 112,
+          "type": "Angle",
+          "size": 4
+        },
+        "minimum error": {
+          "offset": 120,
+          "type": "Angle",
+          "size": 4
+        },
+        "error angle": {
+          "offset": 124,
+          "type": "Angle",
+          "size": 8,
+          "bounds": true
+        },
+        "first person offset": {
+          "offset": 132,
+          "type": "Point3D",
+          "size": 12
+        },
+        "projectile": {
+          "offset": 148,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "ejection port recovery time": {
+          "offset": 164,
+          "type": "float",
+          "size": 4
+        },
+        "illumination recovery time": {
+          "offset": 168,
+          "type": "float",
+          "size": 4
+        },
+        "heat generated per round": {
+          "offset": 184,
+          "type": "Fraction",
+          "size": 4
+        },
+        "age generated per round": {
+          "offset": 188,
+          "type": "Fraction",
+          "size": 4
+        },
+        "overload time": {
+          "offset": 196,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "illumination recovery rate": {
+          "offset": 240,
+          "type": "float",
+          "size": 4
+        },
+        "ejection port recovery rate": {
+          "offset": 244,
+          "type": "float",
+          "size": 4
+        },
+        "firing acceleration rate": {
+          "offset": 248,
+          "type": "float",
+          "size": 4
+        },
+        "firing deceleration rate": {
+          "offset": 252,
+          "type": "float",
+          "size": 4
+        },
+        "error acceleration rate": {
+          "offset": 256,
+          "type": "float",
+          "size": 4
+        },
+        "error deceleration rate": {
+          "offset": 260,
+          "type": "float",
+          "size": 4
+        },
+        "firing effects": {
+          "offset": 264,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "WeaponTriggerFiringEffect"
+        }
+      }
+    },
+    "Projectile": {
+      "size": 588,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "projectile flags": {
+          "offset": 380,
+          "type": "uint32",
+          "size": 4
+        },
+        "detonation timer starts": {
+          "offset": 384,
+          "type": "int16",
+          "size": 2
+        },
+        "impact noise": {
+          "offset": 386,
+          "type": "int16",
+          "size": 2
+        },
+        "projectile a in": {
+          "offset": 388,
+          "type": "int16",
+          "size": 2
+        },
+        "projectile b in": {
+          "offset": 390,
+          "type": "int16",
+          "size": 2
+        },
+        "projectile c in": {
+          "offset": 392,
+          "type": "int16",
+          "size": 2
+        },
+        "projectile d in": {
+          "offset": 394,
+          "type": "int16",
+          "size": 2
+        },
+        "super detonation": {
+          "offset": 396,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "ai perception radius": {
+          "offset": 412,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "collision radius": {
+          "offset": 416,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "arming time": {
+          "offset": 420,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "danger radius": {
+          "offset": 424,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "effect": {
+          "offset": 428,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "timer": {
+          "offset": 444,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "minimum velocity": {
+          "offset": 452,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "maximum range": {
+          "offset": 456,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "air gravity scale": {
+          "offset": 460,
+          "type": "float",
+          "size": 4
+        },
+        "air damage range": {
+          "offset": 464,
+          "type": "float",
+          "size": 8,
+          "unit": "world units",
+          "bounds": true
+        },
+        "water gravity scale": {
+          "offset": 472,
+          "type": "float",
+          "size": 4
+        },
+        "water damage range": {
+          "offset": 476,
+          "type": "float",
+          "size": 8,
+          "unit": "world units",
+          "bounds": true
+        },
+        "initial velocity": {
+          "offset": 484,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "final velocity": {
+          "offset": 488,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "guided angular velocity": {
+          "offset": 492,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "detonation noise": {
+          "offset": 496,
+          "type": "int16",
+          "size": 2
+        },
+        "detonation started": {
+          "offset": 500,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "flyby sound": {
+          "offset": 516,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "attached detonation damage": {
+          "offset": 532,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "impact damage": {
+          "offset": 548,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "projectile material response": {
+          "offset": 576,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ProjectileMaterialResponse"
+        }
+      }
+    },
+    "DamageEffect": {
+      "size": 672,
+      "fields": {
+        "radius": {
+          "offset": 0,
+          "type": "float",
+          "size": 8,
+          "unit": "world units",
+          "bounds": true
+        },
+        "cutoff scale": {
+          "offset": 8,
+          "type": "float",
+          "size": 4
+        },
+        "flags": {
+          "offset": 12,
+          "type": "uint32",
+          "size": 4
+        },
+        "type": {
+          "offset": 36,
+          "type": "int16",
+          "size": 2
+        },
+        "priority": {
+          "offset": 38,
+          "type": "int16",
+          "size": 2
+        },
+        "duration": {
+          "offset": 52,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "fade function": {
+          "offset": 56,
+          "type": "int16",
+          "size": 2
+        },
+        "maximum intensity": {
+          "offset": 68,
+          "type": "float",
+          "size": 4
+        },
+        "color": {
+          "offset": 76,
+          "type": "ColorARGB",
+          "size": 16
+        },
+        "low frequency vibrate frequency": {
+          "offset": 92,
+          "type": "float",
+          "size": 4
+        },
+        "low frequency vibrate duration": {
+          "offset": 96,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "low frequency vibrate fade function": {
+          "offset": 100,
+          "type": "int16",
+          "size": 2
+        },
+        "high frequency vibrate frequency": {
+          "offset": 112,
+          "type": "float",
+          "size": 4
+        },
+        "high frequency vibrate duration": {
+          "offset": 116,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "high frequency vibrate fade function": {
+          "offset": 120,
+          "type": "int16",
+          "size": 2
+        },
+        "temporary camera impulse duration": {
+          "offset": 152,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "temporary camera impulse fade function": {
+          "offset": 156,
+          "type": "int16",
+          "size": 2
+        },
+        "temporary camera impulse rotation": {
+          "offset": 160,
+          "type": "Angle",
+          "size": 4
+        },
+        "temporary camera impulse pushback": {
+          "offset": 164,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "jitter": {
+          "offset": 168,
+          "type": "float",
+          "size": 8,
+          "unit": "world units",
+          "bounds": true
+        },
+        "permanent camera impulse angle": {
+          "offset": 184,
+          "type": "Angle",
+          "size": 4
+        },
+        "camera shaking duration": {
+          "offset": 204,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "camera shaking falloff function": {
+          "offset": 208,
+          "type": "int16",
+          "size": 2
+        },
+        "camera shaking random translation": {
+          "offset": 212,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "camera shaking random rotation": {
+          "offset": 216,
+          "type": "Angle",
+          "size": 4
+        },
+        "camera shaking wobble function": {
+          "offset": 232,
+          "type": "int16",
+          "size": 2
+        },
+        "camera shaking wobble period": {
+          "offset": 236,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "camera shaking wobble weight": {
+          "offset": 240,
+          "type": "float",
+          "size": 4
+        },
+        "sound": {
+          "offset": 276,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "breaking effect forward velocity": {
+          "offset": 404,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "breaking effect forward radius": {
+          "offset": 408,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "breaking effect forward exponent": {
+          "offset": 412,
+          "type": "float",
+          "size": 4
+        },
+        "breaking effect outward velocity": {
+          "offset": 428,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "breaking effect outward radius": {
+          "offset": 432,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "breaking effect outward exponent": {
+          "offset": 436,
+          "type": "float",
+          "size": 4
+        },
+        "damage side effect": {
+          "offset": 452,
+          "type": "int16",
+          "size": 2
+        },
+        "damage category": {
+          "offset": 454,
+          "type": "int16",
+          "size": 2
+        },
+        "damage flags": {
+          "offset": 456,
+          "type": "uint32",
+          "size": 4
+        },
+        "damage aoe core radius": {
+          "offset": 460,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "damage lower bound": {
+          "offset": 464,
+          "type": "float",
+          "size": 4
+        },
+        "damage upper bound": {
+          "offset": 468,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "damage vehicle passthrough penalty": {
+          "offset": 476,
+          "type": "float",
+          "size": 4
+        },
+        "damage active camouflage damage": {
+          "offset": 480,
+          "type": "float",
+          "size": 4
+        },
+        "damage stun": {
+          "offset": 484,
+          "type": "float",
+          "size": 4
+        },
+        "damage maximum stun": {
+          "offset": 488,
+          "type": "float",
+          "size": 4
+        },
+        "damage stun time": {
+          "offset": 492,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "damage instantaneous acceleration": {
+          "offset": 500,
+          "type": "Vector3D",
+          "size": 12
+        },
+        "dirt": {
+          "offset": 512,
+          "type": "float",
+          "size": 4
+        },
+        "sand": {
+          "offset": 516,
+          "type": "float",
+          "size": 4
+        },
+        "stone": {
+          "offset": 520,
+          "type": "float",
+          "size": 4
+        },
+        "snow": {
+          "offset": 524,
+          "type": "float",
+          "size": 4
+        },
+        "wood": {
+          "offset": 528,
+          "type": "float",
+          "size": 4
+        },
+        "metal hollow": {
+          "offset": 532,
+          "type": "float",
+          "size": 4
+        },
+        "metal thin": {
+          "offset": 536,
+          "type": "float",
+          "size": 4
+        },
+        "metal thick": {
+          "offset": 540,
+          "type": "float",
+          "size": 4
+        },
+        "rubber": {
+          "offset": 544,
+          "type": "float",
+          "size": 4
+        },
+        "glass": {
+          "offset": 548,
+          "type": "float",
+          "size": 4
+        },
+        "force field": {
+          "offset": 552,
+          "type": "float",
+          "size": 4
+        },
+        "grunt": {
+          "offset": 556,
+          "type": "float",
+          "size": 4
+        },
+        "hunter armor": {
+          "offset": 560,
+          "type": "float",
+          "size": 4
+        },
+        "hunter skin": {
+          "offset": 564,
+          "type": "float",
+          "size": 4
+        },
+        "elite": {
+          "offset": 568,
+          "type": "float",
+          "size": 4
+        },
+        "jackal": {
+          "offset": 572,
+          "type": "float",
+          "size": 4
+        },
+        "jackal energy shield": {
+          "offset": 576,
+          "type": "float",
+          "size": 4
+        },
+        "engineer skin": {
+          "offset": 580,
+          "type": "float",
+          "size": 4
+        },
+        "engineer force field": {
+          "offset": 584,
+          "type": "float",
+          "size": 4
+        },
+        "flood combat form": {
+          "offset": 588,
+          "type": "float",
+          "size": 4
+        },
+        "flood carrier form": {
+          "offset": 592,
+          "type": "float",
+          "size": 4
+        },
+        "cyborg armor": {
+          "offset": 596,
+          "type": "float",
+          "size": 4
+        },
+        "cyborg energy shield": {
+          "offset": 600,
+          "type": "float",
+          "size": 4
+        },
+        "human armor": {
+          "offset": 604,
+          "type": "float",
+          "size": 4
+        },
+        "human skin": {
+          "offset": 608,
+          "type": "float",
+          "size": 4
+        },
+        "sentinel": {
+          "offset": 612,
+          "type": "float",
+          "size": 4
+        },
+        "monitor": {
+          "offset": 616,
+          "type": "float",
+          "size": 4
+        },
+        "plastic": {
+          "offset": 620,
+          "type": "float",
+          "size": 4
+        },
+        "water": {
+          "offset": 624,
+          "type": "float",
+          "size": 4
+        },
+        "leaves": {
+          "offset": 628,
+          "type": "float",
+          "size": 4
+        },
+        "elite energy shield": {
+          "offset": 632,
+          "type": "float",
+          "size": 4
+        },
+        "ice": {
+          "offset": 636,
+          "type": "float",
+          "size": 4
+        },
+        "hunter shield": {
+          "offset": 640,
+          "type": "float",
+          "size": 4
+        }
+      }
+    },
+    "Globals": {
+      "size": 428,
+      "fields": {
+        "sounds": {
+          "offset": 248,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsSound"
+        },
+        "camera": {
+          "offset": 260,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsCamera"
+        },
+        "player control": {
+          "offset": 272,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsPlayerControl"
+        },
+        "difficulty": {
+          "offset": 284,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsDifficulty"
+        },
+        "grenades": {
+          "offset": 296,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsGrenade"
+        },
+        "rasterizer data": {
+          "offset": 308,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsRasterizerData"
+        },
+        "interface bitmaps": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsInterfaceBitmaps"
+        },
+        "weapon list": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsWeapon"
+        },
+        "cheat powerups": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsCheatPowerup"
+        },
+        "multiplayer information": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsMultiplayerInformation"
+        },
+        "player information": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsPlayerInformation"
+        },
+        "first person interface": {
+          "offset": 380,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsFirstPersonInterface"
+        },
+        "falling damage": {
+          "offset": 392,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsFallingDamage"
+        },
+        "materials": {
+          "offset": 404,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsMaterial"
+        },
+        "playlist members": {
+          "offset": 416,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsPlaylistMember"
+        }
+      }
+    },
+    "GlobalsGrenade": {
+      "size": 68,
+      "fields": {
+        "maximum count": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "mp spawn default": {
+          "offset": 2,
+          "type": "int16",
+          "size": 2
+        },
+        "throwing effect": {
+          "offset": 4,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "hud interface": {
+          "offset": 20,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "equipment": {
+          "offset": 36,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "projectile": {
+          "offset": 52,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "GlobalsPlayerInformation": {
+      "size": 244,
+      "fields": {
+        "unit": {
+          "offset": 0,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "walking speed": {
+          "offset": 44,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "double speed multiplier": {
+          "offset": 48,
+          "type": "float",
+          "size": 4
+        },
+        "run forward": {
+          "offset": 52,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "run backward": {
+          "offset": 56,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "run sideways": {
+          "offset": 60,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "run acceleration": {
+          "offset": 64,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second squared"
+        },
+        "sneak forward": {
+          "offset": 68,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "sneak backward": {
+          "offset": 72,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "sneak sideways": {
+          "offset": 76,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "sneak acceleration": {
+          "offset": 80,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second squared"
+        },
+        "airborne acceleration": {
+          "offset": 84,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second squared"
+        },
+        "speed multiplier": {
+          "offset": 88,
+          "type": "float",
+          "size": 4,
+          "unit": "multiplayer only"
+        },
+        "grenade origin": {
+          "offset": 104,
+          "type": "Point3D",
+          "size": 12
+        },
+        "stun movement penalty": {
+          "offset": 128,
+          "type": "float",
+          "size": 4
+        },
+        "stun turning penalty": {
+          "offset": 132,
+          "type": "float",
+          "size": 4
+        },
+        "stun jumping penalty": {
+          "offset": 136,
+          "type": "float",
+          "size": 4
+        },
+        "minimum stun time": {
+          "offset": 140,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "maximum stun time": {
+          "offset": 144,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "first person idle time": {
+          "offset": 156,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "first person skip fraction": {
+          "offset": 164,
+          "type": "float",
+          "size": 4
+        },
+        "coop respawn effect": {
+          "offset": 184,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "GlobalsPlayerControl": {
+      "size": 128,
+      "fields": {
+        "magnetism friction": {
+          "offset": 0,
+          "type": "float",
+          "size": 4
+        },
+        "magnetism adhesion": {
+          "offset": 4,
+          "type": "float",
+          "size": 4
+        },
+        "inconsequential target scale": {
+          "offset": 8,
+          "type": "float",
+          "size": 4
+        },
+        "look acceleration time": {
+          "offset": 64,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "look acceleration scale": {
+          "offset": 68,
+          "type": "float",
+          "size": 4
+        },
+        "look peg threshold": {
+          "offset": 72,
+          "type": "float",
+          "size": 4
+        },
+        "look default pitch rate": {
+          "offset": 76,
+          "type": "float",
+          "size": 4
+        },
+        "look default yaw rate": {
+          "offset": 80,
+          "type": "float",
+          "size": 4
+        },
+        "look autolevelling scale": {
+          "offset": 84,
+          "type": "float",
+          "size": 4
+        },
+        "minimum weapon swap ticks": {
+          "offset": 108,
+          "type": "int16",
+          "size": 2
+        },
+        "minimum autolevelling ticks": {
+          "offset": 110,
+          "type": "int16",
+          "size": 2
+        },
+        "minimum angle for vehicle flipping": {
+          "offset": 112,
+          "type": "Angle",
+          "size": 4
+        },
+        "look function": {
+          "offset": 116,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsLookFunction"
+        }
+      }
+    },
+    "Unit": {
+      "size": 752,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "unit flags": {
+          "offset": 380,
+          "type": "uint32",
+          "size": 4
+        },
+        "default team": {
+          "offset": 384,
+          "type": "int16",
+          "size": 2
+        },
+        "constant sound volume": {
+          "offset": 386,
+          "type": "int16",
+          "size": 2
+        },
+        "rider damage fraction": {
+          "offset": 388,
+          "type": "float",
+          "size": 4
+        },
+        "integrated light toggle": {
+          "offset": 392,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "unit a in": {
+          "offset": 408,
+          "type": "int16",
+          "size": 2
+        },
+        "unit b in": {
+          "offset": 410,
+          "type": "int16",
+          "size": 2
+        },
+        "unit c in": {
+          "offset": 412,
+          "type": "int16",
+          "size": 2
+        },
+        "unit d in": {
+          "offset": 414,
+          "type": "int16",
+          "size": 2
+        },
+        "camera field of view": {
+          "offset": 416,
+          "type": "Angle",
+          "size": 4
+        },
+        "camera stiffness": {
+          "offset": 420,
+          "type": "float",
+          "size": 4
+        },
+        "camera marker name": {
+          "offset": 424,
+          "type": "TagString",
+          "size": 32
+        },
+        "camera submerged marker name": {
+          "offset": 456,
+          "type": "TagString",
+          "size": 32
+        },
+        "pitch auto level": {
+          "offset": 488,
+          "type": "Angle",
+          "size": 4
+        },
+        "pitch range": {
+          "offset": 492,
+          "type": "Angle",
+          "size": 8,
+          "bounds": true
+        },
+        "camera tracks": {
+          "offset": 500,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitCameraTrack"
+        },
+        "seat acceleration scale": {
+          "offset": 512,
+          "type": "Point3D",
+          "size": 12
+        },
+        "soft ping threshold": {
+          "offset": 536,
+          "type": "float",
+          "size": 4
+        },
+        "soft ping interrupt time": {
+          "offset": 540,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "hard ping threshold": {
+          "offset": 544,
+          "type": "float",
+          "size": 4
+        },
+        "hard ping interrupt time": {
+          "offset": 548,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "hard death threshold": {
+          "offset": 552,
+          "type": "float",
+          "size": 4
+        },
+        "feign death threshold": {
+          "offset": 556,
+          "type": "float",
+          "size": 4
+        },
+        "feign death time": {
+          "offset": 560,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "distance of evade anim": {
+          "offset": 564,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "distance of dive anim": {
+          "offset": 568,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "stunned movement threshold": {
+          "offset": 576,
+          "type": "float",
+          "size": 4
+        },
+        "feign death chance": {
+          "offset": 580,
+          "type": "float",
+          "size": 4
+        },
+        "feign repeat chance": {
+          "offset": 584,
+          "type": "float",
+          "size": 4
+        },
+        "spawned actor": {
+          "offset": 588,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "spawned actor count": {
+          "offset": 604,
+          "type": "int16",
+          "size": 4,
+          "bounds": true
+        },
+        "spawned velocity": {
+          "offset": 608,
+          "type": "float",
+          "size": 4
+        },
+        "aiming velocity maximum": {
+          "offset": 612,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "aiming acceleration maximum": {
+          "offset": 616,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second squared"
+        },
+        "casual aiming modifier": {
+          "offset": 620,
+          "type": "Fraction",
+          "size": 4
+        },
+        "looking velocity maximum": {
+          "offset": 624,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "looking acceleration maximum": {
+          "offset": 628,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second squared"
+        },
+        "ai vehicle radius": {
+          "offset": 640,
+          "type": "float",
+          "size": 4
+        },
+        "ai danger radius": {
+          "offset": 644,
+          "type": "float",
+          "size": 4
+        },
+        "melee damage": {
+          "offset": 648,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "motion sensor blip size": {
+          "offset": 664,
+          "type": "int16",
+          "size": 2
+        },
+        "metagame type": {
+          "offset": 668,
+          "type": "int16",
+          "size": 2
+        },
+        "metagame class": {
+          "offset": 670,
+          "type": "int16",
+          "size": 2
+        },
+        "new hud interfaces": {
+          "offset": 680,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitUnitHudInterface"
+        },
+        "dialogue variants": {
+          "offset": 692,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitDialogueVariant"
+        },
+        "grenade velocity": {
+          "offset": 704,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "grenade type": {
+          "offset": 708,
+          "type": "int16",
+          "size": 2
+        },
+        "grenade count": {
+          "offset": 710,
+          "type": "int16",
+          "size": 2
+        },
+        "soft ping interrupt ticks": {
+          "offset": 712,
+          "type": "int16",
+          "size": 2
+        },
+        "hard ping interrupt ticks": {
+          "offset": 714,
+          "type": "int16",
+          "size": 2
+        },
+        "powered seats": {
+          "offset": 716,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitPoweredSeat"
+        },
+        "weapons": {
+          "offset": 728,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitWeapon"
+        },
+        "seats": {
+          "offset": 740,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitSeat"
+        }
+      }
+    },
+    "Biped": {
+      "size": 1268,
+      "fields": {
+        "object type": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "flags": {
+          "offset": 2,
+          "type": "uint16",
+          "size": 2
+        },
+        "bounding radius": {
+          "offset": 4,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "bounding offset": {
+          "offset": 8,
+          "type": "Point3D",
+          "size": 12
+        },
+        "origin offset": {
+          "offset": 20,
+          "type": "Point3D",
+          "size": 12
+        },
+        "acceleration scale": {
+          "offset": 32,
+          "type": "float",
+          "size": 4
+        },
+        "scales change colors": {
+          "offset": 36,
+          "type": "uint32",
+          "size": 4
+        },
+        "model": {
+          "offset": 40,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "animation graph": {
+          "offset": 56,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "collision model": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "physics": {
+          "offset": 128,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "modifier shader": {
+          "offset": 144,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "creation effect": {
+          "offset": 160,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "render bounding radius": {
+          "offset": 260,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "a in": {
+          "offset": 264,
+          "type": "int16",
+          "size": 2
+        },
+        "b in": {
+          "offset": 266,
+          "type": "int16",
+          "size": 2
+        },
+        "c in": {
+          "offset": 268,
+          "type": "int16",
+          "size": 2
+        },
+        "d in": {
+          "offset": 270,
+          "type": "int16",
+          "size": 2
+        },
+        "hud text message index": {
+          "offset": 316,
+          "type": "int16",
+          "size": 2
+        },
+        "forced shader permutation index": {
+          "offset": 318,
+          "type": "int16",
+          "size": 2
+        },
+        "attachments": {
+          "offset": 320,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectAttachment"
+        },
+        "widgets": {
+          "offset": 332,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectWidget"
+        },
+        "functions": {
+          "offset": 344,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectFunction"
+        },
+        "change colors": {
+          "offset": 356,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ObjectChangeColors"
+        },
+        "predicted resources": {
+          "offset": 368,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "PredictedResource"
+        },
+        "unit flags": {
+          "offset": 380,
+          "type": "uint32",
+          "size": 4
+        },
+        "default team": {
+          "offset": 384,
+          "type": "int16",
+          "size": 2
+        },
+        "constant sound volume": {
+          "offset": 386,
+          "type": "int16",
+          "size": 2
+        },
+        "rider damage fraction": {
+          "offset": 388,
+          "type": "float",
+          "size": 4
+        },
+        "integrated light toggle": {
+          "offset": 392,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "unit a in": {
+          "offset": 408,
+          "type": "int16",
+          "size": 2
+        },
+        "unit b in": {
+          "offset": 410,
+          "type": "int16",
+          "size": 2
+        },
+        "unit c in": {
+          "offset": 412,
+          "type": "int16",
+          "size": 2
+        },
+        "unit d in": {
+          "offset": 414,
+          "type": "int16",
+          "size": 2
+        },
+        "camera field of view": {
+          "offset": 416,
+          "type": "Angle",
+          "size": 4
+        },
+        "camera stiffness": {
+          "offset": 420,
+          "type": "float",
+          "size": 4
+        },
+        "camera marker name": {
+          "offset": 424,
+          "type": "TagString",
+          "size": 32
+        },
+        "camera submerged marker name": {
+          "offset": 456,
+          "type": "TagString",
+          "size": 32
+        },
+        "pitch auto level": {
+          "offset": 488,
+          "type": "Angle",
+          "size": 4
+        },
+        "pitch range": {
+          "offset": 492,
+          "type": "Angle",
+          "size": 8,
+          "bounds": true
+        },
+        "camera tracks": {
+          "offset": 500,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitCameraTrack"
+        },
+        "seat acceleration scale": {
+          "offset": 512,
+          "type": "Point3D",
+          "size": 12
+        },
+        "soft ping threshold": {
+          "offset": 536,
+          "type": "float",
+          "size": 4
+        },
+        "soft ping interrupt time": {
+          "offset": 540,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "hard ping threshold": {
+          "offset": 544,
+          "type": "float",
+          "size": 4
+        },
+        "hard ping interrupt time": {
+          "offset": 548,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "hard death threshold": {
+          "offset": 552,
+          "type": "float",
+          "size": 4
+        },
+        "feign death threshold": {
+          "offset": 556,
+          "type": "float",
+          "size": 4
+        },
+        "feign death time": {
+          "offset": 560,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "distance of evade anim": {
+          "offset": 564,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "distance of dive anim": {
+          "offset": 568,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "stunned movement threshold": {
+          "offset": 576,
+          "type": "float",
+          "size": 4
+        },
+        "feign death chance": {
+          "offset": 580,
+          "type": "float",
+          "size": 4
+        },
+        "feign repeat chance": {
+          "offset": 584,
+          "type": "float",
+          "size": 4
+        },
+        "spawned actor": {
+          "offset": 588,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "spawned actor count": {
+          "offset": 604,
+          "type": "int16",
+          "size": 4,
+          "bounds": true
+        },
+        "spawned velocity": {
+          "offset": 608,
+          "type": "float",
+          "size": 4
+        },
+        "aiming velocity maximum": {
+          "offset": 612,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "aiming acceleration maximum": {
+          "offset": 616,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second squared"
+        },
+        "casual aiming modifier": {
+          "offset": 620,
+          "type": "Fraction",
+          "size": 4
+        },
+        "looking velocity maximum": {
+          "offset": 624,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "looking acceleration maximum": {
+          "offset": 628,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second squared"
+        },
+        "ai vehicle radius": {
+          "offset": 640,
+          "type": "float",
+          "size": 4
+        },
+        "ai danger radius": {
+          "offset": 644,
+          "type": "float",
+          "size": 4
+        },
+        "melee damage": {
+          "offset": 648,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "motion sensor blip size": {
+          "offset": 664,
+          "type": "int16",
+          "size": 2
+        },
+        "metagame type": {
+          "offset": 668,
+          "type": "int16",
+          "size": 2
+        },
+        "metagame class": {
+          "offset": 670,
+          "type": "int16",
+          "size": 2
+        },
+        "new hud interfaces": {
+          "offset": 680,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitUnitHudInterface"
+        },
+        "dialogue variants": {
+          "offset": 692,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitDialogueVariant"
+        },
+        "grenade velocity": {
+          "offset": 704,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "grenade type": {
+          "offset": 708,
+          "type": "int16",
+          "size": 2
+        },
+        "grenade count": {
+          "offset": 710,
+          "type": "int16",
+          "size": 2
+        },
+        "soft ping interrupt ticks": {
+          "offset": 712,
+          "type": "int16",
+          "size": 2
+        },
+        "hard ping interrupt ticks": {
+          "offset": 714,
+          "type": "int16",
+          "size": 2
+        },
+        "powered seats": {
+          "offset": 716,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitPoweredSeat"
+        },
+        "weapons": {
+          "offset": 728,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitWeapon"
+        },
+        "seats": {
+          "offset": 740,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "UnitSeat"
+        },
+        "moving turning speed": {
+          "offset": 752,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "biped flags": {
+          "offset": 756,
+          "type": "uint32",
+          "size": 4
+        },
+        "stationary turning threshold": {
+          "offset": 760,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "biped a in": {
+          "offset": 780,
+          "type": "int16",
+          "size": 2
+        },
+        "biped b in": {
+          "offset": 782,
+          "type": "int16",
+          "size": 2
+        },
+        "biped c in": {
+          "offset": 784,
+          "type": "int16",
+          "size": 2
+        },
+        "biped d in": {
+          "offset": 786,
+          "type": "int16",
+          "size": 2
+        },
+        "don't use": {
+          "offset": 788,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "bank angle": {
+          "offset": 804,
+          "type": "Angle",
+          "size": 4
+        },
+        "bank apply time": {
+          "offset": 808,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "bank decay time": {
+          "offset": 812,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "pitch ratio": {
+          "offset": 816,
+          "type": "float",
+          "size": 4
+        },
+        "max velocity": {
+          "offset": 820,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "max sidestep velocity": {
+          "offset": 824,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "acceleration": {
+          "offset": 828,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second squared"
+        },
+        "deceleration": {
+          "offset": 832,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second squared"
+        },
+        "angular velocity maximum": {
+          "offset": 836,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second"
+        },
+        "angular acceleration maximum": {
+          "offset": 840,
+          "type": "Angle",
+          "size": 4,
+          "unit": "degrees per second squared"
+        },
+        "crouch velocity modifier": {
+          "offset": 844,
+          "type": "float",
+          "size": 4
+        },
+        "maximum slope angle": {
+          "offset": 856,
+          "type": "Angle",
+          "size": 4
+        },
+        "downhill falloff angle": {
+          "offset": 860,
+          "type": "Angle",
+          "size": 4
+        },
+        "downhill cutoff angle": {
+          "offset": 864,
+          "type": "Angle",
+          "size": 4
+        },
+        "downhill velocity scale": {
+          "offset": 868,
+          "type": "float",
+          "size": 4
+        },
+        "uphill falloff angle": {
+          "offset": 872,
+          "type": "Angle",
+          "size": 4
+        },
+        "uphill cutoff angle": {
+          "offset": 876,
+          "type": "Angle",
+          "size": 4
+        },
+        "uphill velocity scale": {
+          "offset": 880,
+          "type": "float",
+          "size": 4
+        },
+        "footsteps": {
+          "offset": 908,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "jump velocity": {
+          "offset": 948,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per tick"
+        },
+        "maximum soft landing time": {
+          "offset": 980,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "maximum hard landing time": {
+          "offset": 984,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "minimum soft landing velocity": {
+          "offset": 988,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "minimum hard landing velocity": {
+          "offset": 992,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "maximum hard landing velocity": {
+          "offset": 996,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "death hard landing velocity": {
+          "offset": 1000,
+          "type": "float",
+          "size": 4,
+          "unit": "world units per second"
+        },
+        "standing camera height": {
+          "offset": 1024,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "crouching camera height": {
+          "offset": 1028,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "crouch transition time": {
+          "offset": 1032,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "standing collision height": {
+          "offset": 1060,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "crouching collision height": {
+          "offset": 1064,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "collision radius": {
+          "offset": 1068,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "autoaim width": {
+          "offset": 1112,
+          "type": "float",
+          "size": 4,
+          "unit": "world units"
+        },
+        "cosine stationary turning threshold": {
+          "offset": 1224,
+          "type": "float",
+          "size": 4
+        },
+        "crouch camera velocity": {
+          "offset": 1228,
+          "type": "float",
+          "size": 4
+        },
+        "cosine maximum slope angle": {
+          "offset": 1232,
+          "type": "float",
+          "size": 4
+        },
+        "negative sine downhill falloff angle": {
+          "offset": 1236,
+          "type": "float",
+          "size": 4
+        },
+        "negative sine downhill cutoff angle": {
+          "offset": 1240,
+          "type": "float",
+          "size": 4
+        },
+        "sine uphill falloff angle": {
+          "offset": 1244,
+          "type": "float",
+          "size": 4
+        },
+        "sine uphill cutoff angle": {
+          "offset": 1248,
+          "type": "float",
+          "size": 4
+        },
+        "pelvis model node index": {
+          "offset": 1252,
+          "type": "Index",
+          "size": 2
+        },
+        "head model node index": {
+          "offset": 1254,
+          "type": "Index",
+          "size": 2
+        },
+        "contact point": {
+          "offset": 1256,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "BipedContactPoint"
+        }
+      }
+    },
+    "ModelCollisionGeometry": {
+      "size": 664,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "type": "uint32",
+          "size": 4
+        },
+        "indirect damage material": {
+          "offset": 4,
+          "type": "Index",
+          "size": 2
+        },
+        "maximum body vitality": {
+          "offset": 8,
+          "type": "float",
+          "size": 4
+        },
+        "body system shock": {
+          "offset": 12,
+          "type": "float",
+          "size": 4
+        },
+        "friendly damage resistance": {
+          "offset": 68,
+          "type": "Fraction",
+          "size": 4
+        },
+        "localized damage effect": {
+          "offset": 112,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "area damage effect threshold": {
+          "offset": 128,
+          "type": "float",
+          "size": 4
+        },
+        "area damage effect": {
+          "offset": 132,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "body damaged threshold": {
+          "offset": 148,
+          "type": "float",
+          "size": 4
+        },
+        "body damaged effect": {
+          "offset": 152,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "body depleted effect": {
+          "offset": 168,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "body destroyed threshold": {
+          "offset": 184,
+          "type": "float",
+          "size": 4
+        },
+        "body destroyed effect": {
+          "offset": 188,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "maximum shield vitality": {
+          "offset": 204,
+          "type": "float",
+          "size": 4
+        },
+        "shield material type": {
+          "offset": 210,
+          "type": "int16",
+          "size": 2
+        },
+        "shield failure function": {
+          "offset": 236,
+          "type": "int16",
+          "size": 2
+        },
+        "shield failure threshold": {
+          "offset": 240,
+          "type": "Fraction",
+          "size": 4
+        },
+        "failing shield leak fraction": {
+          "offset": 244,
+          "type": "Fraction",
+          "size": 4
+        },
+        "minimum stun damage": {
+          "offset": 264,
+          "type": "float",
+          "size": 4
+        },
+        "stun time": {
+          "offset": 268,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "recharge time": {
+          "offset": 272,
+          "type": "float",
+          "size": 4,
+          "unit": "seconds"
+        },
+        "shield damaged threshold": {
+          "offset": 388,
+          "type": "float",
+          "size": 4
+        },
+        "shield damaged effect": {
+          "offset": 392,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "shield depleted effect": {
+          "offset": 408,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "shield recharging effect": {
+          "offset": 424,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "shield recharge rate": {
+          "offset": 448,
+          "type": "float",
+          "size": 4
+        },
+        "materials": {
+          "offset": 564,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelCollisionGeometryMaterial"
+        },
+        "regions": {
+          "offset": 576,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelCollisionGeometryRegion"
+        },
+        "modifiers": {
+          "offset": 588,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelCollisionGeometryModifier"
+        },
+        "x": {
+          "offset": 616,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "y": {
+          "offset": 624,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "z": {
+          "offset": 632,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "pathfinding spheres": {
+          "offset": 640,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelCollisionGeometrySphere"
+        },
+        "nodes": {
+          "offset": 652,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelCollisionGeometryNode"
+        }
+      }
+    },
+    "GlobalsMultiplayerInformation": {
+      "size": 160,
+      "fields": {
+        "flag": {
+          "offset": 0,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "unit": {
+          "offset": 16,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "vehicles": {
+          "offset": 32,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsVehicle"
+        },
+        "hill shader": {
+          "offset": 44,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "flag shader": {
+          "offset": 60,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "ball": {
+          "offset": 76,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "sounds": {
+          "offset": 92,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "GlobalsSound"
+        }
+      }
+    },
+    "Effect": {
+      "size": 64,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "type": "uint32",
+          "size": 4
+        },
+        "loop start event": {
+          "offset": 4,
+          "type": "Index",
+          "size": 2,
+          "struct": "Effect"
+        },
+        "loop stop event": {
+          "offset": 6,
+          "type": "Index",
+          "size": 2,
+          "struct": "Effect"
+        },
+        "maximum damage radius": {
+          "offset": 8,
+          "type": "float",
+          "size": 4
+        },
+        "locations": {
+          "offset": 40,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "EffectLocation"
+        },
+        "events": {
+          "offset": 52,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "EffectEvent"
+        }
+      }
+    },
+    "EffectEvent": {
+      "size": 68,
+      "fields": {
+        "skip fraction": {
+          "offset": 4,
+          "type": "Fraction",
+          "size": 4
+        },
+        "delay bounds": {
+          "offset": 8,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "duration bounds": {
+          "offset": 16,
+          "type": "float",
+          "size": 8,
+          "unit": "seconds",
+          "bounds": true
+        },
+        "parts": {
+          "offset": 44,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "EffectPart"
+        },
+        "particles": {
+          "offset": 56,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "EffectParticle"
+        }
+      }
+    },
+    "EffectPart": {
+      "size": 104,
+      "fields": {
+        "create in": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "violence mode": {
+          "offset": 2,
+          "type": "int16",
+          "size": 2
+        },
+        "location": {
+          "offset": 4,
+          "type": "Index",
+          "size": 2,
+          "struct": "Effect"
+        },
+        "flags": {
+          "offset": 6,
+          "type": "uint16",
+          "size": 2
+        },
+        "type class": {
+          "offset": 20,
+          "type": "uint32",
+          "size": 4
+        },
+        "type": {
+          "offset": 24,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "velocity bounds": {
+          "offset": 64,
+          "type": "float",
+          "size": 8,
+          "unit": "world units per second",
+          "bounds": true
+        },
+        "velocity cone angle": {
+          "offset": 72,
+          "type": "Angle",
+          "size": 4
+        },
+        "angular velocity bounds": {
+          "offset": 76,
+          "type": "Angle",
+          "size": 8,
+          "unit": "degrees per second",
+          "bounds": true
+        },
+        "radius modifier bounds": {
+          "offset": 84,
+          "type": "float",
+          "size": 8,
+          "bounds": true
+        },
+        "a scales values": {
+          "offset": 96,
+          "type": "uint32",
+          "size": 4
+        },
+        "b scales values": {
+          "offset": 100,
+          "type": "uint32",
+          "size": 4
+        }
+      }
+    },
+    "ModelAnimations": {
+      "size": 128,
+      "fields": {
+        "objects": {
+          "offset": 0,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphObjectOverlay"
+        },
+        "units": {
+          "offset": 12,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphUnitSeat"
+        },
+        "weapons": {
+          "offset": 24,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphWeaponAnimations"
+        },
+        "vehicles": {
+          "offset": 36,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphVehicleAnimations"
+        },
+        "devices": {
+          "offset": 48,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsDeviceAnimations"
+        },
+        "unit damage": {
+          "offset": 60,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsUnitDamageAnimations"
+        },
+        "first person weapons": {
+          "offset": 72,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphFirstPersonWeaponAnimations"
+        },
+        "sound references": {
+          "offset": 84,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphSoundReference"
+        },
+        "limp body node radius": {
+          "offset": 96,
+          "type": "float",
+          "size": 4
+        },
+        "flags": {
+          "offset": 100,
+          "type": "uint16",
+          "size": 2
+        },
+        "nodes": {
+          "offset": 104,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimationGraphNode"
+        },
+        "animations": {
+          "offset": 116,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "ModelAnimationsAnimation"
+        }
+      }
+    },
+    "ModelAnimationsAnimation": {
+      "size": 180,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "type": "TagString",
+          "size": 32
+        },
+        "type": {
+          "offset": 32,
+          "type": "int16",
+          "size": 2
+        },
+        "frame count": {
+          "offset": 34,
+          "type": "uint16",
+          "size": 2
+        },
+        "frame size": {
+          "offset": 36,
+          "type": "uint16",
+          "size": 2
+        },
+        "frame info type": {
+          "offset": 38,
+          "type": "int16",
+          "size": 2
+        },
+        "node list checksum": {
+          "offset": 40,
+          "type": "int32",
+          "size": 4
+        },
+        "node count": {
+          "offset": 44,
+          "type": "uint16",
+          "size": 2
+        },
+        "loop frame index": {
+          "offset": 46,
+          "type": "Index",
+          "size": 2
+        },
+        "weight": {
+          "offset": 48,
+          "type": "Fraction",
+          "size": 4
+        },
+        "key frame index": {
+          "offset": 52,
+          "type": "Index",
+          "size": 2
+        },
+        "second key frame index": {
+          "offset": 54,
+          "type": "Index",
+          "size": 2
+        },
+        "next animation": {
+          "offset": 56,
+          "type": "Index",
+          "size": 2,
+          "struct": "ModelAnimations"
+        },
+        "flags": {
+          "offset": 58,
+          "type": "uint16",
+          "size": 2
+        },
+        "sound": {
+          "offset": 60,
+          "type": "Index",
+          "size": 2,
+          "struct": "ModelAnimations"
+        },
+        "sound frame index": {
+          "offset": 62,
+          "type": "Index",
+          "size": 2
+        },
+        "left foot frame index": {
+          "offset": 64,
+          "type": "int8",
+          "size": 1
+        },
+        "right foot frame index": {
+          "offset": 65,
+          "type": "int8",
+          "size": 1
+        },
+        "main animation index": {
+          "offset": 66,
+          "type": "uint16",
+          "size": 2
+        },
+        "relative weight": {
+          "offset": 68,
+          "type": "float",
+          "size": 4
+        },
+        "frame info": {
+          "offset": 72,
+          "type": "TagDataOffset",
+          "size": 20
+        },
+        "node transform flag data": {
+          "offset": 92,
+          "type": "uint32",
+          "size": 8
+        },
+        "node rotation flag data": {
+          "offset": 108,
+          "type": "uint32",
+          "size": 8
+        },
+        "node scale flag data": {
+          "offset": 124,
+          "type": "uint32",
+          "size": 8
+        },
+        "offset to compressed data": {
+          "offset": 136,
+          "type": "uint32",
+          "size": 4
+        },
+        "default data": {
+          "offset": 140,
+          "type": "TagDataOffset",
+          "size": 20
+        },
+        "frame data": {
+          "offset": 160,
+          "type": "TagDataOffset",
+          "size": 20
+        }
+      }
+    }
+  }
+}

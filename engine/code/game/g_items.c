@@ -208,9 +208,10 @@ int Pickup_Holdable( gentity_t *ent, gentity_t *other ) {
 
 void Add_Ammo (gentity_t *ent, int weapon, int count)
 {
+ int maximum=ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceAmmoLimit(&ent->client->ps,weapon):200;
 	ent->client->ps.ammo[weapon] += count;
-	if ( ent->client->ps.ammo[weapon] > 200 ) {
-		ent->client->ps.ammo[weapon] = 200;
+	if ( ent->client->ps.ammo[weapon] > maximum ) {
+		ent->client->ps.ammo[weapon] = maximum;
 	}
 }
 
@@ -224,12 +225,7 @@ int Pickup_Ammo (gentity_t *ent, gentity_t *other)
 		quantity = ent->item->quantity;
 	}
 
-	if (other->client->ps.stats[STAT_QCE_COMBAT] && ent->item->giTag==WP_GRENADE_LAUNCHER) {
-  int type=BG_QceGrenadeType(&other->client->ps);
-  int count=BG_QceGrenadeCount(&other->client->ps,type);
-  BG_QceSetGrenadeCount(&other->client->ps,type,count+2);
-		return RESPAWN_AMMO;
-	}
+
 	Add_Ammo (other, ent->item->giTag, quantity);
 
 	return RESPAWN_AMMO;
@@ -265,10 +261,15 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 
 	// add the weapon
 	if (other->client->ps.stats[STAT_QCE_COMBAT]) {
+		if(!(ent->flags&FL_DROPPED_ITEM) && !ent->count)quantity=BG_QceWeaponDef(ent->item->giTag)->ammo_initial;
 		if (!BG_QceAddWeapon(&other->client->ps, ent->item->giTag, quantity)) return 0;
 		if (previousSlot<0 && ent->qceDroppedMagazine && BG_QceSlot(&other->client->ps, ent->item->giTag)>=0) {
 			int slot = BG_QceSlot(&other->client->ps, ent->item->giTag);
 			int clip = ent->qceDroppedMagazine-1;
+   int heat=ent->qceDroppedHeat,remainder=ent->qceDroppedHeatRemainder,locked=ent->qceDroppedOverheated;
+   BG_QceCoolWeapon(ent->item->giTag,other->client->ps.ammo[ent->item->giTag],level.time-ent->qceDroppedHeatTime,&heat,&remainder,&locked);
+   other->client->ps.qceHeat[slot]=heat;other->client->ps.qceHeatRemainder[slot]=remainder;
+   other->client->ps.qceOverheated=(other->client->ps.qceOverheated&~(1<<slot))|(locked<<slot);
 			if (clip > other->client->ps.ammo[ent->item->giTag]) clip = other->client->ps.ammo[ent->item->giTag];
 			other->client->ps.stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0] = clip;
 		}

@@ -244,7 +244,7 @@ PROTOCOL
 ==============================================================
 */
 
-#define	PROTOCOL_VERSION	71
+#define	PROTOCOL_VERSION	91 /* QCE replicated heat state; incompatible with ioquake3 71. */
 #define PROTOCOL_LEGACY_VERSION	68
 // 1.31 - 67
 

@@ -1536,8 +1536,14 @@ Generates weapon events and modifes the weapon counter
 static void PM_Weapon( void ) {
 	int		addTime;
 	int slot;
+ int qceReleased=0,qceChargedShot=0,ammoCost=1;
 	if (!(pm->cmd.buttons & BUTTON_QCE_GRENADE)) pm->ps->stats[STAT_QCE_GRENADES] &= ~8;
 	if (!(pm->cmd.buttons & BUTTON_QCE_MELEE)) pm->ps->stats[STAT_QCE_GRENADES] &= ~QCE_MELEE_HELD;
+
+ if(!pm->ps->stats[STAT_QCE_COMBAT] || pm->ps->weapon!=WP_LIGHTNING || pm->cmd.weapon!=pm->ps->weapon ||
+    pm->ps->pm_type!=PM_NORMAL || pm->ps->stats[STAT_HEALTH]<=0 || (pm->ps->pm_flags&PMF_RESPAWNED) ||
+    (pm->cmd.buttons&(BUTTON_QCE_MELEE|BUTTON_QCE_GRENADE)))pm->ps->qceChargeMs=0;
+ BG_QceCoolWeapons(pm->ps,pml.msec);
 
 	// don't allow attack until all buttons are up
 	if ( pm->ps->pm_flags & PMF_RESPAWNED ) {
@@ -1584,6 +1590,10 @@ static void PM_Weapon( void ) {
   pm->ps->stats[STAT_QCE_GRENADES]&=~32;
   PM_AddEvent(EV_QCE_MELEE_STRIKE);
  }
+ if(pm->ps->stats[STAT_QCE_COMBAT] && pm->ps->weaponstate==WEAPON_RELOADING &&
+    BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceMagazine(pm->ps,pm->ps->weapon)>0 && (pm->cmd.buttons&BUTTON_ATTACK)) {
+  pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;
+ }
 	// check for weapon change
 	// can't change if weapon is firing, but can change
 	// again if lowering or raising
@@ -1616,6 +1626,10 @@ static void PM_Weapon( void ) {
 	if (pm->ps->stats[STAT_QCE_COMBAT]) {
 		if (pm->ps->weaponstate == WEAPON_RELOADING) {
 			BG_QceReload(pm->ps);
+   if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceCanReload(pm->ps)) {
+    pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_ms;
+    return;
+   }
 			pm->ps->weaponstate = WEAPON_READY;
 			return;
 		}
@@ -1662,12 +1676,34 @@ static void PM_Weapon( void ) {
 		}
 	}
 
+ if(pm->ps->stats[STAT_QCE_COMBAT] && BG_QceWeaponDef(pm->ps->weapon)->charge_ms>0 && pm->ps->pm_type==PM_NORMAL) {
+  const qce_weapondef_t *def=BG_QceWeaponDef(pm->ps->weapon);
+  if(BG_QceOverheated(pm->ps,pm->ps->weapon)) {pm->ps->qceChargeMs=0;pm->ps->eFlags&=~EF_FIRING;return;}
+  if(BG_QceMagazine(pm->ps,pm->ps->weapon)>0 && pm->ps->ammo[pm->ps->weapon]>0) {
+   if(pm->cmd.buttons&BUTTON_ATTACK) {
+    pm->ps->qceChargeMs+=pml.msec;
+    if(pm->ps->qceChargeMs>def->charge_ms)pm->ps->qceChargeMs=def->charge_ms;
+    pm->ps->weaponstate=WEAPON_READY;pm->ps->eFlags&=~EF_FIRING;return;
+   }
+   if(pm->ps->qceChargeMs>0) {
+    qceReleased=1;qceChargedShot=pm->ps->qceChargeMs>=def->charge_ms;pm->ps->qceChargeMs=0;
+    if(qceChargedShot)ammoCost=def->charged_ammo;
+    if(ammoCost>pm->ps->ammo[pm->ps->weapon])ammoCost=pm->ps->ammo[pm->ps->weapon];
+    if(ammoCost>BG_QceMagazine(pm->ps,pm->ps->weapon))ammoCost=BG_QceMagazine(pm->ps,pm->ps->weapon);
+   }
+  } else pm->ps->qceChargeMs=0;
+ }
+
 	// check for fire
-	if ( ! (pm->cmd.buttons & BUTTON_ATTACK) ) {
+	if ( ! (pm->cmd.buttons & BUTTON_ATTACK) && !qceReleased ) {
 		pm->ps->weaponTime = 0;
 		pm->ps->weaponstate = WEAPON_READY;
 		return;
 	}
+
+ if(pm->ps->stats[STAT_QCE_COMBAT] && BG_QceOverheated(pm->ps,pm->ps->weapon)) {
+  pm->ps->weaponstate=WEAPON_READY;pm->ps->eFlags&=~EF_FIRING;return;
+ }
 
 	// start the animation even if out of ammo
 	if ( pm->ps->weapon == WP_GAUNTLET ) {
@@ -1694,16 +1730,23 @@ static void PM_Weapon( void ) {
 	if (pm->ps->stats[STAT_QCE_COMBAT] && BG_QceCapacity(pm->ps->weapon)) {
 		slot=BG_QceSlot(pm->ps,pm->ps->weapon);
 		if (slot<0 || !BG_QceMagazine(pm->ps,pm->ps->weapon)) return;
-		pm->ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]--;
+		pm->ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]-=ammoCost;
 	}
 
 	// take an ammo away if not infinite
 	if ( pm->ps->ammo[ pm->ps->weapon ] != -1 ) {
-		pm->ps->ammo[ pm->ps->weapon ]--;
+		pm->ps->ammo[ pm->ps->weapon ]-=ammoCost;
 	}
 
 	// fire weapon
-	PM_AddEvent( EV_FIRE_WEAPON );
+ if(pm->ps->stats[STAT_QCE_COMBAT]) {
+  BG_QceHeatShot(pm->ps);
+  if(qceChargedShot && slot>=0) {
+   pm->ps->qceHeat[slot]=BG_QceWeaponDef(pm->ps->weapon)->charged_heat;
+   if(pm->ps->qceHeat[slot]>=BG_QceWeaponDef(pm->ps->weapon)->heat_overheat)pm->ps->qceOverheated|=1<<slot;
+  }
+ }
+ BG_AddPredictableEventToPlayerstate(EV_FIRE_WEAPON,qceChargedShot,pm->ps);
 
 	switch( pm->ps->weapon ) {
 	default:

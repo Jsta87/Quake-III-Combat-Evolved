@@ -1,0 +1,1145 @@
+{
+  "source_map": {
+    "filename": "bloodgulch.map",
+    "name": "bloodgulch",
+    "build": "01.10.12.2276",
+    "version": 5,
+    "compressed": true,
+    "file_size": 22571008,
+    "decompressed_size": 44328960,
+    "sha256": "50fe52406f075d975e24100a65b26ff696458023dd3509878953052ab0ef858f",
+    "header_crc32": "035e2da3",
+    "header_crc_verified": false,
+    "tag_count": 1806
+  },
+  "scale": 80.0,
+  "scale_basis": "0.7 world-unit standing hull mapped to 56 existing Quake units; chosen adaptation scale, not an official Quake conversion",
+  "tick_rate": 30,
+  "weapons": {
+    "WP_MACHINEGUN": {
+      "tag": "weapons\\assault rifle\\assault rifle",
+      "root_sha256": "393fcb1a0ddca5c8c52293d9688c25a0277b826ff110b21a556269b856873c57",
+      "imported": {
+        "name": "halo_assault_rifle",
+        "magazine": 60,
+        "ammo_initial": 240,
+        "ammo_max": 660,
+        "reload_rounds": 60,
+        "reload_ms": 3400,
+        "fire_ms": 67,
+        "damage": 10,
+        "shield_multiplier": 1.0,
+        "health_multiplier": 1.0,
+        "headshot_mode": 0,
+        "spread": 286.0709414585858,
+        "pellets": 1,
+        "projectile_speed": 25920.000457763672,
+        "projectile_range": 3200.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 240,
+        "rounds reserved maximum": 600,
+        "rounds loaded maximum": 60,
+        "reload time": 3.4000000953674316,
+        "rounds reloaded": 60,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          15.0,
+          15.0
+        ],
+        "acceleration time": 1.0,
+        "deceleration time": 0.10000000149011612,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 3,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          1.0
+        ],
+        "error acceleration time": 0.6000000238418579,
+        "error deceleration time": 1.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.03490658476948738,
+          0.11344639956951141
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3802267950,
+          "class": "proj",
+          "path": "weapons\\assault rifle\\bullet"
+        },
+        "ejection port recovery time": 0.15000000596046448,
+        "illumination recovery time": 0.10000000149011612,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.3333333432674408,
+        "ejection port recovery rate": 0.2222222238779068,
+        "firing acceleration rate": 0.03333333507180214,
+        "firing deceleration rate": 0.3333333432674408,
+        "error acceleration rate": 0.0555555559694767,
+        "error deceleration rate": 0.03333333507180214,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 10.0,
+        "damage upper bound": [
+          10.0,
+          10.0
+        ],
+        "cyborg armor": 1.0,
+        "cyborg energy shield": 1.0
+      },
+      "assumptions": [
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake."
+      ]
+    },
+    "WP_SHOTGUN": {
+      "tag": "weapons\\shotgun\\shotgun",
+      "root_sha256": "fb579ec66524cbe6a560f680fc1a23f009fe7b2e47adfd26043f36e0e8291d6e",
+      "imported": {
+        "name": "halo_shotgun",
+        "magazine": 12,
+        "ammo_initial": 24,
+        "ammo_max": 72,
+        "reload_rounds": 1,
+        "reload_ms": 400,
+        "fire_ms": 1000,
+        "damage": 18,
+        "shield_multiplier": 0.5,
+        "health_multiplier": 1.0,
+        "headshot_mode": 0,
+        "spread": 1444.4705830774349,
+        "pellets": 15,
+        "projectile_speed": 11200.000762939453,
+        "projectile_range": 3200.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 2,
+        "rounds recharged": 0,
+        "rounds total initial": 24,
+        "rounds reserved maximum": 60,
+        "rounds loaded maximum": 12,
+        "reload time": 0.4000000059604645,
+        "rounds reloaded": 1,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          1.0,
+          1.0
+        ],
+        "acceleration time": 0.0,
+        "deceleration time": 0.0,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          0.0
+        ],
+        "error acceleration time": 0.0,
+        "error deceleration time": 0.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 15,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.1745329201221466,
+          0.1745329201221466
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3845456833,
+          "class": "proj",
+          "path": "weapons\\shotgun\\pellet"
+        },
+        "ejection port recovery time": 0.15000000596046448,
+        "illumination recovery time": 0.10000000149011612,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.3333333432674408,
+        "ejection port recovery rate": 0.2222222238779068,
+        "firing acceleration rate": 1.0,
+        "firing deceleration rate": 1.0,
+        "error acceleration rate": 1.0,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 8.0,
+        "damage upper bound": [
+          18.0,
+          25.0
+        ],
+        "cyborg armor": 1.0,
+        "cyborg energy shield": 0.5
+      },
+      "assumptions": [
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake.",
+        "Uses the first upper-bound damage value; randomized damage and distance falloff remain pending."
+      ]
+    },
+    "WP_ROCKET_LAUNCHER": {
+      "tag": "weapons\\rocket launcher\\rocket launcher",
+      "root_sha256": "7bdcbd3940abdc3d8117f579610ce5b2320788503322a329593b79db21eef8c8",
+      "imported": {
+        "name": "halo_rocket_launcher",
+        "magazine": 2,
+        "ammo_initial": 4,
+        "ammo_max": 10,
+        "reload_rounds": 2,
+        "reload_ms": 5000,
+        "fire_ms": 2000,
+        "damage": 300,
+        "shield_multiplier": 1.0,
+        "health_multiplier": 1.0,
+        "headshot_mode": 0,
+        "spread": 0.0,
+        "pellets": 1,
+        "projectile_speed": 960.0000858306885,
+        "projectile_range": 10240.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 4,
+        "rounds reserved maximum": 8,
+        "rounds loaded maximum": 2,
+        "reload time": 5.0,
+        "rounds reloaded": 2,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 8,
+        "maximum rate of fire": [
+          0.5,
+          0.5
+        ],
+        "acceleration time": 0.0,
+        "deceleration time": 0.0,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          0.0
+        ],
+        "error acceleration time": 0.0,
+        "error deceleration time": 0.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.0,
+          0.0
+        ],
+        "first person offset": [
+          0.0,
+          -0.10000000149011612,
+          0.0
+        ],
+        "projectile": {
+          "id": 3856925808,
+          "class": "proj",
+          "path": "weapons\\rocket launcher\\rocket"
+        },
+        "ejection port recovery time": 0.0,
+        "illumination recovery time": 0.30000001192092896,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.1111111119389534,
+        "ejection port recovery rate": 1.0,
+        "firing acceleration rate": 1.0,
+        "firing deceleration rate": 1.0,
+        "error acceleration rate": 1.0,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 80.0,
+        "damage upper bound": [
+          300.0,
+          330.0
+        ],
+        "cyborg armor": 1.0,
+        "cyborg energy shield": 1.0
+      },
+      "assumptions": [
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake.",
+        "Uses the first upper-bound damage value; randomized damage and distance falloff remain pending."
+      ]
+    },
+    "WP_RAILGUN": {
+      "tag": "weapons\\sniper rifle\\sniper rifle",
+      "root_sha256": "d6cde0158cc14605fa68fa763cd47c491faa2009ab1e12ee4effcfe1b0feed89",
+      "imported": {
+        "name": "halo_sniper_rifle",
+        "magazine": 4,
+        "ammo_initial": 12,
+        "ammo_max": 28,
+        "reload_rounds": 4,
+        "reload_ms": 3133,
+        "fire_ms": 500,
+        "damage": 101,
+        "shield_multiplier": 1.0,
+        "health_multiplier": 1.0,
+        "headshot_mode": 2,
+        "spread": 71.49050038807624,
+        "pellets": 1,
+        "projectile_speed": 80000.00610351562,
+        "projectile_range": 80000.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 12,
+        "rounds reserved maximum": 24,
+        "rounds loaded maximum": 4,
+        "reload time": 0.0,
+        "rounds reloaded": 4,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 1032,
+        "maximum rate of fire": [
+          2.0,
+          2.0
+        ],
+        "acceleration time": 0.0,
+        "deceleration time": 0.0,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 1,
+        "error": [
+          1.0,
+          1.0
+        ],
+        "error acceleration time": 0.0,
+        "error deceleration time": 0.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.008726646192371845,
+          0.008726646192371845
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3862234305,
+          "class": "proj",
+          "path": "weapons\\sniper rifle\\sniper bullet"
+        },
+        "ejection port recovery time": 0.15000000596046448,
+        "illumination recovery time": 0.10000000149011612,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.3333333432674408,
+        "ejection port recovery rate": 0.2222222238779068,
+        "firing acceleration rate": 1.0,
+        "firing deceleration rate": 1.0,
+        "error acceleration rate": 1.0,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 101.0,
+        "damage upper bound": [
+          101.0,
+          101.0
+        ],
+        "cyborg armor": 1.0,
+        "cyborg energy shield": 1.0
+      },
+      "assumptions": [
+        "Zero reload-time tag: provisional empty reload animation duration at 30 frames/s, not verified runtime reload completion.",
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake."
+      ]
+    },
+    "WP_PLASMAGUN": {
+      "tag": "weapons\\plasma rifle\\plasma rifle",
+      "root_sha256": "3bfb1d177d4e508457ba0e650e5a96a1e96333ee26b8e23d4325ca2fc22d0694",
+      "imported": {
+        "name": "halo_plasma_rifle",
+        "magazine": 200,
+        "ammo_initial": 200,
+        "ammo_max": 200,
+        "reload_rounds": 0,
+        "reload_ms": 1500,
+        "fire_ms": 100,
+        "damage": 12,
+        "shield_multiplier": 2.0,
+        "health_multiplier": 0.5,
+        "headshot_mode": 0,
+        "spread": 71.49050038807624,
+        "pellets": 1,
+        "projectile_speed": 4000.0001907348633,
+        "projectile_range": 0.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 800,
+        "heat_loss_per_second": 3000,
+        "heat_recovery": 2500,
+        "heat_overheat": 10000,
+        "heat_age_penalty": 200,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 0,
+        "rounds reserved maximum": 0,
+        "rounds loaded maximum": 0,
+        "reload time": 0.0,
+        "rounds reloaded": 0,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": []
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          7.0,
+          10.0
+        ],
+        "acceleration time": 1.7999999523162842,
+        "deceleration time": 0.25,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 0,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 3,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          1.0
+        ],
+        "error acceleration time": 2.5,
+        "error deceleration time": 0.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.008726646192371845,
+          0.0872664600610733
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3850699793,
+          "class": "proj",
+          "path": "weapons\\plasma rifle\\bolt"
+        },
+        "ejection port recovery time": 0.0,
+        "illumination recovery time": 0.15000000596046448,
+        "heat generated per round": 0.07999999821186066,
+        "age generated per round": 0.004999999888241291,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.2222222238779068,
+        "ejection port recovery rate": 1.0,
+        "firing acceleration rate": 0.018518520519137383,
+        "firing deceleration rate": 0.13333334028720856,
+        "error acceleration rate": 0.013333333656191826,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 2,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 10.0,
+        "damage upper bound": [
+          12.0,
+          14.0
+        ],
+        "cyborg armor": 0.5,
+        "cyborg energy shield": 2.0
+      },
+      "assumptions": [
+        "Battery represented as shot-equivalent inventory from age-per-round; Heat uses imported per-shot/loss/threshold scalars; Charged consumption uses normal-shot equivalents and clamps at the remaining battery.",
+        "Uses final fire rate; trigger acceleration/ramp is not yet simulated.",
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake.",
+        "Uses the first upper-bound damage value; randomized damage and distance falloff remain pending."
+      ]
+    },
+    "WP_LIGHTNING": {
+      "tag": "weapons\\plasma pistol\\plasma pistol",
+      "root_sha256": "94abdf84d53ef0c1e182e0f58768ff3ff4ac346840524e974a8f525191ed1a90",
+      "imported": {
+        "name": "halo_plasma_pistol",
+        "magazine": 500,
+        "ammo_initial": 500,
+        "ammo_max": 500,
+        "reload_rounds": 0,
+        "reload_ms": 1500,
+        "fire_ms": 33,
+        "damage": 16,
+        "shield_multiplier": 0.6000000238418579,
+        "health_multiplier": 0.6000000238418579,
+        "headshot_mode": 0,
+        "spread": 0.0,
+        "pellets": 1,
+        "projectile_speed": 2000.0000953674316,
+        "projectile_range": 4000.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 1600,
+        "heat_loss_per_second": 6500,
+        "heat_recovery": 2500,
+        "heat_overheat": 10000,
+        "heat_age_penalty": 0,
+        "charge_ms": 600,
+        "charged_ammo": 55,
+        "charged_heat": 10000,
+        "charged_damage": 70,
+        "charged_speed": 1200.0,
+        "charged_range": 3200.0,
+        "charged_tracking_radians": 0.5061454772949219,
+        "charged_health_multiplier": 0.6000000238418579,
+        "charged_shield_multiplier": 1.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 0,
+        "rounds reserved maximum": 0,
+        "rounds loaded maximum": 0,
+        "reload time": 0.0,
+        "rounds reloaded": 0,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": []
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          0.0,
+          0.0
+        ],
+        "acceleration time": 0.0,
+        "deceleration time": 0.0,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 0,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          1.0
+        ],
+        "error acceleration time": 0.0,
+        "error deceleration time": 0.0,
+        "charging time": 0.6000000238418579,
+        "charged time": 45.0,
+        "overcharged action": 0,
+        "charged illumination": 1.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.0,
+          0.0
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3868525857,
+          "class": "proj",
+          "path": "weapons\\plasma pistol\\bolt"
+        },
+        "ejection port recovery time": 0.0,
+        "illumination recovery time": 0.15000000596046448,
+        "heat generated per round": 0.1599999964237213,
+        "age generated per round": 0.0020000000949949026,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.2222222238779068,
+        "ejection port recovery rate": 1.0,
+        "firing acceleration rate": 1.0,
+        "firing deceleration rate": 1.0,
+        "error acceleration rate": 1.0,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 10.0,
+        "damage upper bound": [
+          16.0,
+          20.0
+        ],
+        "cyborg armor": 0.6000000238418579,
+        "cyborg energy shield": 0.6000000238418579
+      },
+      "assumptions": [
+        "Battery represented as shot-equivalent inventory from age-per-round; Heat uses imported per-shot/loss/threshold scalars; Charged consumption uses normal-shot equivalents and clamps at the remaining battery.",
+        "Release before 600 ms fires primary bolt; full charge fires secondary bolt with EMP shield depletion. Behavior follows build-2342 reference. Charge pause/cancellation, aim cone, constant speed and shot-equivalent battery rounding await retail validation.",
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake.",
+        "Uses the first upper-bound damage value; randomized damage and distance falloff remain pending."
+      ]
+    },
+    "WP_BFG": {
+      "tag": "weapons\\pistol\\pistol",
+      "root_sha256": "7f8c898d5fc7810242fe5333690c5c5102f616eb73c7b052e370135b8af937d5",
+      "imported": {
+        "name": "halo_pistol",
+        "magazine": 12,
+        "ammo_initial": 60,
+        "ammo_max": 132,
+        "reload_rounds": 12,
+        "reload_ms": 2170,
+        "fire_ms": 300,
+        "damage": 25,
+        "shield_multiplier": 1.0,
+        "health_multiplier": 1.5,
+        "headshot_mode": 1,
+        "spread": 28.59559038612275,
+        "pellets": 1,
+        "projectile_speed": 24000.00228881836,
+        "projectile_range": 3200.0,
+        "tracking_radians": 0.0,
+        "attachment_ms": 0,
+        "combine_count": 0,
+        "combine_damage": 0,
+        "combine_radius": 0.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 60,
+        "rounds reserved maximum": 120,
+        "rounds loaded maximum": 12,
+        "reload time": 2.1700000762939453,
+        "rounds reloaded": 12,
+        "chamber time": 0.0,
+        "reloading effect": {
+          "id": 3815703035,
+          "class": "effe",
+          "path": "weapons\\pistol\\effects\\reload"
+        },
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          3.5,
+          3.5
+        ],
+        "acceleration time": 0.0,
+        "deceleration time": 0.0,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          2.0
+        ],
+        "error acceleration time": 0.5,
+        "error deceleration time": 0.20000000298023224,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.0,
+        "error angle": [
+          0.003490658476948738,
+          0.03490658476948738
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3816292868,
+          "class": "proj",
+          "path": "weapons\\pistol\\bullet"
+        },
+        "ejection port recovery time": 0.0,
+        "illumination recovery time": 0.10000000149011612,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.3333333432674408,
+        "ejection port recovery rate": 1.0,
+        "firing acceleration rate": 1.0,
+        "firing deceleration rate": 1.0,
+        "error acceleration rate": 0.06666667014360428,
+        "error deceleration rate": 0.1666666716337204,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 25.0,
+        "damage upper bound": [
+          25.0,
+          25.0
+        ],
+        "cyborg armor": 1.5,
+        "cyborg energy shield": 1.0
+      },
+      "assumptions": [
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake."
+      ]
+    },
+    "WP_GRENADE_LAUNCHER": {
+      "tag": "weapons\\needler\\needler",
+      "root_sha256": "21c0c005253fd74083efb6438de78edba5d3cb23ce4cea0ea7e9941e7308198b",
+      "imported": {
+        "name": "halo_needler",
+        "magazine": 20,
+        "ammo_initial": 80,
+        "ammo_max": 100,
+        "reload_rounds": 20,
+        "reload_ms": 1000,
+        "fire_ms": 100,
+        "damage": 10,
+        "shield_multiplier": 1.0,
+        "health_multiplier": 1.0,
+        "headshot_mode": 0,
+        "spread": 572.840438989354,
+        "pellets": 1,
+        "projectile_speed": 320.00001668930054,
+        "projectile_range": 1600.0,
+        "tracking_radians": 1.5707963705062866,
+        "attachment_ms": 750,
+        "combine_count": 7,
+        "combine_damage": 60,
+        "combine_radius": 80.0,
+        "heat_per_shot": 0,
+        "heat_loss_per_second": 0,
+        "heat_recovery": 0,
+        "heat_overheat": 0,
+        "heat_age_penalty": 0,
+        "charge_ms": 0,
+        "charged_ammo": 0,
+        "charged_heat": 0,
+        "charged_damage": 0,
+        "charged_speed": 0.0,
+        "charged_range": 0.0,
+        "charged_tracking_radians": 0.0,
+        "charged_health_multiplier": 0.0,
+        "charged_shield_multiplier": 0.0
+      },
+      "source_magazine": {
+        "flags": 0,
+        "rounds recharged": 0,
+        "rounds total initial": 80,
+        "rounds reserved maximum": 80,
+        "rounds loaded maximum": 20,
+        "reload time": 1.0,
+        "rounds reloaded": 20,
+        "chamber time": 0.0,
+        "reloading effect": null,
+        "chambering effect": null,
+        "magazine objects": {
+          "count": 1,
+          "unparsed_struct": "WeaponMagazineObject"
+        }
+      },
+      "source_trigger": {
+        "flags": 0,
+        "maximum rate of fire": [
+          3.0,
+          10.0
+        ],
+        "acceleration time": 0.5,
+        "deceleration time": 0.15000000596046448,
+        "blurred rate of fire": 0.0,
+        "magazine": 0,
+        "rounds per shot": 1,
+        "minimum rounds loaded": 0,
+        "projectiles between contrails": 0,
+        "prediction type": 0,
+        "firing noise": 2,
+        "error": [
+          0.0,
+          1.0
+        ],
+        "error acceleration time": 0.5,
+        "error deceleration time": 0.0,
+        "charging time": 0.0,
+        "charged time": 0.0,
+        "overcharged action": 0,
+        "charged illumination": 0.0,
+        "spew time": 0.0,
+        "charging effect": null,
+        "distribution function": 0,
+        "projectiles per shot": 1,
+        "distribution angle": 0.0,
+        "minimum error": 0.03490658476948738,
+        "error angle": [
+          0.06981316953897476,
+          0.06981316953897476
+        ],
+        "first person offset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "projectile": {
+          "id": 3883861515,
+          "class": "proj",
+          "path": "weapons\\needler\\needle"
+        },
+        "ejection port recovery time": 0.0,
+        "illumination recovery time": 0.20000000298023224,
+        "heat generated per round": 0.0,
+        "age generated per round": 0.0,
+        "overload time": 0.0,
+        "illumination recovery rate": 0.1666666716337204,
+        "ejection port recovery rate": 1.0,
+        "firing acceleration rate": 0.06666667014360428,
+        "firing deceleration rate": 0.2222222238779068,
+        "error acceleration rate": 0.06666667014360428,
+        "error deceleration rate": 1.0,
+        "firing effects": {
+          "count": 1,
+          "unparsed_struct": "WeaponTriggerFiringEffect"
+        }
+      },
+      "source_damage": {
+        "damage lower bound": 10.0,
+        "damage upper bound": [
+          10.0,
+          10.0
+        ],
+        "cyborg armor": 1.0,
+        "cyborg energy shield": 1.0
+      },
+      "assumptions": [
+        "Uses final fire rate; trigger acceleration/ramp is not yet simulated.",
+        "Initial angular error converted to Quake ray offsets; random distribution and sustained-fire spread are still Quake.",
+        "Seven-needle threshold follows halo-ce-universal build 2342 reference, commit 76b1898ee14e6fb58e0412acc183da509c10e001; uploaded tags are build 2276. Acquisition cone, world-contact behavior and grouped explosion scheduling are adaptations awaiting retail validation."
+      ]
+    }
+  },
+  "player": {
+    "tag": "characters\\cyborg_mp\\cyborg_mp",
+    "collision_tag": "characters\\cyborg\\cyborg",
+    "imported": {
+      "health": 75,
+      "shield": 75,
+      "shield_delay_ms": 6000,
+      "shield_recharge_ms": 4000
+    },
+    "movement_source": {
+      "unit": {
+        "id": 3892250251,
+        "class": "bipd",
+        "path": "characters\\cyborg\\cyborg"
+      },
+      "walking speed": 0.5120000243186951,
+      "double speed multiplier": 1.25,
+      "run forward": 2.25,
+      "run backward": 2.0,
+      "run sideways": 2.0,
+      "run acceleration": 0.3199999928474426,
+      "sneak forward": 0.8999999761581421,
+      "sneak backward": 0.6499999761581421,
+      "sneak sideways": 0.6000000238418579,
+      "sneak acceleration": 0.1599999964237213,
+      "airborne acceleration": 0.03500000014901161,
+      "speed multiplier": 0.0,
+      "grenade origin": [
+        0.0,
+        0.05000000074505806,
+        0.0
+      ],
+      "stun movement penalty": 0.800000011920929,
+      "stun turning penalty": 0.800000011920929,
+      "stun jumping penalty": 1.0,
+      "minimum stun time": 0.0,
+      "maximum stun time": 1.25,
+      "first person idle time": [
+        10.0,
+        15.0
+      ],
+      "first person skip fraction": 0.25,
+      "coop respawn effect": {
+        "id": 3892315788,
+        "class": "effe",
+        "path": "effects\\coop teleport"
+      }
+    },
+    "biped_source": {
+      "jump velocity": 0.07000000029802322,
+      "standing camera height": 0.6200000047683716,
+      "crouching camera height": 0.3499999940395355,
+      "standing collision height": 0.699999988079071,
+      "crouching collision height": 0.5,
+      "collision radius": 0.20000000298023224
+    },
+    "note": "Movement values preserved for the next behavior/conversion pass, not applied as unverified accelerations."
+  },
+  "remaining": [
+    "plasma charged tracking/acquisition and animation events; exact fractional battery age",
+    "Needler target acquisition/material response and exact supercombine scheduling",
+    "damage ranges/falloff/material-response details and integer damage rounding",
+    "projectile acceleration/gravity/range and finite bullet travel",
+    "spread growth/recovery and recoil animation",
+    "full/empty reload animation state, weapon ready/recovery timing",
+    "melee damage ranges, moving strike modifiers and animation timing",
+    "movement acceleration interpretation, slopes and collision/camera transitions",
+    "grenade throw impulse/material bounce response, spawn counts and 10-second flight safety expiry",
+    "retail multiplayer and latency parity validation",
+    "Quake placeholder art/audio remains"
+  ],
+  "ui_map": {
+    "filename": "ui.map",
+    "name": "ui",
+    "build": "01.10.12.2276",
+    "version": 5,
+    "compressed": true,
+    "file_size": 14145536,
+    "decompressed_size": 33582080,
+    "sha256": "35e3e560478d85178749be310ad13d6d6ecde618d32675261a3554592333a833",
+    "header_crc32": "cdc1a39a",
+    "header_crc_verified": false,
+    "tag_count": 983
+  }
+}

@@ -772,6 +772,11 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 #endif
 	client->ps.stats[STAT_MAX_HEALTH] = client->pers.maxHealth;
+ if(client->ps.stats[STAT_QCE_COMBAT]) {
+  client->ps.stats[STAT_MAX_HEALTH]=BG_QcePlayerDef()->health*client->pers.maxHealth/100;
+  if(client->ps.stats[STAT_MAX_HEALTH]<1)client->ps.stats[STAT_MAX_HEALTH]=1;
+ }
+
 
 	// set model
 	if( g_gametype.integer >= GT_TEAM ) {
@@ -1180,8 +1185,11 @@ void ClientSpawn(gentity_t *ent) {
 	client->ps.stats[STAT_QCE_COMBAT] = g_qceCombat.integer == 1;
 	client->ps.stats[STAT_QCE_SHIELD] = client->ps.stats[STAT_QCE_COMBAT] ? QCE_SHIELD_MAX : 0;
 	client->qceShieldNextTick = level.time + QCE_SHIELD_DELAY;
+ client->qceShieldRemainder=0;
 	if (client->ps.stats[STAT_QCE_COMBAT]) {
-		int ammo = client->ps.ammo[WP_MACHINEGUN];
+		int ammo = BG_QceWeaponDef(WP_MACHINEGUN)->ammo_initial;
+  client->ps.stats[STAT_MAX_HEALTH]=BG_QcePlayerDef()->health*client->pers.maxHealth/100;
+  if(client->ps.stats[STAT_MAX_HEALTH]<1)client->ps.stats[STAT_MAX_HEALTH]=1;
 		client->ps.stats[STAT_WEAPONS] = 1 << WP_GAUNTLET;
 		BG_QceAddWeapon(&client->ps, WP_MACHINEGUN, ammo);
 		client->ps.stats[STAT_QCE_GRENADES] = 0;

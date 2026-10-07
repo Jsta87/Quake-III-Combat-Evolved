@@ -85,7 +85,9 @@ void G_ExplodeMissile( gentity_t *ent ) {
 	if ( ent->splashDamage ) {
 		if( G_RadiusDamage( ent->r.currentOrigin, ent->parent, ent->splashDamage, ent->splashRadius, ent
 			, ent->splashMethodOfDeath ) ) {
-			g_entities[ent->r.ownerNum].client->accuracy_hits++;
+			if(ent->r.ownerNum>=0 && ent->r.ownerNum<level.maxclients && g_entities[ent->r.ownerNum].client &&
+               (!ent->qceNeedle || g_entities[ent->r.ownerNum].qceEntitySerial==ent->qceOwnerSerial))
+                g_entities[ent->r.ownerNum].client->accuracy_hits++;
 		}
 	}
 
@@ -267,11 +269,18 @@ static void ProximityMine_Player( gentity_t *mine, gentity_t *player ) {
 G_MissileImpact
 ================
 */
+#include "g_qce_needle.h"
+
 qboolean G_QceGrenadeImpact(gentity_t *ent,trace_t *trace) {
  gentity_t *other=&g_entities[trace->entityNum];
  /* Hand frags bounce off bodies too; plasma arms its fuse on first contact. */
  if(ent->qceGrenadeType>0 && !BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky) {
-  G_BounceMissile(ent,trace);G_AddEvent(ent,EV_GRENADE_BOUNCE,0);return qtrue;
+  const qce_grenadedef_t *def=BG_QceGrenadeDef(ent->qceGrenadeType-1);
+  G_BounceMissile(ent,trace);
+  if(!ent->qceFuseArmed && (def->timer_start==1 || (def->timer_start==2 && ent->s.pos.trType==TR_STATIONARY))) {
+   ent->qceFuseArmed=1;ent->nextthink=level.time+def->fuse_ms;
+  }
+  G_AddEvent(ent,EV_GRENADE_BOUNCE,0);return qtrue;
  }
  if(ent->qceGrenadeType>0 && BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky && !ent->qceStuck) {
   vec3_t offset,angles,forward,right,up;
@@ -279,7 +288,7 @@ qboolean G_QceGrenadeImpact(gentity_t *ent,trace_t *trace) {
   ent->qceAttachSerial=other->qceEntitySerial;
   ent->qceAttachSpawn=other->client?other->client->ps.persistant[PERS_SPAWN_COUNT]:0;
   G_SetOrigin(ent,trace->endpos);
-  ent->nextthink=level.time+BG_QceGrenadeDef(ent->qceGrenadeType-1)->fuse_ms;
+  if(!ent->qceFuseArmed) {ent->qceFuseArmed=1;ent->nextthink=level.time+BG_QceGrenadeDef(ent->qceGrenadeType-1)->fuse_ms;}
   VectorSubtract(trace->endpos,other->r.currentOrigin,offset);
   VectorCopy(other->r.currentAngles,angles);
   if(other->client)VectorSet(angles,0,other->client->ps.viewangles[YAW],0);
@@ -322,7 +331,9 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 	int				eFlags;
 #endif
 	other = &g_entities[trace->entityNum];
+ if(ent->qceCharged)ent->parent=QceNeedleOwner(ent);
 
+ if(G_QceNeedleImpact(ent,trace))return;
  if(G_QceGrenadeImpact(ent,trace))return;
 
 	// check for bounce
@@ -500,6 +511,7 @@ void G_RunMissile( gentity_t *ent ) {
 	int			passent;
 
  if(G_QceRunStuckGrenade(ent))return;
+ G_QceTrackNeedle(ent);
 
 	// get current position
 	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
@@ -620,7 +632,14 @@ gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t dir) {
   bolt->splashMethodOfDeath=QceProjectileMod(self->client->ps.weapon,qtrue);
   bolt->damage=def->damage;bolt->splashDamage=def->splash_damage;bolt->splashRadius=def->splash_radius;
   bolt->nextthink=level.time+def->fuse_ms;
+  if(def->projectile_range>0 && def->projectile_speed>0)bolt->nextthink=level.time+(int)(1000*def->projectile_range/def->projectile_speed);
   VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);SnapVector(bolt->s.pos.trDelta);
+  if(def->attachment_ms>0) {
+   bolt->qceNeedle=1;bolt->qceOwnerSerial=self->qceEntitySerial;
+   bolt->think=G_QceNeedleThink;bolt->s.weapon=WP_PLASMAGUN;
+   bolt->nextthink=level.time+(int)(1000*def->projectile_range/def->projectile_speed);
+   QceAcquireNeedle(bolt,dir,def->projectile_range);
+  }
  }
 
 	return bolt;
@@ -899,3 +918,14 @@ gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t dir ) {
 	return bolt;
 }
 #endif
+
+gentity_t *fire_qce_overcharge(gentity_t *self,vec3_t start,vec3_t dir) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(WP_LIGHTNING);
+ gentity_t *bolt=fire_plasma(self,start,dir);
+ bolt->qceCharged=1;bolt->qceOwnerSerial=self->qceEntitySerial;bolt->damage=def->charged_damage;
+ bolt->methodOfDeath=MOD_QCE_OVERCHARGE;bolt->splashDamage=0;
+ VectorScale(dir,def->charged_speed,bolt->s.pos.trDelta);
+ bolt->nextthink=level.time+(int)(1000*def->charged_range/def->charged_speed);
+ QceAcquireNeedle(bolt,dir,def->charged_range);
+ return bolt;
+}

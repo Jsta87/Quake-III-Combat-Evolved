@@ -104,6 +104,8 @@ void TossClientItems( gentity_t *self ) {
 			drop=Drop_Item(self,BG_FindItemForWeapon(held),i*90);
 			drop->count=self->client->ps.ammo[held]?self->client->ps.ammo[held]:-1;
 			drop->qceDroppedMagazine=BG_QceMagazine(&self->client->ps,held)+1;
+   drop->qceDroppedHeat=self->client->ps.qceHeat[i];drop->qceDroppedHeatRemainder=self->client->ps.qceHeatRemainder[i];
+   drop->qceDroppedOverheated=(self->client->ps.qceOverheated>>i)&1;drop->qceDroppedHeatTime=level.time;
 		}
 	} else if ( weapon > WP_MACHINEGUN && weapon != WP_GRAPPLING_HOOK && 
 		self->client->ps.ammo[ weapon ] ) {
@@ -318,7 +320,7 @@ char	*modNames[] = {
 	"MOD_KAMIKAZE",
 	"MOD_JUICED",
 #endif
-	"MOD_GRAPPLE", "MOD_QCE_SNIPER", "MOD_QCE_FRAG", "MOD_QCE_PLASMA_GRENADE"
+	"MOD_GRAPPLE", "MOD_QCE_SNIPER", "MOD_QCE_FRAG", "MOD_QCE_PLASMA_GRENADE", "MOD_QCE_OVERCHARGE"
 };
 
 #ifdef MISSIONPACK
@@ -866,6 +868,11 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	// unless they are rocket jumping
 	if ( attacker->client && attacker != targ ) {
 		max = attacker->client->ps.stats[STAT_MAX_HEALTH];
+  /* Halo vitality is not Quake's 100-point handicap percentage. */
+  if(attacker->client->ps.stats[STAT_QCE_COMBAT]) {
+   max=attacker->client->pers.maxHealth;
+   if(max<1 || max>100)max=100;
+  }
 #ifdef MISSIONPACK
 		if( bg_itemlist[attacker->client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 			max /= 2;
@@ -990,14 +997,15 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		damage = 1;
 	}
 	take = damage;
- qceHeadDef=BG_QceWeaponDef(mod==MOD_QCE_SNIPER?WP_BFG:WP_RAILGUN);
+ qceHeadDef=BG_QceWeaponDef(mod==MOD_BFG?WP_BFG:WP_RAILGUN);
  if(attacker->client && attacker->client->ps.stats[STAT_QCE_COMBAT] &&
-    (mod==MOD_RAILGUN || mod==MOD_QCE_SNIPER)) {
+    (mod==MOD_RAILGUN || mod==MOD_QCE_SNIPER || mod==MOD_BFG)) {
   const qce_weapondef_t *source=BG_QceWeaponDef(attacker->client->ps.weapon);
   if(source->fire_kind==QCE_FIRE_RAIL || source->fire_kind==QCE_FIRE_BULLET)qceHeadDef=source;
  }
 	if (client && client->ps.stats[STAT_QCE_COMBAT]) {
 		client->qceShieldNextTick = level.time + QCE_SHIELD_DELAY;
+  client->qceShieldRemainder=0;
 		/* Classify the hit now; evaluate shields after this hit is absorbed.
 		 * Existing protection checks already ran above. */
 		qceHeadshot = qceHeadDef->headshot_mode!=0 && attacker != targ && attacker->client &&
@@ -1015,13 +1023,14 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
   case MOD_SHOTGUN: weapon=WP_SHOTGUN;break;
   case MOD_GRENADE: case MOD_GRENADE_SPLASH: weapon=WP_GRENADE_LAUNCHER;break;
   case MOD_ROCKET: case MOD_ROCKET_SPLASH: weapon=WP_ROCKET_LAUNCHER;break;
-  case MOD_LIGHTNING: weapon=WP_LIGHTNING;break;
+  case MOD_LIGHTNING: case MOD_QCE_OVERCHARGE: weapon=WP_LIGHTNING;break;
   case MOD_RAILGUN: weapon=WP_RAILGUN;break;
   case MOD_PLASMA: case MOD_PLASMA_SPLASH: weapon=WP_PLASMAGUN;break;
-  case MOD_QCE_SNIPER: case MOD_BFG: case MOD_BFG_SPLASH: weapon=WP_BFG;break;
+  case MOD_QCE_SNIPER: weapon=WP_RAILGUN;break;
+  case MOD_BFG: case MOD_BFG_SPLASH: weapon=WP_BFG;break;
   }
   def=BG_QceWeaponDef(weapon);
-  if(weapon!=WP_NONE && inflictor==attacker && attacker->client &&
+  if(weapon!=WP_NONE && mod!=MOD_QCE_OVERCHARGE && inflictor==attacker && attacker->client &&
      attacker->client->ps.stats[STAT_QCE_COMBAT] && !(dflags&DAMAGE_RADIUS) &&
      BG_QceCapacity(attacker->client->ps.weapon))def=BG_QceWeaponDef(attacker->client->ps.weapon);
   if(weapon!=WP_NONE) {shieldScale=def->shield_multiplier;healthScale=def->health_multiplier;}
@@ -1029,8 +1038,10 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
    const qce_grenadedef_t *grenade=BG_QceGrenadeDef(mod==MOD_QCE_PLASMA_GRENADE);
    shieldScale=grenade->shield_multiplier;healthScale=grenade->health_multiplier;
   }
+  if(mod==MOD_QCE_OVERCHARGE) {shieldScale=def->charged_shield_multiplier;healthScale=def->charged_health_multiplier;}
   shieldDamage=(int)ceil(damage*shieldScale);
   asave=QCE_ShieldAbsorb(&client->ps.stats[STAT_QCE_SHIELD],shieldDamage);
+  if(mod==MOD_QCE_OVERCHARGE)client->ps.stats[STAT_QCE_SHIELD]=0;
   remaining=damage-asave/shieldScale;
   take=remaining>0?(int)ceil(remaining*healthScale):0;
  } else {
@@ -1295,15 +1306,15 @@ int QCE_ShieldAbsorb(int *shield, int damage) {
  *shield -= absorbed;
  return absorbed;
 }
-void QCE_ShieldRecharge(int *shield, int *nextTick, int now, int alive) {
- int ticks, missing;
- if(!alive || *shield >= QCE_SHIELD_MAX || now < *nextTick) return;
- ticks = (now - *nextTick) / QCE_SHIELD_TICK + 1;
- missing = QCE_SHIELD_MAX - *shield;
- if(ticks >= (missing + QCE_SHIELD_STEP - 1) / QCE_SHIELD_STEP)
-  *shield = QCE_SHIELD_MAX;
- else *shield += ticks * QCE_SHIELD_STEP;
- *nextTick = now + QCE_SHIELD_TICK - (now - *nextTick) % QCE_SHIELD_TICK;
+void QCE_ShieldRecharge(int *shield,int *nextTick,int *remainder,int now,int alive) {
+ int elapsed,points,total,period=BG_QcePlayerDef()->shield_recharge_ms;
+ if(!alive || *shield>=QCE_SHIELD_MAX || now<*nextTick)return;
+ elapsed=now-*nextTick;
+ if(elapsed>=period) {*shield=QCE_SHIELD_MAX;*remainder=0;*nextTick=now;return;}
+ total=elapsed*QCE_SHIELD_MAX+*remainder;points=total/period;
+ *remainder=total%period;*shield+=points;
+ if(*shield>=QCE_SHIELD_MAX) {*shield=QCE_SHIELD_MAX;*remainder=0;}
+ *nextTick=now;
 }
 
 /* Geometric prototype, not model/bone-based Halo head collision. */
@@ -1311,7 +1322,7 @@ qboolean G_QceHeadshot(gentity_t *target, const vec3_t point, int mod, int flags
  float lower,upper;
  int i;
  if(!target || !target->client || target->health<=0 || !point ||
-    !target->client->ps.stats[STAT_QCE_COMBAT] || (mod!=MOD_RAILGUN && mod!=MOD_QCE_SNIPER) ||
+    !target->client->ps.stats[STAT_QCE_COMBAT] || (mod!=MOD_RAILGUN && mod!=MOD_QCE_SNIPER && mod!=MOD_BFG) ||
     (flags&(DAMAGE_RADIUS|DAMAGE_NO_ARMOR|DAMAGE_NO_PROTECTION))) return qfalse;
  for(i=0;i<3;i++) {
   lower=target->r.currentOrigin[i]+target->r.mins[i];

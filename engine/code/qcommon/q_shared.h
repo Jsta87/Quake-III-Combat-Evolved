@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define GAMENAME_FOR_MASTER		"Quake3Arena"
   #define CINEMATICS_LOGO		"idlogo.RoQ"
   #define CINEMATICS_INTRO		"intro.RoQ"
-  #define LEGACY_PROTOCOL
+  /* QCE snapshots have custom player-state fields; no legacy protocol. */
   #define PROTOCOL_HANDLER		"quake3"
   #define CONFIG_PREFIX			"q3config"
 #endif
@@ -1145,6 +1145,7 @@ typedef struct playerState_s {
 	vec3_t		origin;
 	vec3_t		velocity;
 	int			weaponTime;
+ int qceHeat[2], qceHeatRemainder[2], qceOverheated, qceChargeMs;
 	int			gravity;
 	int			speed;
 	int			delta_angles[3];	// add to command angles to get view direction

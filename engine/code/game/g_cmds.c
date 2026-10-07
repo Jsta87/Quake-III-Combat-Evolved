@@ -1709,10 +1709,13 @@ ClientCommand
 static void QceDropWeapon(gentity_t *ent, qboolean notify) {
  playerState_t *ps=&ent->client->ps;
  gentity_t *drop;
- int weapon=ps->weapon,mag=BG_QceMagazine(ps,weapon),ammo;
+ int weapon=ps->weapon,mag=BG_QceMagazine(ps,weapon),ammo,slot;
  if(!ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR || BG_QceSlot(ps,weapon)<0 || ps->weaponTime>0) return;
  drop=Drop_Item(ent,BG_FindItemForWeapon(weapon),0);
  if(!drop)return;
+ slot=BG_QceSlot(ps,weapon);
+ drop->qceDroppedHeat=ps->qceHeat[slot];drop->qceDroppedHeatRemainder=ps->qceHeatRemainder[slot];
+ drop->qceDroppedOverheated=(ps->qceOverheated>>slot)&1;drop->qceDroppedHeatTime=level.time;
  ammo=BG_QceRemoveWeapon(ps,weapon);
  drop->count=ammo?ammo:-1;
  drop->qceDroppedMagazine=mag+1;
@@ -1738,9 +1741,10 @@ void G_QceSwapWeapon(gentity_t *ent) {
   if(!item->inuse || !item->r.linked || item->s.eType!=ET_ITEM ||
      !(item->r.contents&CONTENTS_TRIGGER) || !item->item || item->item->giType!=IT_WEAPON)continue;
   weapon=item->item->giTag;
-  if(!BG_QceCapacity(weapon) || BG_QceSlot(ps,weapon)>=0)continue;
+  if(!BG_QceCapacity(weapon))continue;
+  if(BG_QceSlot(ps,weapon)>=0 && !(weapon==ps->weapon && BG_QceWeaponDef(weapon)->reload_rounds==0))continue;
   trial=*ps;
-  if(!BG_QceCanCarry(&trial,weapon)) {
+  if((weapon==trial.weapon && BG_QceWeaponDef(weapon)->reload_rounds==0) || !BG_QceCanCarry(&trial,weapon)) {
    if(BG_QceSlot(&trial,trial.weapon)<0)continue;
    BG_QceRemoveWeapon(&trial,trial.weapon);
   }
@@ -1753,7 +1757,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  }
  if(!best)return;
  weapon=best->item->giTag;
- if(!BG_QceCanCarry(ps,weapon)) {
+ if((weapon==ps->weapon && BG_QceWeaponDef(weapon)->reload_rounds==0) || !BG_QceCanCarry(ps,weapon)) {
   int oldWeapon=ps->weapon;
   QceDropWeapon(ent,qfalse);
   if(BG_QceSlot(ps,oldWeapon)>=0)return;
@@ -1846,9 +1850,9 @@ void ClientCommand( int clientNum ) {
 
 	if (Q_stricmp(cmd,"qce_status")==0) {
 		playerState_t *ps=&ent->client->ps;
-		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d profile=%s\n\"",
-			ps->stats[STAT_QCE_COMBAT],ps->weapon,ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,
-			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,BG_QceProfileHash()));
+		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d profile=%s\n\"",
+			ps->stats[STAT_QCE_COMBAT],ps->weapon,BG_QceWeaponName(ps->weapon),ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,
+			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,ps->qceHeat[0],ps->qceHeat[1],ps->qceOverheated,ps->qceChargeMs,BG_QceProfileHash()));
 	}
 	else if (Q_stricmp(cmd,"qce_swap")==0)
   G_QceSwapWeapon(ent);

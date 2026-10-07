@@ -2,8 +2,9 @@
 
 Halo CE gameplay on Quake III arenas, using [ioquake3](https://github.com/ioquake/ioq3).
 The client/server foundation and experimental combat systems are implemented.
-Values, Quake models, sounds and animations remain provisional; retail Halo
-accuracy and vehicles are future work.
+The supported combat scalars now come from uploaded Xbox build 2276 maps.
+The profile remains mixed: engine behaviors and Quake presentation still need
+parity work. See [the import report](docs/HALO-IMPORT.md). Vehicles remain deferred.
 
 ## Build and run
 
@@ -67,11 +68,11 @@ counts, selected type, shields, health, action state and gameplay-profile hash.
   strafe-speed buildup. Provisional run speed 200 units/s, crouch factor 0.5,
   jump impulse 300, reduced air acceleration 0.5. Gravity, collision, slopes,
   water, hazards and map interactions still use Quake behavior.
-- Health/shields: normally 100 health / 100 shields, without the +25 spawn
-  health bonus. Recharge starts after five seconds without damage and restores
-  two points per 100 ms. Damage classes scale shields and health independently,
-  conserving base damage when shields break. Provisional plasma/lightning
-  scaling is 2x against shields and 0.5x against health.
+- Health/shields: normally 75 health / 75 shields, without the +25 spawn
+  health bonus. Recharge starts after six seconds without damage and takes four seconds
+  to fill 75 shields, carrying fractional progress across frames. Damage classes scale shields and health independently,
+  conserving base damage when shields break. Plasma rifle scaling is 2x against shields and 0.5x against health;
+  plasma pistol normal-bolt scaling is 0.6x for both.
 - Inventory: two firearms plus gauntlet. Loaded ammunition is part of total
   ammunition; reloading never creates rounds. Capacities, reload/fire timing,
   spread, recoil, firing behavior, projectile speed/fuse/splash, damage policy
@@ -84,20 +85,27 @@ counts, selected type, shields, health, action state and gameplay-profile hash.
   pickup without dropping anything. Q drops explicitly. The owner cannot
   immediately re-pick a drop for two seconds. Death drops preserve both slots.
   Full inventory while gauntlet is selected requires choosing a firearm first.
+- Plasma: heat rises per shot, cools while holstered, and persists across drops.
+  Overheated weapons cannot fire until heat falls below 25%. Plasma-rifle
+  cooling slows with battery age. Tap/release the plasma pistol for a normal
+  bolt; hold at least 600 ms then release for a homing EMP bolt that costs
+  55 normal-shot equivalents, overheats the weapon, and strips shields.
+  The HUD shows heat and charge status.
 - Grenades: independent frag/plasma counts, two of each on spawn, up to four
   of each. G throws once per press; the event records the selected type.
-  Grenade ammo boxes replenish the selected type. Frags bounce off bodies and
-  surfaces and explode on their fuse. Plasma sticks on first contact, arms
+  Needles track visible targets, attach for 750 ms, and combine in groups of seven.
+  Quake grenade-launcher ammo boxes replenish the Needler. Frags bounce off bodies and
+  surfaces and arm a 500 ms fuse on the first bounce. Plasma sticks on first contact, arms
   its fuse, follows moving/rotating targets, and safely stops following a
-  respawned or reused target. Unattached grenades also expire on their fuse.
+  respawned or reused target. Airborne grenades have a ten-second safety expiry.
 - Melee: keeps the firearm equipped and spends no ammo. Each weapon defines
   strike damage, reach, cooldown, lunge reach/speed and delayed lunge impact.
   A directly aimed body beyond strike reach but within lunge reach triggers
   shared predicted forward motion; the server traces again at impact. Walls
   block strikes. A strike from behind a player is lethal through shields;
   friendly-fire, god mode and other protection checks still apply.
-- Precision: railgun is a pistol placeholder, BFG is a sniper placeholder using
-  hitscan rail behavior and Quake presentation. A qualifying pistol headshot
+- Precision: railgun is the sniper slot and BFG is the Magnum slot.
+  They use Quake presentation; Magnum fires bullets and sniper uses rail traces. A qualifying pistol headshot
   kills when its normal damage leaves shields at zero, including **the same
   shot that breaks them** and exact depletion. The sniper policy permits a
   headshot kill through remaining shields. Body shots follow normal damage
@@ -105,24 +113,34 @@ counts, selected type, shields, health, action state and gameplay-profile hash.
   box, including crouching, rather than Halo model/bone hitboxes. Headshot
   events identify the shooter for HEADSHOT text and the Quake excellent cue.
 
-These are working systems, not measured Halo parity. The railgun's current
-50 damage is a placeholder; the regression suite separately covers a 40-damage
-third-shot shield-breaking headshot. Actual Halo weapon names, visuals,
-animations, heat/overcharge, aim assistance, detailed damage effects and retail
-behavior calibration still require the source data and further implementation.
-Bots are not adapted to the new inventory/actions. Remote multiplayer, latency
-correction, real audio output and live Halo comparison remain unvalidated.
+Supported values and the agreed eight-weapon mapping are applied; full Halo
+parity is not claimed. AR magazines hold 60, Magnum 12, sniper 4 and shotgun
+12 shells with 15 pellets. Reserve limits come from magazine tags. Shotgun
+reloads one shell at a time and firing can interrupt; battery weapons cannot
+magazine-reload or refill from ammo boxes. E can replace a depleted battery
+weapon of the same type. The HUD uses Halo weapon names with Quake art.
+
+See [HALO-IMPORT.md](docs/HALO-IMPORT.md) for the full mapping, imported values,
+conversion assumptions, animation timing fallback and remaining behaviors.
+Exact plasma/Needler targeting, animations and fractional battery age, damage ranges/falloff,
+movement calibration and art conversion remain. Bots are not adapted to these
+inventory/actions. Remote multiplayer, latency correction, real audio output
+and live retail comparison remain unvalidated.
 
 ## Verification and next data upload
 
 ```sh
 python3 tests/profile.py
+python3 tests/halo-extraction.py
 ./scripts/test-movement.sh
 ./scripts/test-shields.sh
 ./scripts/test-weapons.sh
 ./scripts/test-melee.sh
 ./scripts/test-headshots.sh
 ./scripts/test-grenades.sh
+./scripts/test-needles.sh
+./scripts/test-heat.sh
+./scripts/test-network-state.sh
 ./scripts/test-swap.sh
 ```
 
@@ -137,3 +155,8 @@ Upload guidance and the offline tag/profile workflow are in
 [HALO-DATA.md](docs/HALO-DATA.md). See [integration status](docs/INTEGRATION.md)
 and [source provenance/licensing](docs/UPSTREAM.md). Upstream README, GPL license
 and notices are retained under `engine/`.
+
+Networking uses QCE protocol **91** for replicated heat and charge state. Both
+client and server engines and game modules must be rebuilt together. Stock
+Quake/ioquake3 connections and older demos are incompatible, including when
+experimental combat is disabled. See [the import notes](docs/HALO-IMPORT.md).
