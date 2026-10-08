@@ -4,6 +4,8 @@ import importlib.util
 import math
 from pathlib import Path
 import struct
+import tempfile
+from types import SimpleNamespace
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('anim',ROOT/'scripts/animate-halo-weapons.py');a=importlib.util.module_from_spec(s);s.loader.exec_module(a)
@@ -49,6 +51,14 @@ class AnimationTests(unittest.TestCase):
   self.assertEqual(struct.unpack_from('<3f',data,header[6]+112+64),(4,5,6))
   surface=header[7];s=struct.unpack_from('<10i',data,surface+68);self.assertEqual(s[1],2)
   self.assertEqual(struct.unpack_from('<3h',data,surface+s[-2]+24),(128,256,384))
+ def test_tangents_orthogonal_mirrored_and_degenerate_uv(self):
+  vertices=[{'position':p,'normal':[0,0,1],'uv':uv} for p,uv in [([0,0,0],[0,0]),([1,0,0],[1,0]),([0,1,0],[0,1])]]
+  surface={'vertices':vertices,'triangles':[[0,1,2]]}
+  self.assertEqual(a.mesh_tangents(surface),[[1,0,0,1]]*3)
+  vertices[1]['uv']=[-1,0];self.assertEqual(a.mesh_tangents(surface),[[-1,0,0,-1]]*3)
+  for v in vertices:v['uv']=[0,0]
+  for t in a.mesh_tangents(surface):
+   self.assertAlmostEqual(sum(x*x for x in t[:3]),1);self.assertEqual(t[2],0)
  def test_iqm_skeleton_channels_weights_and_attachment(self):
   r=a.qmatrix((0,0,math.sqrt(.5),math.sqrt(.5)))
   c=a.transform_channels((r,(1,2,3)))
@@ -64,6 +74,7 @@ class AnimationTests(unittest.TestCase):
   joint=struct.unpack_from('<Ii10f',data,h[14]+96);self.assertEqual(joint[1],0);self.assertEqual(joint[2:5],(1,0,0))
   text=data[h[4]:h[4]+h[3]];self.assertEqual(text[joint[0]:].split(b'\0')[0],b'tag_flash')
   arrays=[struct.unpack_from('<5I',data,h[9]+20*i) for i in range(h[7])]
+  tangent=next(x for x in arrays if x[0]==3);self.assertEqual(tangent[2:4],(7,4))
   weight=next(x for x in arrays if x[0]==5);self.assertEqual(data[weight[4]:weight[4]+4],bytes((255,0,0,0)))
   self.assertEqual(len(data[h[21]:h[21]+h[19]*h[20]*2]),h[19]*h[20]*2)
  def test_material_channel_semantics_and_energy_split(self):
@@ -74,5 +85,38 @@ class AnimationTests(unittest.TestCase):
  def test_mask_resampling_preserves_normalized_uv(self):
   pixels=bytes((0,0,0,255,200,100,50,255))
   self.assertEqual(a.resample_rgba(pixels,2,1,1,1),bytes((100,50,25,255)))
+
+ def test_runtime_loop_keeps_valid_indices_and_bounds_retail_links(self):
+  self.assertEqual(a.runtime_loop({'loop_frame':3,'count':10}),3)
+  for index in (-1,10,34):self.assertEqual(a.runtime_loop({'loop_frame':index,'count':10}),0)
+ def test_sound_event_aliases_source_frames_and_bounds(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   data=bytearray(160);struct.pack_into('<II',data,84,1,120);struct.pack_into('<I',data,132,42)
+   tag={'id':42,'path':'sound\\reload','class':'snd!'}
+   cache=SimpleNamespace(data=data,tags={42:tag},pointer=lambda p,n:p)
+   assets=a.a.Assets(cache,Path(tmp));assets.write('sound/raw.wav',b'fixture',{})
+   clip={'sound_index':0,'sound_frame':6,'count':30}
+   clips=[None]*len(a.ACTIONS);clips[4]=clip
+   records=[{'id':42,'range':0,'permutation':0,'outputs':['sound/raw.wav']}]
+   events=a.animation_sounds(cache,{'offset':0},clips,assets,records,'machinegun')
+   self.assertEqual(events[4]['frame'],6);self.assertEqual(events[4]['source'],tag)
+   self.assertEqual((Path(tmp)/events[4]['outputs'][0]).read_bytes(),b'fixture')
+   self.assertTrue((Path(tmp)/'models/qce/halo/view/machinegun.events').read_text().startswith('2 '+str(len(a.ACTIONS))))
+   clip['sound_frame']=30
+   with self.assertRaises(a.a.halo.CacheError):a.animation_sounds(cache,{'offset':0},clips,assets,records,'machinegun')
+ def test_ammo_skins_keep_other_materials_and_select_tens_units(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   tag={'id':42,'path':'weapons\\assault rifle\\fp\\bitmaps\\numbers_plate'}
+   assets=a.a.Assets(SimpleNamespace(index=[tag]),Path(tmp))
+   for digit in range(10):assets.write('textures/qce/halo/'+a.a.safe_name(tag['path'])+f'/{digit:03}.tga',b'fixture',{})
+   parts=[{'shader':'weapon\\numbers','geometry':0,'part':i,'vertices':[{'position':[0,y,0]}]} for i,y in enumerate((1,-1))]
+   meta={'id':123,'parts':parts}
+   surfaces=[{'shader':f'qce/halo/0000007b/0_{i}'} for i in range(2)]+[{'shader':'qce/hands'}]
+   report=a.ammunition_skins(assets,surfaces,meta,'machinegun')
+   self.assertEqual(report['skins'],61)
+   for ammo in (0,9,10,59,60):
+    lines=(Path(tmp)/f'models/qce/halo/view/machinegun_{ammo}.skin').read_text().splitlines()
+    self.assertEqual(lines,[f'part0,qce/halo/digits/{ammo//10}',f'part1,qce/halo/digits/{ammo%10}','part2,qce/hands'])
+   self.assertIsNone(a.ammunition_skins(assets,surfaces,meta,'shotgun'))
 
 if __name__=='__main__':unittest.main()

@@ -168,7 +168,7 @@ typedef struct centity_s {
 	qboolean		currentValid;	// true if cg.frame holds this entity
 
 	int				muzzleFlashTime;	// move to playerEntity?
-	int qceMeleeTime, qceGrenadeTime, qceChargedFire;
+	int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
 	int				previousEvent;
 	int				teleportFlag;
 
@@ -382,8 +382,18 @@ typedef struct {
 enum { QCE_VIEW_IDLE, QCE_VIEW_FIRE, QCE_VIEW_READY, QCE_VIEW_PUTAWAY,
  QCE_VIEW_RELOAD_FULL, QCE_VIEW_RELOAD_EMPTY, QCE_VIEW_MELEE, QCE_VIEW_GRENADE,
  QCE_VIEW_OVERHEAT, QCE_VIEW_CHARGE, QCE_VIEW_CHARGED_FIRE, QCE_VIEW_RECOVER,
- QCE_VIEW_RELOAD_ENTER, QCE_VIEW_RELOAD_EXIT, QCE_VIEW_CLIPS };
+ QCE_VIEW_RELOAD_ENTER, QCE_VIEW_RELOAD_EXIT, QCE_VIEW_RELOAD_EXIT_EMPTY,
+ QCE_VIEW_CHARGE_ENTER, QCE_VIEW_HOT_IDLE, QCE_VIEW_CHARGED_HOT, QCE_VIEW_CLIPS };
 typedef struct { int first, count, fps, loop; } qceViewClip_t;
+typedef struct { int frame, count, loop; sfxHandle_t sounds[4]; } qceViewSound_t;
+typedef struct {
+ int weapon, state, clip, start, time, magazine, weaponTime, hot, recoveryStart;
+ int soundClip, soundStart, soundPlayed, ejectSequence;
+} qceViewPlayback_t;
+typedef struct {
+ int weapon, state, now, magazine, weaponTime, hot, charge, chargeMs;
+ int fireTime, chargedFire, grenadeTime, meleeTime, reloadRounds, phaseMs;
+} qceViewInput_t;
 typedef struct weaponInfo_s {
 	qboolean		registered;
 	gitem_t			*item;
@@ -394,6 +404,11 @@ typedef struct weaponInfo_s {
 	qhandle_t		flashModel;
 	qhandle_t haloViewModel;
 	qceViewClip_t haloClips[QCE_VIEW_CLIPS];
+ qceViewSound_t haloSounds[QCE_VIEW_CLIPS];
+ sfxHandle_t haloStopSound;
+ char haloName[16];
+ qboolean haloAmmoCounter;
+ qhandle_t haloAmmoSkins[61];
 
 	vec3_t			weaponMidpoint;		// so it will rotate centered instead of by tag
 
@@ -647,7 +662,7 @@ typedef struct {
 	refEntity_t		testModelEntity;
 	char			testModelName[MAX_QPATH];
 	qboolean		testGun;
-	int qceViewWeapon, qceViewState, qceViewClip, qceViewStart;
+	qceViewPlayback_t haloView;
 
 } cg_t;
 
@@ -1131,6 +1146,7 @@ extern	vmCvar_t		cg_showmiss;
 extern	vmCvar_t		cg_footsteps;
 extern	vmCvar_t		cg_addMarks;
 extern	vmCvar_t		cg_brassTime;
+extern vmCvar_t cg_qceFlashlight;
 extern	vmCvar_t		cg_gun_frame;
 extern	vmCvar_t		cg_gun_x;
 extern	vmCvar_t		cg_gun_y;

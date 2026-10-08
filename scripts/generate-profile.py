@@ -6,6 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 ORDER=['WP_NONE','WP_GAUNTLET','WP_MACHINEGUN','WP_SHOTGUN','WP_GRENADE_LAUNCHER','WP_ROCKET_LAUNCHER','WP_LIGHTNING','WP_RAILGUN','WP_PLASMAGUN','WP_BFG','WP_GRAPPLING_HOOK','WP_NAILGUN','WP_PROX_LAUNCHER','WP_CHAINGUN']
 KINDS=['none','melee','bullet','shotgun','grenade','rocket','lightning','rail','plasma']
 FIELDS=['magazine','reload_ms','fire_ms','damage','spread','recoil_degrees','fire_kind','projectile_speed','splash_damage','splash_radius','fuse_ms','shield_multiplier','health_multiplier','headshot_mode','melee_damage','melee_reach','lunge_reach','lunge_speed','melee_impact_ms','melee_ms','pellets','ammo_initial','ammo_max','reload_rounds','tracking_radians','projectile_range','attachment_ms','combine_count','combine_damage','combine_radius','heat_per_shot','heat_loss_per_second','heat_recovery','heat_overheat','heat_age_penalty','charge_ms','charged_ammo','charged_heat','charged_damage','charged_speed','charged_range','charged_tracking_radians','charged_health_multiplier','charged_shield_multiplier','spread_max','spread_grow','spread_recover','projectile_final_speed','falloff_start','falloff_end']
+FIELDS+=['reload_enter_ms','reload_exit_ms','reload_exit_empty_ms']
 FIELDS+=['damage_minimum', 'damage_maximum', 'splash_inner', 'projectile_gravity', 'water_gravity', 'water_falloff_start', 'water_falloff_end', 'rate_min', 'rate_max', 'rate_grow', 'rate_recover', 'ready_ms', 'reload_empty_ms', 'overheat_ms', 'battery_cost', 'charged_battery_cost', 'zoom_levels', 'zoom_min', 'zoom_max', 'scoped_error']
 RFIELDS=['response', 'potential', 'flags', 'skip', 'angle_min', 'angle_max', 'velocity_min', 'velocity_max', 'initial', 'parallel', 'perpendicular', 'angular_noise', 'velocity_noise']
 MFIELDS=['forward', 'backward', 'sideways', 'crouch_forward', 'crouch_backward', 'crouch_sideways', 'acceleration', 'crouch_acceleration', 'air_acceleration', 'jump', 'gravity', 'radius', 'standing_height', 'crouch_height', 'standing_view', 'crouch_view', 'crouch_ms', 'slope_falloff', 'slope_cutoff', 'uphill_scale', 'downhill_scale', 'grenade_up']
@@ -13,6 +14,7 @@ GFIELDS=['spawn_count','max_count','throw_speed','fuse_ms','sticky','splash_dama
 GFIELDS+=['damage_minimum', 'damage_maximum', 'splash_inner', 'gravity', 'bounce_parallel', 'bounce_perpendicular', 'metal_parallel', 'metal_perpendicular']
 INTS={'magazine','reload_ms','fire_ms','damage','splash_damage','fuse_ms','headshot_mode','melee_damage','melee_impact_ms','melee_ms','pellets','spawn_count','max_count','ammo_initial','ammo_max','reload_rounds','timer_start','max_flight_ms','attachment_ms','combine_count','combine_damage','heat_per_shot','heat_loss_per_second','heat_recovery','heat_overheat','heat_age_penalty','charge_ms','charged_ammo','charged_heat','charged_damage','spread_grow','spread_recover'}
 INTS.update(['response','potential','flags'])
+INTS.update(['reload_enter_ms','reload_exit_ms','reload_exit_empty_ms'])
 INTS.update(['rate_grow', 'rate_recover', 'ready_ms', 'reload_empty_ms', 'overheat_ms', 'battery_cost', 'charged_battery_cost', 'zoom_levels', 'scoped_error'])
 def validate(p):
  if p['schema_version']!=3 or p['status'] not in ('provisional','mixed','reference'):raise ValueError('Unsupported profile schema/status')
@@ -36,6 +38,7 @@ def validate(p):
   for k,v in numeric.items():
    if type(v) not in (int,float) or not math.isfinite(v) or v<0 or v>1000000:raise ValueError(f'{key}.{k}: invalid nonnegative value')
    if k in INTS and type(v)!=int:raise ValueError(f'{key}.{k}: integer required')
+  if any(w[k] for k in ('reload_enter_ms','reload_exit_ms','reload_exit_empty_ms')) and w['reload_rounds']!=1:raise ValueError(f'{key}: staged reload requires one-round insertion')
   if w['ready_ms']<1 or w['reload_empty_ms']<1 or w['rate_min']<0 or (w['rate_max']==0 and not w['charge_ms']) or w['battery_cost']>1000000 or w['charged_battery_cost']>1000000 or w['zoom_levels'] and (w['zoom_min']<1 or w['zoom_max']<w['zoom_min']):raise ValueError(f'{key}: invalid timing/battery/zoom definition')
   if w['damage_maximum']<w['damage'] or w['damage_minimum']>w['damage'] or w['rate_max']<w['rate_min'] or w['zoom_levels']>2 or w['scoped_error']>1 or w['splash_inner']>w['splash_radius']:raise ValueError(f'{key}: invalid damage/rate/zoom bounds')
   if w['spread_max']<w['spread'] or w['falloff_end']<w['falloff_start']:raise ValueError(f'{key}: reversed spread/falloff bounds')

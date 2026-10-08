@@ -37,4 +37,12 @@ else:raise AssertionError('Invalid material enum accepted')
 changed=copy.deepcopy(profile);changed['weapons']['WP_MACHINEGUN']['magazine']=17
 assert(generator.render(changed)!=generator.render(profile))
 subprocess.run(['python3',str(root/'scripts/generate-profile.py'),'--check'],check=True)
+
+
+invalid=copy.deepcopy(profile)
+invalid['weapons']['WP_MACHINEGUN']['reload_enter_ms']=500
+try:
+ generator.validate(invalid)
+ raise AssertionError('Magazine reload must not accept shell phases')
+except ValueError:pass
 print('PASS: profile validation, numeric limits, timing/policy errors, packed grenade capacity, provenance and generated-source freshness')

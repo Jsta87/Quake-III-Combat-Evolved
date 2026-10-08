@@ -7,8 +7,12 @@ case "$mode" in
   client) client=ON ;;
   *) echo "Usage: $0 [server|client]" >&2; exit 2 ;;
 esac
-if [[ -d /workspace/.qce-sdl ]]; then
-  export CMAKE_PREFIX_PATH="/workspace/.qce-sdl${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+sdl_prefix="${QCE_SDL_PREFIX:-$root/.tools/sdl}"
+if [[ -z "${QCE_SDL_PREFIX:-}" && ! -d "$sdl_prefix" && -d /workspace/.qce-sdl ]]; then
+ sdl_prefix=/workspace/.qce-sdl
+fi
+if [[ -d "$sdl_prefix" ]]; then
+ export CMAKE_PREFIX_PATH="$sdl_prefix${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
 fi
 python3 "$root/scripts/generate-profile.py"
 cmake -S "$root/engine" -B "$root/build/$mode" -G Ninja \

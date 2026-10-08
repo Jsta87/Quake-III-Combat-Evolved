@@ -10,12 +10,13 @@ void QDECL Com_Printf(const char *fmt,...) {(void)fmt;}
 void QDECL Com_Error(int code,const char *fmt,...) {(void)code;(void)fmt;abort();}
 int main(void) {
  byte buffer[16384];msg_t msg;playerState_t base={0},state={0},decoded={0};int i;
- assert(PROTOCOL_VERSION==93);
+ assert(PROTOCOL_VERSION==94);
  state.commandTime=12345;state.weapon=8;state.qceHeat[0]=10000;state.qceHeat[1]=2500;
  state.qceHeatRemainder[0]=999;state.qceHeatRemainder[1]=1;state.qceError[0]=10000;state.qceError[1]=3456;state.qceErrorRemainder[0]=-999;state.qceErrorRemainder[1]=998;state.qceOverheated=3;state.qceChargeMs=600;
  state.qceRate[0]=10000;state.qceRate[1]=3456;state.qceRateRemainder[0]=-999;state.qceRateRemainder[1]=998;state.qceBattery[0]=1000000;state.qceBattery[1]=333333;state.qceZoom=6;state.qceCrouch=10000;state.qceOverheatTime[0]=1933;state.qceOverheatTime[1]=1133;
  state.stats[5]=75;state.ammo[8]=197;
  for(i=0;i<3;i++) {
+  state.weaponstate=WEAPON_RELOAD_ENTER+i;
   MSG_Init(&msg,buffer,sizeof(buffer));MSG_Bitstream(&msg);MSG_WriteDeltaPlayerstate(&msg,&base,&state);assert(!msg.overflowed);
   MSG_BeginReading(&msg);MSG_ReadDeltaPlayerstate(&msg,&base,&decoded);if(memcmp(&state,&decoded,sizeof(state))) {int n;for(n=0;n<sizeof(state)/sizeof(int);n++)if(((int*)&state)[n]!=((int*)&decoded)[n])fprintf(stderr,"offset %d expected %d decoded %d\n",n*4,((int*)&state)[n],((int*)&decoded)[n]);abort();}
   base=state;
@@ -34,5 +35,5 @@ int main(void) {
   MSG_Init(&msg,buffer,sizeof(buffer));MSG_Bitstream(&msg);MSG_WriteDeltaUsercmdKey(&msg,456,&from,&to);
   MSG_BeginReading(&msg);MSG_ReadDeltaUsercmdKey(&msg,456,&from,&read);assert(!memcmp(&to,&read,sizeof(to)));
  }
- puts("PASS: protocol-93 player-state heat/charge/spread/rate/battery/zoom/crouch/recovery delta serialization, recovery transitions and zero/reset state");return 0;
+ puts("PASS: protocol-94 player-state heat/charge/spread/rate/battery/zoom/crouch/recovery/reload-phase delta serialization, recovery transitions and zero/reset state");return 0;
 }

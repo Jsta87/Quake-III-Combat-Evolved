@@ -37,7 +37,7 @@ profiles unless overridden. `QCE_MAP` selects another installed arena. Launchers
 stage native modules and disable pure checking for development. Use
 `+connect localhost` to join a running local dedicated server.
 
-Networking uses QCE protocol **93**. Rebuild both engines and all modules together;
+Networking uses QCE protocol **94**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
 ## Halo assets
@@ -49,6 +49,9 @@ points, and layered Halo materials. Generated art and PK3s stay local under
 `assets/`. Player models, effects, HUD integration and remaining retail material/
 animation fidelity are still in progress.
 
+For the complete data/build/conversion walkthrough, see
+[Local testing](docs/LOCAL-TESTING.md).
+
 ## Controls
 
 | Action | Control |
@@ -58,6 +61,7 @@ animation fidelity are still in progress.
 | Replace nearby firearm / drop | E / Q |
 | Melee | F |
 | Cycle weapon zoom | Right mouse button |
+| Local flashlight preview | L |
 | Select carried weapon | Number keys / wheel |
 
 [Controls](config/qce-controls.cfg) load automatically. `qce_status` reports
@@ -79,7 +83,8 @@ inventory, vitality, heat, charge, error and profile hash.
 - Sustained spread and fire-rate ramps. Shared fixed-point trigger state keeps
   client prediction and server decisions consistent.
 - Weapon-ready timings, full/empty reload durations, melee keyframe impacts and
-  overheat recovery timings from tag/animation metadata. Quake animations remain.
+  overheat recovery timings from tag/animation metadata. The optional converted
+  package supplies first-person Halo clips and animation sounds.
 - Fractional battery consumption, plasma heat and cooling, charged plasma-pistol
   release after 600 ms, homing and shield-stripping EMP. The HUD shows battery percent.
 - Authoritative 2× Magnum/rocket and 2×/8× sniper zoom, scoped sniper accuracy and
@@ -96,8 +101,8 @@ inventory, vitality, heat, charge, error and profile hash.
 
 See [the eight-item completion record](docs/GAMEPLAY-PASS.md) and
 [import values and remaining parity limits](docs/HALO-IMPORT.md). The uploaded
-maps suffice for the next asset-conversion investigation. Models, animations,
-textures, HUD and sound are the next milestone. Bots and remote latency/retail
+maps suffice for the current first-person weapon conversion. Player models, HUD,
+full effects and remaining material fidelity are the next milestones. Bots and remote latency/retail
 validation remain work.
 
 ## Verification

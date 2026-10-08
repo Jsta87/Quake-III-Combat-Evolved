@@ -143,7 +143,10 @@ typedef enum {
 	WEAPON_DROPPING,
 	WEAPON_FIRING,
 	WEAPON_RELOADING,
-	WEAPON_MELEEING
+	WEAPON_MELEEING,
+ WEAPON_RELOAD_ENTER,
+ WEAPON_RELOAD_EXIT,
+ WEAPON_RELOAD_EXIT_EMPTY
 } weaponstate_t;
 
 // pmove->pm_flags
@@ -780,6 +783,7 @@ typedef struct {
  float spread_max;
  int spread_grow, spread_recover;
  float projectile_final_speed, falloff_start, falloff_end;
+ int reload_enter_ms, reload_exit_ms, reload_exit_empty_ms;
  float damage_minimum, damage_maximum, splash_inner, projectile_gravity, water_gravity, water_falloff_start, water_falloff_end;
  float rate_min, rate_max;
  int rate_grow, rate_recover, ready_ms, reload_empty_ms, overheat_ms, battery_cost, charged_battery_cost, zoom_levels;

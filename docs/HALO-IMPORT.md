@@ -157,7 +157,7 @@ python3 tests/profile.py
 python3 tests/halo-extraction.py
 ```
 
-Project protocol **93** carries heat, charge, spread, rate, battery, zoom, camera
+Project protocol **94** carries heat, charge, spread, rate, battery, zoom, camera
 transition and recovery timers. Rebuild engines and native/QVM modules together.
 The fourteen shell test suites and two Python suites cover controlled shared
 prediction, server damage/travel/materials/blasts, drop/pickup conservation,

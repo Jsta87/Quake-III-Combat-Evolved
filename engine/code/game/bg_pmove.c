@@ -1579,6 +1579,19 @@ PM_Weapon
 Generates weapon events and modifes the weapon counter
 ==============
 */
+static qboolean PM_QceReloading( void ) {
+ return pm->ps->weaponstate==WEAPON_RELOADING || pm->ps->weaponstate==WEAPON_RELOAD_ENTER ||
+        pm->ps->weaponstate==WEAPON_RELOAD_EXIT || pm->ps->weaponstate==WEAPON_RELOAD_EXIT_EMPTY;
+}
+
+static void PM_QceReloadExit( void ) {
+ const qce_weapondef_t *def=BG_QceWeaponDef(pm->ps->weapon);
+ qboolean loaded=BG_QceMagazine(pm->ps,pm->ps->weapon)>0;
+ pm->ps->weaponstate=loaded?WEAPON_RELOAD_EXIT:WEAPON_RELOAD_EXIT_EMPTY;
+ pm->ps->weaponTime=loaded?def->reload_exit_ms:def->reload_exit_empty_ms;
+ if(pm->ps->weaponTime<=0)pm->ps->weaponstate=WEAPON_READY;
+}
+
 static void PM_Weapon( void ) {
 	int		addTime;
 	int slot;
@@ -1648,12 +1661,17 @@ static void PM_Weapon( void ) {
  }
  if(pm->ps->stats[STAT_QCE_COMBAT] && pm->ps->weaponstate==WEAPON_RELOADING &&
     BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceMagazine(pm->ps,pm->ps->weapon)>0 && (pm->cmd.buttons&BUTTON_ATTACK)) {
+  PM_QceReloadExit();
+ }
+ /* A carried-weapon switch cancels reload without granting uninserted ammunition. */
+ if(pm->ps->stats[STAT_QCE_COMBAT] && PM_QceReloading() && pm->cmd.weapon!=pm->ps->weapon &&
+    pm->cmd.weapon>WP_NONE && pm->cmd.weapon<WP_NUM_WEAPONS && (pm->ps->stats[STAT_WEAPONS]&(1<<pm->cmd.weapon))) {
   pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;
  }
 	// check for weapon change
 	// can't change if weapon is firing, but can change
 	// again if lowering or raising
-	if ( pm->ps->weaponstate != WEAPON_RELOADING && pm->ps->weaponstate != WEAPON_MELEEING && (pm->ps->weaponTime <= 0 || pm->ps->weaponstate != WEAPON_FIRING) ) {
+	if ( !PM_QceReloading() && pm->ps->weaponstate != WEAPON_MELEEING && (pm->ps->weaponTime <= 0 || pm->ps->weaponstate != WEAPON_FIRING) ) {
 		if ( pm->ps->weapon != pm->cmd.weapon ) {
 			PM_BeginWeaponChange( pm->cmd.weapon );
 		}
@@ -1680,13 +1698,21 @@ static void PM_Weapon( void ) {
 	}
 
 	if (pm->ps->stats[STAT_QCE_COMBAT]) {
+  if(pm->ps->weaponstate==WEAPON_RELOAD_ENTER) {
+   pm->ps->weaponstate=WEAPON_RELOADING;pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_ms;
+   return;
+  }
+  if(pm->ps->weaponstate==WEAPON_RELOAD_EXIT || pm->ps->weaponstate==WEAPON_RELOAD_EXIT_EMPTY) {
+   pm->ps->weaponstate=WEAPON_READY;return;
+  }
 		if (pm->ps->weaponstate == WEAPON_RELOADING) {
 			BG_QceReload(pm->ps);
    if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceCanReload(pm->ps)) {
     pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_ms;
     return;
    }
-			pm->ps->weaponstate = WEAPON_READY;
+   if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1)PM_QceReloadExit();
+   else pm->ps->weaponstate=WEAPON_READY;
 			return;
 		}
 		if (pm->ps->weaponstate == WEAPON_MELEEING) {
@@ -1728,6 +1754,9 @@ static void PM_Weapon( void ) {
 		if (BG_QceCanReload(pm->ps) && ((pm->cmd.buttons & BUTTON_QCE_RELOAD) || ((pm->cmd.buttons & BUTTON_ATTACK) && !BG_QceMagazine(pm->ps,pm->ps->weapon)))) {
 			pm->ps->weaponstate=WEAPON_RELOADING;
 			pm->ps->weaponTime=BG_QceMagazine(pm->ps,pm->ps->weapon)>0?BG_QceWeaponDef(pm->ps->weapon)->reload_ms:BG_QceWeaponDef(pm->ps->weapon)->reload_empty_ms;
+   if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceWeaponDef(pm->ps->weapon)->reload_enter_ms>0) {
+    pm->ps->weaponstate=WEAPON_RELOAD_ENTER;pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_enter_ms;
+   }
    pm->ps->qceZoom&=4;
 			pm->ps->eFlags &= ~EF_FIRING;
 			return;
@@ -2035,7 +2064,7 @@ void PmoveSingle (pmove_t *pmove) {
 	// set the firing flag for continuous beam weapons
 	if ( !(pm->ps->pm_flags & PMF_RESPAWNED) && pm->ps->pm_type != PM_INTERMISSION && pm->ps->pm_type != PM_NOCLIP
 		&& ( pm->cmd.buttons & BUTTON_ATTACK ) && pm->ps->ammo[ pm->ps->weapon ]
-		&& pm->ps->weaponstate != WEAPON_RELOADING && pm->ps->weaponstate != WEAPON_MELEEING
+		&& !PM_QceReloading() && pm->ps->weaponstate != WEAPON_MELEEING
 		&& (!pm->ps->stats[STAT_QCE_COMBAT] || !BG_QceCapacity(pm->ps->weapon) || BG_QceMagazine(pm->ps,pm->ps->weapon)>0) ) {
 		pm->ps->eFlags |= EF_FIRING;
 	} else {

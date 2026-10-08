@@ -244,7 +244,7 @@ PROTOCOL
 ==============================================================
 */
 
-#define	PROTOCOL_VERSION	93 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
+#define	PROTOCOL_VERSION	94 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
 #define PROTOCOL_LEGACY_VERSION	68
 // 1.31 - 67
 

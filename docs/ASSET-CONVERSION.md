@@ -114,8 +114,8 @@ reference files or executes map contents at runtime.
 - Reproduce multipurpose/detail/reflection/transparency shader behavior, including
   Xbox channel semantics and animated weapon displays.
 - Integrate HUD graphics, crosshairs, scope masks and presentation timing.
-- Connect reload, ready, melee, charge, impact and explosion sounds to events;
-  implement variation/gain/pitch/distance rules.
+- Refine source sound gain/pitch/distance and charge fades; connect impact and
+  explosion audio/effects. Ready/reload/melee/charge/recovery events are connected.
 - Convert projectile effects, particles, decals and grenade meshes; vehicles later.
 - Add palette-backed bump and 3D textures. Blood Gulch explicitly skips 12 such
   bitmap entries; the UI cache skips five 3D entries. They are not converted to

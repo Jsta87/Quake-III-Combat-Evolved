@@ -3968,6 +3968,86 @@
           "size": 4
         }
       }
+    },
+    "ModelAnimationsAnimationGraphSoundReference": {
+      "size": 20,
+      "fields": {
+        "sound": {
+          "offset": 0,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "WeaponTriggerFiringEffect": {
+      "size": 132,
+      "fields": {
+        "shot count lower bound": {
+          "offset": 0,
+          "type": "int16",
+          "size": 2
+        },
+        "shot count upper bound": {
+          "offset": 2,
+          "type": "int16",
+          "size": 2
+        },
+        "firing effect": {
+          "offset": 36,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "misfire effect": {
+          "offset": 52,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "empty effect": {
+          "offset": 68,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "firing damage": {
+          "offset": 84,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "misfire damage": {
+          "offset": 100,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "empty damage": {
+          "offset": 116,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "ObjectAttachment": {
+      "size": 72,
+      "fields": {
+        "type": {
+          "offset": 0,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "marker": {
+          "offset": 16,
+          "type": "TagString",
+          "size": 32
+        },
+        "primary scale": {
+          "offset": 48,
+          "type": "int16",
+          "size": 2
+        },
+        "secondary scale": {
+          "offset": 50,
+          "type": "int16",
+          "size": 2
+        }
+      }
     }
   }
 }

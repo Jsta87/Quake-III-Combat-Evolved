@@ -90,7 +90,10 @@
         "zoom_levels": 0,
         "zoom_min": 0.0,
         "zoom_max": 0.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -258,7 +261,10 @@
         "zoom_levels": 0,
         "zoom_min": 0.0,
         "zoom_max": 0.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 500,
+        "reload_exit_ms": 800,
+        "reload_exit_empty_ms": 1400
       },
       "source_magazine": {
         "flags": 2,
@@ -426,7 +432,10 @@
         "zoom_levels": 1,
         "zoom_min": 2.0,
         "zoom_max": 2.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -594,7 +603,10 @@
         "zoom_levels": 2,
         "zoom_min": 2.0,
         "zoom_max": 8.0,
-        "scoped_error": 1
+        "scoped_error": 1,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -763,7 +775,10 @@
         "zoom_levels": 0,
         "zoom_min": 0.0,
         "zoom_max": 0.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -929,7 +944,10 @@
         "zoom_levels": 0,
         "zoom_min": 0.0,
         "zoom_max": 0.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -1096,7 +1114,10 @@
         "zoom_levels": 1,
         "zoom_min": 2.0,
         "zoom_max": 2.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,
@@ -1268,7 +1289,10 @@
         "zoom_levels": 0,
         "zoom_min": 0.0,
         "zoom_max": 0.0,
-        "scoped_error": 0
+        "scoped_error": 0,
+        "reload_enter_ms": 0,
+        "reload_exit_ms": 0,
+        "reload_exit_empty_ms": 0
       },
       "source_magazine": {
         "flags": 0,

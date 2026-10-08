@@ -351,7 +351,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_GAUNTLET": {
       "name": "gauntlet_placeholder",
@@ -424,7 +427,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_MACHINEGUN": {
       "name": "halo_assault_rifle",
@@ -497,7 +503,10 @@
       "zoom_levels": 0,
       "zoom_min": 0.0,
       "zoom_max": 0.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_SHOTGUN": {
       "name": "halo_shotgun",
@@ -570,7 +579,10 @@
       "zoom_levels": 0,
       "zoom_min": 0.0,
       "zoom_max": 0.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 500,
+      "reload_exit_ms": 800,
+      "reload_exit_empty_ms": 1400
     },
     "WP_GRENADE_LAUNCHER": {
       "name": "halo_needler",
@@ -643,7 +655,10 @@
       "zoom_levels": 0,
       "zoom_min": 0.0,
       "zoom_max": 0.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_ROCKET_LAUNCHER": {
       "name": "halo_rocket_launcher",
@@ -716,7 +731,10 @@
       "zoom_levels": 1,
       "zoom_min": 2.0,
       "zoom_max": 2.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_LIGHTNING": {
       "name": "halo_plasma_pistol",
@@ -789,7 +807,10 @@
       "zoom_levels": 0,
       "zoom_min": 0.0,
       "zoom_max": 0.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_RAILGUN": {
       "name": "halo_sniper_rifle",
@@ -862,7 +883,10 @@
       "zoom_levels": 2,
       "zoom_min": 2.0,
       "zoom_max": 8.0,
-      "scoped_error": 1
+      "scoped_error": 1,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_PLASMAGUN": {
       "name": "halo_plasma_rifle",
@@ -935,7 +959,10 @@
       "zoom_levels": 0,
       "zoom_min": 0.0,
       "zoom_max": 0.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_BFG": {
       "name": "halo_pistol",
@@ -1008,7 +1035,10 @@
       "zoom_levels": 1,
       "zoom_min": 2.0,
       "zoom_max": 2.0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_GRAPPLING_HOOK": {
       "name": "grappling_hook_placeholder",
@@ -1081,7 +1111,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_NAILGUN": {
       "name": "nailgun_placeholder",
@@ -1154,7 +1187,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_PROX_LAUNCHER": {
       "name": "prox_launcher_placeholder",
@@ -1227,7 +1263,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     },
     "WP_CHAINGUN": {
       "name": "chaingun_placeholder",
@@ -1300,7 +1339,10 @@
       "zoom_levels": 0,
       "zoom_min": 0,
       "zoom_max": 0,
-      "scoped_error": 0
+      "scoped_error": 0,
+      "reload_enter_ms": 0,
+      "reload_exit_ms": 0,
+      "reload_exit_empty_ms": 0
     }
   },
   "grenades": [

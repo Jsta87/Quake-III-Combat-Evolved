@@ -9,6 +9,8 @@ jobs:
       - run: ./scripts/test-movement.sh
       - run: ./scripts/test-shields.sh
       - run: ./scripts/test-weapons.sh
+      - run: ./scripts/test-weapon-presentation.sh
+      - run: ./scripts/test-iqm-tags.sh
       - run: ./scripts/test-melee.sh
       - run: ./scripts/test-headshots.sh
       - run: python3 ./tests/profile.py

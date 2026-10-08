@@ -25,7 +25,7 @@ int main(void) {
  action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);
  assert(ps.weaponstate==WEAPON_RELOADING);
  seq=ps.eventSequence;
- action(&ps,BUTTON_ATTACK,WP_SHOTGUN,16);
+ action(&ps,BUTTON_ATTACK,WP_MACHINEGUN,16);
  assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_RELOADING);
  assert(!(ps.eFlags&EF_FIRING));
  ps.stats[STAT_QCE_GRENADES]=2;
@@ -109,10 +109,28 @@ int main(void) {
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_SHOTGUN;
  BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=0;
  action(&ps,BUTTON_QCE_RELOAD,WP_SHOTGUN,16);
- for(i=0;i<26;i++)action(&ps,0,WP_SHOTGUN,16);
+ assert(ps.weaponstate==WEAPON_RELOAD_ENTER);
+ for(i=0;i<57;i++)action(&ps,0,WP_SHOTGUN,16);
  assert(BG_QceMagazine(&ps,WP_SHOTGUN)==1 && ps.weaponstate==WEAPON_RELOADING && ps.ammo[WP_SHOTGUN]==24);
  action(&ps,BUTTON_ATTACK,WP_SHOTGUN,16);
+ assert(ps.weaponstate==WEAPON_RELOAD_EXIT && ps.ammo[WP_SHOTGUN]==24);
+ assert(BG_QceMagazine(&ps,WP_SHOTGUN)==1); /* closing must complete before firing */
+ for(i=0;i<51;i++)action(&ps,BUTTON_ATTACK,WP_SHOTGUN,16);
  assert(BG_QceMagazine(&ps,WP_SHOTGUN)==0 && ps.ammo[WP_SHOTGUN]==23 && ps.weaponstate==WEAPON_FIRING);
+ /* A reload switch cancels insertion and follows normal drop/raise timing. */
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;
+ BG_QceAddWeapon(&ps,WP_MACHINEGUN,120);BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=10;
+ action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);assert(ps.weaponstate==WEAPON_RELOADING);
+ action(&ps,0,WP_SHOTGUN,16);assert(ps.weaponstate==WEAPON_DROPPING && ps.stats[STAT_QCE_MAG0]==10);
+ for(i=0;i<100;i++)action(&ps,0,WP_SHOTGUN,16);
+ assert(ps.weapon==WP_SHOTGUN && ps.weaponstate==WEAPON_READY && ps.stats[STAT_QCE_MAG0]==10);
+ /* Reloading a nearly full tube closes once and never mints reserve ammunition. */
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_SHOTGUN;BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=11;
+ predicted=ps;
+ action(&ps,BUTTON_QCE_RELOAD,WP_SHOTGUN,16);action(&predicted,BUTTON_QCE_RELOAD,WP_SHOTGUN,16);
+ for(i=0;i<60;i++) {action(&ps,0,WP_SHOTGUN,16);action(&predicted,0,WP_SHOTGUN,16);assert(!memcmp(&ps,&predicted,sizeof(ps)));}
+ assert(BG_QceMagazine(&ps,WP_SHOTGUN)==12 && ps.weaponstate==WEAPON_RELOAD_EXIT && ps.ammo[WP_SHOTGUN]==24);
+ for(i=0;i<60;i++)action(&ps,0,WP_SHOTGUN,16);assert(ps.weaponstate==WEAPON_READY);
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_PLASMAGUN;
  BG_QceAddWeapon(&ps,WP_PLASMAGUN,200);ps.stats[STAT_QCE_MAG0]=150;
  assert(!BG_QceCanReload(&ps));action(&ps,BUTTON_QCE_RELOAD,WP_PLASMAGUN,16);
@@ -131,6 +149,6 @@ int main(void) {
   BG_QceRayEnd(start,end,WP_RAILGUN);VectorSubtract(end,start,direction);assert(fabs(VectorLength(direction)-80000)<0.1);
   VectorCopy(start,end);BG_QceRayEnd(start,end,WP_SHOTGUN);assert(VectorCompare(start,end));
  }
- puts("PASS: two-slot capacity, magazine/total ammo, reload timing and conservation, automatic reload, grenade press latch/count/events, slot removal, owner pickup delay, reload action lock, stock fallback, empty-ammo handling melee input/cooldown/action locks, delayed predicted lunge, blocked lunge and independent grenade types");
+ puts("PASS: two-slot capacity, magazine/total ammo, reload timing, staged shotgun closing, switch cancellation, prediction and conservation, automatic reload, grenade press latch/count/events, slot removal, owner pickup delay, reload action lock, stock fallback, empty-ammo handling melee input/cooldown/action locks, delayed predicted lunge, blocked lunge and independent grenade types");
  return 0;
 }

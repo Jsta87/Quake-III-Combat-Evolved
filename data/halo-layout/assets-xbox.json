@@ -2069,6 +2069,62 @@
           "type": "FunctionOut"
         }
       }
+    },
+    "ModelAnimationsAnimationGraphSoundReference": {
+      "size": 20,
+      "fields": {
+        "sound": {
+          "offset": 0,
+          "type": "TagDependency",
+          "size": 16
+        }
+      }
+    },
+    "SoundLooping": {
+      "size": 84,
+      "fields": {
+        "tracks": {
+          "offset": 60,
+          "type": "TagReflexive",
+          "size": 12,
+          "struct": "SoundLoopingTrack"
+        }
+      }
+    },
+    "SoundLoopingTrack": {
+      "size": 160,
+      "fields": {
+        "start": {
+          "offset": 48,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "loop": {
+          "offset": 64,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "end": {
+          "offset": 80,
+          "type": "TagDependency",
+          "size": 16
+        },
+        "gain": {
+          "offset": 4,
+          "type": "float",
+          "size": 4
+        },
+        "fade in duration": {
+          "offset": 8,
+          "type": "float",
+          "size": 4
+        },
+        "fade out duration": {
+          "offset": 12,
+          "type": "float",
+          "size": 4
+        }
+      }
     }
   }
 }

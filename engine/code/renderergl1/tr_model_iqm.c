@@ -1476,7 +1476,8 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 		return qfalse;
 	}
 
-	ComputeJointMats( data, startFrame, endFrame, frac, jointMats );
+	/* Tag API frac interpolates start -> end; pose API takes old-frame weight. */
+ ComputeJointMats( data, endFrame, startFrame, 1.0f-frac, jointMats );
 
 	tag->axis[0][0] = jointMats[12 * joint + 0];
 	tag->axis[1][0] = jointMats[12 * joint + 1];

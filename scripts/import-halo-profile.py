@@ -46,6 +46,11 @@ def import_profile(report,profile):
   # Animation duration controls the visible magazine reload; shell reload retains its scalar cycle.
   if mag['rounds reloaded']>1 and full:w['reload_ms']=round(full['frame count']*1000/30)
   w['reload_empty_ms']=round(empty['frame count']*1000/30) if empty else w['reload_ms']
+  w.update(reload_enter_ms=0,reload_exit_ms=0,reload_exit_empty_ms=0)
+  if w['reload_rounds']==1:
+   for field,clip in [('reload_enter_ms','enter'),('reload_exit_ms','exit-full'),('reload_exit_empty_ms','exit-empty')]:
+    track=animations.get('first-person '+clip)
+    if track:w[field]=round(track['frame count']*1000/(25 if track['flags']&4 else 30))
   hot=animations.get('first-person overheating');w['overheat_ms']=round(hot['frame count']*1000/30) if hot else 0
   w.update(rate_min=t['maximum rate of fire'][0],rate_max=t['maximum rate of fire'][1],rate_grow=round(t['firing acceleration rate']*30*10000),rate_recover=round(t['firing deceleration rate']*30*10000),battery_cost=round(t['age generated per round']*1000000),charged_battery_cost=round(v['triggers'][1]['age generated per round']*1000000) if slot=='WP_LIGHTNING' else 0,zoom_levels=v['zoom levels'],zoom_min=v['zoom magnification range'][0],zoom_max=v['zoom magnification range'][1],scoped_error=int(bool(t['flags']&1024)))
   rate=t['maximum rate of fire'][1]

@@ -14,8 +14,8 @@ import struct
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('assets',ROOT/'scripts/convert-halo-assets.py')
 a = importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
-ACTIONS = ('idle','fire','ready','putaway','reloadfull','reloadempty','melee','grenade','overheat','charge','chargedfire','recover','reloadenter','reloadexit')
-NAMES = {'idle':'idle','fire':'fire-1','ready':'ready','putaway':'put-away','reloadfull':'reload-full','reloadempty':'reload-empty','melee':'melee','grenade':'throw-grenade','overheat':'overheating','charge':'overcharged','chargedfire':'fire-2','recover':'o-h-exit','reloadenter':'enter','reloadexit':'exit-full'}
+ACTIONS = ('idle','fire','ready','putaway','reloadfull','reloadempty','melee','grenade','overheat','charge','chargedfire','recover','reloadenter','reloadexit','reloadexitempty','chargeenter','hotidle','chargedhot')
+NAMES = {'idle':'idle','fire':'fire-1','ready':'ready','putaway':'put-away','reloadfull':'reload-full','reloadempty':'reload-empty','melee':'melee','grenade':'throw-grenade','overheat':'overheating','charge':'overcharged','chargedfire':'fire-2','recover':'o-h-exit','reloadenter':'enter','reloadexit':'exit-full','reloadexitempty':'exit-empty','chargeenter':'overcharged','hotidle':'overheated','chargedhot':'o-h-s-enter'}
 WEAPON_NAMES = ('machinegun','shotgun','rocket','railgun','plasma','lightning','bfg','grenade')
 IDENTITY = ((1.,0.,0.),(0.,1.,0.),(0.,0.,1.))
 
@@ -196,6 +196,30 @@ def transform_channels(transform):
     return list(t)+list(q)+[scale]*3
 
 
+def mesh_tangents(surface):
+    vertices=surface['vertices'];tangents=[[0.]*3 for v in vertices];bitangents=[[0.]*3 for v in vertices]
+    for triangle in surface['triangles']:
+        v0,v1,v2=[vertices[i] for i in triangle]
+        e1=[v1['position'][i]-v0['position'][i] for i in range(3)];e2=[v2['position'][i]-v0['position'][i] for i in range(3)]
+        u1,v1uv=[v1['uv'][i]-v0['uv'][i] for i in range(2)];u2,v2uv=[v2['uv'][i]-v0['uv'][i] for i in range(2)]
+        determinant=u1*v2uv-u2*v1uv
+        if abs(determinant)<1e-12:continue
+        t=[(e1[i]*v2uv-e2[i]*v1uv)/determinant for i in range(3)];b=[(e2[i]*u1-e1[i]*u2)/determinant for i in range(3)]
+        for vi in triangle:
+            for i in range(3):tangents[vi][i]+=t[i];bitangents[vi][i]+=b[i]
+    result=[]
+    for v,t,b in zip(vertices,tangents,bitangents):
+        n=v['normal'];length=math.sqrt(sum(x*x for x in n))
+        if not length:raise a.halo.CacheError('Zero mesh normal')
+        n=[x/length for x in n];dot=sum(n[i]*t[i] for i in range(3));t=[t[i]-dot*n[i] for i in range(3)]
+        length=math.sqrt(sum(x*x for x in t))
+        if length<1e-12:
+            axis=min(range(3),key=lambda i:abs(n[i]));t=[float(i==axis)-n[axis]*n[i] for i in range(3)];length=math.sqrt(sum(x*x for x in t))
+        t=[x/length for x in t];cross=(n[1]*t[2]-n[2]*t[1],n[2]*t[0]-n[0]*t[2],n[0]*t[1]-n[1]*t[0])
+        result.append(t+[-1. if sum(cross[i]*b[i] for i in range(3))<0 else 1.])
+    return result
+
+
 def animated_iqm(surfaces,bones,bind_world,local_frames,skin_groups,attached,gun_mapping,scale,clips,posed_frames):
     # IQM evaluates parents sequentially. Halo node indices need not be ordered.
     order=[]
@@ -226,9 +250,10 @@ def animated_iqm(surfaces,bones,bind_world,local_frames,skin_groups,attached,gun
     def name(value):
         if value not in names:names[value]=len(text_data);text_data.extend(value.encode()+b'\0')
         return names[value]
-    mesh=bytearray();triangles=bytearray();positions=bytearray();normals=bytearray();uv=bytearray();indices=bytearray();weights=bytearray();nv=nt=0
+    mesh=bytearray();triangles=bytearray();positions=bytearray();normals=bytearray();uv=bytearray();indices=bytearray();weights=bytearray();tangent_data=bytearray();nv=nt=0
     for si,(surface,(_,mapping)) in enumerate(zip(surfaces,skin_groups)):
         verts=surface['vertices'];tris=surface['triangles']
+        tangent_data.extend(b''.join(struct.pack('<4f',*t) for t in mesh_tangents(surface)))
         mesh.extend(struct.pack('<6I',name('part'+str(si)),name(surface['shader']),nv,len(verts),nt,len(tris)))
         for v in verts:
             positions.extend(struct.pack('<3f',*v['position']));normals.extend(struct.pack('<3f',*v['normal']));uv.extend(struct.pack('<2f',*v['uv']))
@@ -258,9 +283,9 @@ def animated_iqm(surfaces,bones,bind_world,local_frames,skin_groups,attached,gun
         offset=124+len(body);body.extend(data);return offset
     ot=chunk(text_data);om=chunk(mesh);otr=chunk(triangles);oj=chunk(joint_data);op=chunk(pose);oa=chunk(anim);of=chunk(frames);ob=chunk(bounds)
     arrays=[]
-    for typ,fmt,size,data in [(0,7,3,positions),(1,7,2,uv),(2,7,3,normals),(4,1,4,indices),(5,1,4,weights)]:arrays.append(struct.pack('<5I',typ,0,fmt,size,chunk(data)))
+    for typ,fmt,size,data in [(0,7,3,positions),(1,7,2,uv),(2,7,3,normals),(3,7,4,tangent_data),(4,1,4,indices),(5,1,4,weights)]:arrays.append(struct.pack('<5I',typ,0,fmt,size,chunk(data)))
     ov=chunk(b''.join(arrays))
-    return struct.pack('<16s27I',b'INTERQUAKEMODEL\0',2,124+len(body),0,len(text_data),ot,len(surfaces),om,5,nv,ov,nt,otr,0,len(joints),oj,len(joints),op,len(clips),oa,len(channels),nc,of,ob,0,0,0,0)+body
+    return struct.pack('<16s27I',b'INTERQUAKEMODEL\0',2,124+len(body),0,len(text_data),ot,len(surfaces),om,6,nv,ov,nt,otr,0,len(joints),oj,len(joints),op,len(clips),oa,len(channels),nc,of,ob,0,0,0,0)+body
 
 
 def markers(cache,assets,tag):
@@ -399,6 +424,89 @@ def materials(cache,assets,models):
     return records
 
 
+def runtime_loop(clip):
+    # Retail hot/charge entries can refer outside their separate track's frame
+    # range. Keep that source index in the manifest; runtime clips loop locally.
+    return clip['loop_frame'] if 0<=clip['loop_frame']<clip['count'] else 0
+
+
+def weapon_sound_overrides(cache,assets,slot):
+    if slot!='WP_LIGHTNING':return {}
+    weapon=cache.tag('weapons\\plasma pistol\\plasma pistol','weap')['values']
+    overrides={}
+    charging=next((v['type'] for v in weapon['attachments'] if v['type'] and v['type']['class']=='lsnd'),None)
+    if charging:
+        tag=cache.tags[charging['id']]
+        tracks=assets.reflexive('SoundLooping','tracks',tag['offset'],'SoundLoopingTrack')
+        if len(tracks)!=1:raise a.halo.CacheError('Expected one charging audio track')
+        p=tracks[0]
+        for action,offset in [('chargeenter',48),('charge',64)]:
+            source=cache.tags.get(struct.unpack_from('<I',cache.data,p+offset+12)[0])
+            if source:overrides[action]={'source':source,'frame':0,'loop':action=='charge','binding':charging,'gain':struct.unpack_from('<f',cache.data,p+4)[0]}
+    firing=weapon['triggers'][1]['firing effects'][0]['firing effect']
+    if firing and firing['class']=='effe':
+        effect=cache.tag(firing['path'],'effe')['values']
+        sounds=[p['type'] for event in effect['events'] if event['delay bounds']==[0.,0.] for p in event['parts'] if p['type'] and p['type']['class']=='snd!']
+        if len(sounds)==1:overrides['chargedfire']={'source':cache.tags[sounds[0]['id']],'frame':0,'loop':False,'binding':firing}
+    return overrides
+
+
+def animation_sounds(cache,graph,clips,assets,records,runtime,overrides=None):
+    count,pointer=struct.unpack_from('<II',cache.data,graph['offset']+84)
+    if count>256:raise a.halo.CacheError('Animation sound reference limit')
+    start=cache.pointer(pointer,count*20) if count else 0
+    refs=[cache.tags.get(struct.unpack_from('<I',cache.data,start+i*20+12)[0]) for i in range(count)]
+    events=[];overrides=overrides or {}
+    for action,clip in zip(ACTIONS,clips):
+        outputs=[];source=None;frame=0;override=overrides.get(action)
+        if clip and (override or clip['sound_index']>=0):
+            if not override and clip['sound_index']>=count:raise a.halo.CacheError('Animation sound index outside graph')
+            source=override['source'] if override else refs[clip['sound_index']]
+            if not source or source['class']!='snd!':raise a.halo.CacheError('Invalid animation sound reference')
+            frame=override['frame'] if override else clip['sound_frame']
+            if not 0<=frame<clip['count']:raise a.halo.CacheError('Animation sound frame outside clip')
+            candidates=[r for r in records if r['id']==source['id'] and 'permutation' in r and r['range']==0]
+            for i,record in enumerate(candidates[:4]):
+                path=f'sound/qce/halo/events/{runtime}/{action}{i+1}.wav'
+                assets.files.pop(path,None);assets.write(path,(assets.output/record['outputs'][0]).read_bytes(),{'alias_of':record['outputs'][0],'source_event_frame':frame})
+                outputs.append(path)
+        events.append({'action':action,'frame':frame,'source':source,'outputs':outputs,'loop':bool(override and override['loop']),'binding':override.get('binding') if override else None})
+    path=f'models/qce/halo/view/{runtime}.events'
+    lines=['2 '+str(len(ACTIONS))]
+    lines += [f'{e["frame"]} {len(e["outputs"])} {int(e["loop"])}'+(' '+' '.join(e['outputs']) if e['outputs'] else '') for e in events]
+    assets.files.pop(path,None);assets.write(path,('\n'.join(lines)+'\n').encode(),{'weapon':runtime,'animation_events':True})
+    return events
+
+
+def ammunition_skins(assets,surfaces,gun_meta,runtime,scale=60):
+    if runtime!='machinegun':return None
+    digits=[]
+    for i,part in enumerate(gun_meta['parts']):
+        if part['shader'].endswith('\\numbers'):
+            center=sum(v['position'][1] for v in part['vertices'])/len(part['vertices'])
+            name=f'qce/halo/{gun_meta["id"]:08x}/{part["geometry"]}_{part["part"]}'
+            digits.append((center,name))
+    if len(digits)!=2:raise a.halo.CacheError('Expected two assault-rifle digit surfaces')
+    # Camera +Y is left; source positive-Y digit is the tens place.
+    digits.sort(reverse=True);places={digits[0][1]:'t',digits[1][1]:'u'}
+    source=next(t for t in assets.cache.index if t['path']=='weapons\\assault rifle\\fp\\bitmaps\\numbers_plate')
+    shader=[]
+    for digit in range(10):
+        path=f'textures/qce/halo/{a.safe_name(source["path"])}/{digit:03}.tga'
+        if path not in assets.files:raise a.halo.CacheError('Missing ammo digit bitmap')
+        shader.append(f'qce/halo/digits/{digit}\n{{\n cull none\n {{ map {path}\n blendFunc add\n rgbGen identity }}\n}}\n')
+    for ammo in range(scale+1):
+        lines=[]
+        for i,surface in enumerate(surfaces):
+            place=places.get(surface['shader']);value=ammo//10 if place=='t' else ammo%10
+            material=f'qce/halo/digits/{value}' if place else surface['shader']
+            lines.append(f'part{i},{material}')
+        path=f'models/qce/halo/view/{runtime}_{ammo}.skin';assets.files.pop(path,None)
+        assets.write(path,('\n'.join(lines)+'\n').encode(),{'magazine':ammo,'source_digits':source['path']})
+    path='scripts/qce-halo-digits.shader';assets.files.pop(path,None);assets.write(path,'\n'.join(shader).encode(),{'source':source['path']})
+    return {'capacity':scale,'digits':digits,'source':source,'skins':scale+1}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__);parser.add_argument('map',type=Path);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--pk3',type=Path,required=True);parser.add_argument('--materials-only',action='store_true');args = parser.parse_args()
     cache = a.halo.XboxMap(args.map);report = json.loads((args.output/'manifest.json').read_text())
@@ -422,6 +530,8 @@ def main():
         print('Rebuilt Halo materials:',args.pk3);return
     models = assets.weapon_models(enriched)
     assets.files = {**{k:v for k,v in report['files'].items() if not k.startswith('textures/qce/material/')},**assets.files}
+    stop = "sound/qce/halo/events/stop.wav"
+    assets.files.pop(stop,None);assets.write(stop,a.wav(bytes(2),1,22050),{'purpose':'stop cancelled animation channel'})
     material_report = materials(cache,assets,models)
     model_map = {m['id']:m for m in models};hands_meta = json.loads((args.output/model_map[hands_id]['source_mesh']).read_text())
     exports = []
@@ -475,20 +585,23 @@ def main():
         path = f'models/qce/halo/view/{runtime}.iqm';assets.files.pop(path,None)
         fallback = globals_for(bones,local_frames[0]);bind_world = [bind_by_name.get(b['name'],fallback[i]) for i,b in enumerate(bones)]
         assets.write(path,animated_iqm(surfaces,bones,bind_world,local_frames,skin_groups,attached,[names[b['name']] for b in gun_meta['bones']],gun_meta['scale'],clips,frame_list),{'weapon':slot,'animated':True,'spartan_hands':True})
-        config = [];bindings = []
+        config = [];bindings = [];bound_clips = []
         for action in ACTIONS:
             name = NAMES[action]
             if action=='fire' and slot=='WP_MACHINEGUN':name = 'firing'
             clip = next((c for c in clips if c['name']=='first-person '+name),None)
             if action=='reloadfull' and not clip:clip = next((c for c in clips if c['name']=='first-person reload-empty'),None)
             if action=='reloadempty' and not clip:clip = next((c for c in clips if c['name']=='first-person reload-full'),None)
-            config.append(f'{clip["first"] if clip else 0} {clip["count"] if clip else 0} {clip["fps"] if clip else 30} {clip["loop_frame"] if clip else 0}')
-            bindings.append({'action':action,'source':clip['name'] if clip else None})
+            config.append(f'{clip["first"] if clip else 0} {clip["count"] if clip else 0} {clip["fps"] if clip else 30} {runtime_loop(clip) if clip else 0}')
+            bound_clips.append(clip)
+            bindings.append({'action':action,'source':clip['name'] if clip else None,'runtime_loop_frame':runtime_loop(clip) if clip else 0})
         cfg = f'models/qce/halo/view/{runtime}.cfg';assets.files.pop(cfg,None);assets.write(cfg,('\n'.join(config)+'\n').encode(),{'weapon':slot,'actions':ACTIONS})
-        exports.append({'weapon':slot,'model':path,'config':cfg,'frames':len(frame_list),'surfaces':len(surfaces),'clips':clips,'bindings':bindings,'markers':attached,'overlays_deferred':[c['name'] for c in values['animations'] if c['type']!=0]})
+        event_report = animation_sounds(cache,graph,bound_clips,assets,report['assets'],runtime,weapon_sound_overrides(cache,assets,slot))
+        counter = ammunition_skins(assets,surfaces,gun_meta,runtime)
+        exports.append({'sound_events':event_report,'ammo_display':counter,'weapon':slot,'model':path,'config':cfg,'frames':len(frame_list),'surfaces':len(surfaces),'clips':clips,'bindings':bindings,'markers':attached,'overlays_deferred':[c['name'] for c in values['animations'] if c['type']!=0]})
         print(runtime,len(frame_list),'frames',len(surfaces),'surfaces',len(attached),'attachments',flush=True)
     report['schema_version'] = 2;report['files'] = assets.files;report['animated_weapons'] = exports;report['materials'] = material_report
-    report['limitations'] = ['Additive movement/ammunition/aim overlays pending','Animation-event audio scheduling pending','Halo cubemap reflection and biased/masked detail approximated/deferred','Runtime animation transitions and retail view calibration require comparison']
+    report['limitations'] = ['Additive movement/ammunition/aim overlays pending','Animation sound gain/pitch/attenuation pending','Halo cubemap reflection and biased/masked detail approximated/deferred','Runtime animation transitions and retail view calibration require comparison']
     (args.output/'manifest.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');assets.package(args.pk3)
     print('Packaged animated Halo weapons:',args.pk3)
 
