@@ -43,6 +43,8 @@ the uploaded build 2276 maps. See [HALO-IMPORT.md](HALO-IMPORT.md) for applied
 values, reproducible commands, hashes, conversion assumptions and remaining
 behavior/art work. The profile is mixed, not a validated reference profile.
 Both supplied maps contain the dependencies needed for the current weapon pass.
+Texture/audio conversion and static weapon MD3 exports are now implemented;
+see [ASSET-CONVERSION.md](ASSET-CONVERSION.md) for commands and remaining work.
 
 ## What is needed to convert accurately
 

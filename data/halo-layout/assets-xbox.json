@@ -1,0 +1,1339 @@
+{
+  "source": "https://github.com/SnowyMouse/invader",
+  "commit": "696830ff80af227e84e7237c2ef26eb2301ed110",
+  "license": "GPL-3.0-only",
+  "structs": {
+    "BitmapGroupSprite": {
+      "size": 32,
+      "fields": {
+        "bitmap index": {
+          "offset": 0,
+          "size": 2,
+          "type": "Index"
+        },
+        "left": {
+          "offset": 8,
+          "size": 4,
+          "type": "float"
+        },
+        "right": {
+          "offset": 12,
+          "size": 4,
+          "type": "float"
+        },
+        "top": {
+          "offset": 16,
+          "size": 4,
+          "type": "float"
+        },
+        "bottom": {
+          "offset": 20,
+          "size": 4,
+          "type": "float"
+        },
+        "registration point": {
+          "offset": 24,
+          "size": 8,
+          "type": "Point2D"
+        }
+      }
+    },
+    "BitmapGroupSequence": {
+      "size": 64,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "first bitmap index": {
+          "offset": 32,
+          "size": 2,
+          "type": "Index"
+        },
+        "bitmap count": {
+          "offset": 34,
+          "size": 2,
+          "type": "uint16"
+        },
+        "sprites": {
+          "offset": 52,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "BitmapGroupSprite"
+        }
+      }
+    },
+    "BitmapData": {
+      "size": 48,
+      "fields": {
+        "bitmap class": {
+          "offset": 0,
+          "size": 4,
+          "type": "TagFourCC"
+        },
+        "width": {
+          "offset": 4,
+          "size": 2,
+          "type": "uint16"
+        },
+        "height": {
+          "offset": 6,
+          "size": 2,
+          "type": "uint16"
+        },
+        "depth": {
+          "offset": 8,
+          "size": 2,
+          "type": "uint16"
+        },
+        "type": {
+          "offset": 10,
+          "size": 2,
+          "type": "BitmapDataType"
+        },
+        "format": {
+          "offset": 12,
+          "size": 2,
+          "type": "BitmapDataFormat"
+        },
+        "flags": {
+          "offset": 14,
+          "size": 2,
+          "type": "BitmapDataFlags"
+        },
+        "registration point": {
+          "offset": 16,
+          "size": 4,
+          "type": "Point2DInt"
+        },
+        "mipmap count": {
+          "offset": 20,
+          "size": 2,
+          "type": "uint16"
+        },
+        "pixel data offset": {
+          "offset": 24,
+          "size": 4,
+          "type": "uint32"
+        },
+        "pixel data size": {
+          "offset": 28,
+          "size": 4,
+          "type": "uint32"
+        },
+        "bitmap tag id": {
+          "offset": 32,
+          "size": 4,
+          "type": "TagID"
+        },
+        "pointer": {
+          "offset": 36,
+          "size": 4,
+          "type": "Pointer"
+        }
+      }
+    },
+    "Bitmap": {
+      "size": 108,
+      "fields": {
+        "type": {
+          "offset": 0,
+          "size": 2,
+          "type": "BitmapType"
+        },
+        "encoding format": {
+          "offset": 2,
+          "size": 2,
+          "type": "BitmapFormat"
+        },
+        "usage": {
+          "offset": 4,
+          "size": 2,
+          "type": "BitmapUsage"
+        },
+        "flags": {
+          "offset": 6,
+          "size": 2,
+          "type": "BitmapFlags"
+        },
+        "detail fade factor": {
+          "offset": 8,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "sharpen amount": {
+          "offset": 12,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "bump height": {
+          "offset": 16,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "sprite budget size": {
+          "offset": 20,
+          "size": 2,
+          "type": "BitmapSpriteBudgetSize"
+        },
+        "sprite budget count": {
+          "offset": 22,
+          "size": 2,
+          "type": "uint16"
+        },
+        "color plate width": {
+          "offset": 24,
+          "size": 2,
+          "type": "uint16"
+        },
+        "color plate height": {
+          "offset": 26,
+          "size": 2,
+          "type": "uint16"
+        },
+        "compressed color plate data": {
+          "offset": 28,
+          "size": 20,
+          "type": "TagDataOffset"
+        },
+        "processed pixel data": {
+          "offset": 48,
+          "size": 20,
+          "type": "TagDataOffset"
+        },
+        "blur filter size": {
+          "offset": 68,
+          "size": 4,
+          "type": "float"
+        },
+        "alpha bias": {
+          "offset": 72,
+          "size": 4,
+          "type": "float"
+        },
+        "mipmap count": {
+          "offset": 76,
+          "size": 2,
+          "type": "uint16"
+        },
+        "sprite usage": {
+          "offset": 78,
+          "size": 2,
+          "type": "BitmapSpriteUsage"
+        },
+        "sprite spacing": {
+          "offset": 80,
+          "size": 2,
+          "type": "uint16"
+        },
+        "bitmap group sequence": {
+          "offset": 84,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "BitmapGroupSequence"
+        },
+        "bitmap data": {
+          "offset": 96,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "BitmapData"
+        }
+      }
+    },
+    "SoundPermutation": {
+      "size": 124,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "skip fraction": {
+          "offset": 32,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "gain": {
+          "offset": 36,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "format": {
+          "offset": 40,
+          "size": 2,
+          "type": "SoundFormat"
+        },
+        "next permutation index": {
+          "offset": 42,
+          "size": 2,
+          "type": "Index"
+        },
+        "samples pointer": {
+          "offset": 44,
+          "size": 4,
+          "type": "uint32"
+        },
+        "tag id 0": {
+          "offset": 52,
+          "size": 4,
+          "type": "TagID"
+        },
+        "buffer size": {
+          "offset": 56,
+          "size": 4,
+          "type": "uint32"
+        },
+        "tag id 1": {
+          "offset": 60,
+          "size": 4,
+          "type": "TagID"
+        },
+        "samples": {
+          "offset": 64,
+          "size": 20,
+          "type": "TagDataOffset"
+        },
+        "mouth data": {
+          "offset": 84,
+          "size": 20,
+          "type": "TagDataOffset"
+        },
+        "subtitle data": {
+          "offset": 104,
+          "size": 20,
+          "type": "TagDataOffset"
+        }
+      }
+    },
+    "SoundPitchRange": {
+      "size": 72,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "natural pitch": {
+          "offset": 32,
+          "size": 4,
+          "type": "float"
+        },
+        "bend bounds": {
+          "offset": 36,
+          "size": 8,
+          "type": "float"
+        },
+        "actual permutation count": {
+          "offset": 44,
+          "size": 2,
+          "type": "uint16"
+        },
+        "playback rate": {
+          "offset": 48,
+          "size": 4,
+          "type": "float"
+        },
+        "permutation flags": {
+          "offset": 52,
+          "size": 4,
+          "type": "uint32"
+        },
+        "last permutation index": {
+          "offset": 56,
+          "size": 2,
+          "type": "Index"
+        },
+        "discarded permutation index": {
+          "offset": 58,
+          "size": 2,
+          "type": "Index"
+        },
+        "permutations": {
+          "offset": 60,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "SoundPermutation"
+        }
+      }
+    },
+    "Sound": {
+      "size": 164,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 4,
+          "type": "SoundFlags"
+        },
+        "sound class": {
+          "offset": 4,
+          "size": 2,
+          "type": "SoundClass"
+        },
+        "sample rate": {
+          "offset": 6,
+          "size": 2,
+          "type": "SoundSampleRate"
+        },
+        "minimum distance": {
+          "offset": 8,
+          "size": 4,
+          "type": "float"
+        },
+        "maximum distance": {
+          "offset": 12,
+          "size": 4,
+          "type": "float"
+        },
+        "skip fraction": {
+          "offset": 16,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "random pitch bounds": {
+          "offset": 20,
+          "size": 8,
+          "type": "float"
+        },
+        "inner cone angle": {
+          "offset": 28,
+          "size": 4,
+          "type": "Angle"
+        },
+        "outer cone angle": {
+          "offset": 32,
+          "size": 4,
+          "type": "Angle"
+        },
+        "outer cone gain": {
+          "offset": 36,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "random gain modifier": {
+          "offset": 40,
+          "size": 4,
+          "type": "float"
+        },
+        "maximum bend per second": {
+          "offset": 44,
+          "size": 4,
+          "type": "float"
+        },
+        "zero skip fraction modifier": {
+          "offset": 60,
+          "size": 4,
+          "type": "float"
+        },
+        "zero gain modifier": {
+          "offset": 64,
+          "size": 4,
+          "type": "float"
+        },
+        "zero pitch modifier": {
+          "offset": 68,
+          "size": 4,
+          "type": "float"
+        },
+        "one skip fraction modifier": {
+          "offset": 84,
+          "size": 4,
+          "type": "float"
+        },
+        "one gain modifier": {
+          "offset": 88,
+          "size": 4,
+          "type": "float"
+        },
+        "one pitch modifier": {
+          "offset": 92,
+          "size": 4,
+          "type": "float"
+        },
+        "channel count": {
+          "offset": 108,
+          "size": 2,
+          "type": "SoundChannelCount"
+        },
+        "format": {
+          "offset": 110,
+          "size": 2,
+          "type": "SoundFormat"
+        },
+        "promotion sound": {
+          "offset": 112,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "promotion count": {
+          "offset": 128,
+          "size": 2,
+          "type": "uint16"
+        },
+        "longest permutation length": {
+          "offset": 132,
+          "size": 4,
+          "type": "uint32"
+        },
+        "promotion counter": {
+          "offset": 136,
+          "size": 4,
+          "type": "uint32"
+        },
+        "promotion time": {
+          "offset": 140,
+          "size": 4,
+          "type": "uint32"
+        },
+        "scripting time": {
+          "offset": 144,
+          "size": 4,
+          "type": "uint32"
+        },
+        "scripting sound": {
+          "offset": 148,
+          "size": 4,
+          "type": "TagID"
+        },
+        "pitch ranges": {
+          "offset": 152,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "SoundPitchRange"
+        }
+      }
+    },
+    "ModelMarkerInstance": {
+      "size": 32,
+      "fields": {
+        "region index": {
+          "offset": 0,
+          "size": 1,
+          "type": "uint8"
+        },
+        "permutation index": {
+          "offset": 1,
+          "size": 1,
+          "type": "uint8"
+        },
+        "node index": {
+          "offset": 2,
+          "size": 1,
+          "type": "uint8"
+        },
+        "translation": {
+          "offset": 4,
+          "size": 12,
+          "type": "Point3D"
+        },
+        "rotation": {
+          "offset": 16,
+          "size": 16,
+          "type": "Quaternion"
+        }
+      }
+    },
+    "ModelMarker": {
+      "size": 64,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "magic identifier": {
+          "offset": 32,
+          "size": 2,
+          "type": "int16"
+        },
+        "instances": {
+          "offset": 52,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelMarkerInstance"
+        }
+      }
+    },
+    "ModelNode": {
+      "size": 156,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "next sibling node index": {
+          "offset": 32,
+          "size": 2,
+          "type": "Index"
+        },
+        "first child node index": {
+          "offset": 34,
+          "size": 2,
+          "type": "Index"
+        },
+        "parent node index": {
+          "offset": 36,
+          "size": 2,
+          "type": "Index"
+        },
+        "default translation": {
+          "offset": 40,
+          "size": 12,
+          "type": "Point3D"
+        },
+        "default rotation": {
+          "offset": 52,
+          "size": 16,
+          "type": "Quaternion"
+        },
+        "node distance from parent": {
+          "offset": 68,
+          "size": 4,
+          "type": "float"
+        },
+        "scale": {
+          "offset": 104,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation": {
+          "offset": 108,
+          "size": 36,
+          "type": "Matrix"
+        },
+        "translation": {
+          "offset": 144,
+          "size": 12,
+          "type": "Point3D"
+        }
+      }
+    },
+    "ModelRegionPermutationMarker": {
+      "size": 80,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "node index": {
+          "offset": 32,
+          "size": 2,
+          "type": "Index"
+        },
+        "rotation": {
+          "offset": 36,
+          "size": 16,
+          "type": "Quaternion"
+        },
+        "translation": {
+          "offset": 52,
+          "size": 12,
+          "type": "Point3D"
+        }
+      }
+    },
+    "ModelRegionPermutation": {
+      "size": 88,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "flags": {
+          "offset": 32,
+          "size": 4,
+          "type": "ModelRegionPermutationFlags"
+        },
+        "permutation number": {
+          "offset": 36,
+          "size": 2,
+          "type": "uint16"
+        },
+        "super low": {
+          "offset": 64,
+          "size": 2,
+          "type": "Index"
+        },
+        "low": {
+          "offset": 66,
+          "size": 2,
+          "type": "Index"
+        },
+        "medium": {
+          "offset": 68,
+          "size": 2,
+          "type": "Index"
+        },
+        "high": {
+          "offset": 70,
+          "size": 2,
+          "type": "Index"
+        },
+        "super high": {
+          "offset": 72,
+          "size": 2,
+          "type": "Index"
+        },
+        "markers": {
+          "offset": 76,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelRegionPermutationMarker"
+        }
+      }
+    },
+    "ModelRegion": {
+      "size": 76,
+      "fields": {
+        "name": {
+          "offset": 0,
+          "size": 32,
+          "type": "TagString"
+        },
+        "permutations": {
+          "offset": 64,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelRegionPermutation"
+        }
+      }
+    },
+    "ModelVertexUncompressed": {
+      "size": 68,
+      "fields": {
+        "position": {
+          "offset": 0,
+          "size": 12,
+          "type": "Point3D"
+        },
+        "normal": {
+          "offset": 12,
+          "size": 12,
+          "type": "Vector3D"
+        },
+        "binormal": {
+          "offset": 24,
+          "size": 12,
+          "type": "Vector3D"
+        },
+        "tangent": {
+          "offset": 36,
+          "size": 12,
+          "type": "Vector3D"
+        },
+        "texture coords": {
+          "offset": 48,
+          "size": 8,
+          "type": "Point2D"
+        },
+        "node0 index": {
+          "offset": 56,
+          "size": 2,
+          "type": "Index"
+        },
+        "node1 index": {
+          "offset": 58,
+          "size": 2,
+          "type": "Index"
+        },
+        "node0 weight": {
+          "offset": 60,
+          "size": 4,
+          "type": "float"
+        },
+        "node1 weight": {
+          "offset": 64,
+          "size": 4,
+          "type": "float"
+        }
+      }
+    },
+    "ModelVertexCompressed": {
+      "size": 32,
+      "fields": {
+        "position": {
+          "offset": 0,
+          "size": 12,
+          "type": "Point3D"
+        },
+        "normal": {
+          "offset": 12,
+          "size": 4,
+          "type": "uint32"
+        },
+        "binormal": {
+          "offset": 16,
+          "size": 4,
+          "type": "uint32"
+        },
+        "tangent": {
+          "offset": 20,
+          "size": 4,
+          "type": "uint32"
+        },
+        "texture coordinate u": {
+          "offset": 24,
+          "size": 2,
+          "type": "int16"
+        },
+        "texture coordinate v": {
+          "offset": 26,
+          "size": 2,
+          "type": "int16"
+        },
+        "node0 index": {
+          "offset": 28,
+          "size": 1,
+          "type": "int8"
+        },
+        "node1 index": {
+          "offset": 29,
+          "size": 1,
+          "type": "int8"
+        },
+        "node0 weight": {
+          "offset": 30,
+          "size": 2,
+          "type": "uint16"
+        }
+      }
+    },
+    "ModelTriangle": {
+      "size": 6,
+      "fields": {
+        "vertex0 index": {
+          "offset": 0,
+          "size": 2,
+          "type": "Index"
+        },
+        "vertex1 index": {
+          "offset": 2,
+          "size": 2,
+          "type": "Index"
+        },
+        "vertex2 index": {
+          "offset": 4,
+          "size": 2,
+          "type": "Index"
+        }
+      }
+    },
+    "ModelGeometryPart": {
+      "size": 104,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 4,
+          "type": "ModelGeometryPartFlags"
+        },
+        "shader index": {
+          "offset": 4,
+          "size": 2,
+          "type": "Index"
+        },
+        "prev filthy part index": {
+          "offset": 6,
+          "size": 1,
+          "type": "uint8"
+        },
+        "next filthy part index": {
+          "offset": 7,
+          "size": 1,
+          "type": "uint8"
+        },
+        "centroid primary node": {
+          "offset": 8,
+          "size": 2,
+          "type": "Index"
+        },
+        "centroid secondary node": {
+          "offset": 10,
+          "size": 2,
+          "type": "Index"
+        },
+        "centroid primary weight": {
+          "offset": 12,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "centroid secondary weight": {
+          "offset": 16,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "centroid": {
+          "offset": 20,
+          "size": 12,
+          "type": "Point3D"
+        },
+        "uncompressed vertices": {
+          "offset": 32,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelVertexUncompressed"
+        },
+        "compressed vertices": {
+          "offset": 44,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelVertexCompressed"
+        },
+        "triangles": {
+          "offset": 56,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelTriangle"
+        },
+        "triangle buffer type": {
+          "offset": 68,
+          "size": 2,
+          "type": "TriangleBufferType"
+        },
+        "triangle count": {
+          "offset": 72,
+          "size": 4,
+          "type": "uint32"
+        },
+        "triangle offset": {
+          "offset": 76,
+          "size": 4,
+          "type": "uint32"
+        },
+        "triangle offset 2": {
+          "offset": 80,
+          "size": 4,
+          "type": "uint32"
+        },
+        "vertex type": {
+          "offset": 84,
+          "size": 2,
+          "type": "VertexType"
+        },
+        "vertex count": {
+          "offset": 88,
+          "size": 4,
+          "type": "uint32"
+        },
+        "vertex pointer": {
+          "offset": 96,
+          "size": 4,
+          "type": "Pointer"
+        },
+        "vertex offset": {
+          "offset": 100,
+          "size": 4,
+          "type": "uint32"
+        }
+      }
+    },
+    "ModelGeometry": {
+      "size": 48,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 4,
+          "type": "IsUnusedFlag"
+        },
+        "parts": {
+          "offset": 36,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelGeometryPart"
+        }
+      }
+    },
+    "ModelShaderReference": {
+      "size": 32,
+      "fields": {
+        "shader": {
+          "offset": 0,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "permutation": {
+          "offset": 16,
+          "size": 2,
+          "type": "Index"
+        }
+      }
+    },
+    "Model": {
+      "size": 232,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 4,
+          "type": "ModelFlags"
+        },
+        "node list checksum": {
+          "offset": 4,
+          "size": 4,
+          "type": "int32"
+        },
+        "super high detail cutoff": {
+          "offset": 8,
+          "size": 4,
+          "type": "float"
+        },
+        "high detail cutoff": {
+          "offset": 12,
+          "size": 4,
+          "type": "float"
+        },
+        "medium detail cutoff": {
+          "offset": 16,
+          "size": 4,
+          "type": "float"
+        },
+        "low detail cutoff": {
+          "offset": 20,
+          "size": 4,
+          "type": "float"
+        },
+        "super low detail cutoff": {
+          "offset": 24,
+          "size": 4,
+          "type": "float"
+        },
+        "super low detail node count": {
+          "offset": 28,
+          "size": 2,
+          "type": "uint16"
+        },
+        "low detail node count": {
+          "offset": 30,
+          "size": 2,
+          "type": "uint16"
+        },
+        "medium detail node count": {
+          "offset": 32,
+          "size": 2,
+          "type": "uint16"
+        },
+        "high detail node count": {
+          "offset": 34,
+          "size": 2,
+          "type": "uint16"
+        },
+        "super high detail node count": {
+          "offset": 36,
+          "size": 2,
+          "type": "uint16"
+        },
+        "base map u scale": {
+          "offset": 48,
+          "size": 4,
+          "type": "float"
+        },
+        "base map v scale": {
+          "offset": 52,
+          "size": 4,
+          "type": "float"
+        },
+        "markers": {
+          "offset": 172,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelMarker"
+        },
+        "nodes": {
+          "offset": 184,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelNode"
+        },
+        "regions": {
+          "offset": 196,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelRegion"
+        },
+        "geometries": {
+          "offset": 208,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelGeometry"
+        },
+        "shaders": {
+          "offset": 220,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ModelShaderReference"
+        }
+      }
+    },
+    "ShaderTransparentExtraLayer": {
+      "size": 16,
+      "fields": {
+        "shader": {
+          "offset": 0,
+          "size": 16,
+          "type": "TagDependency"
+        }
+      }
+    },
+    "Shader": {
+      "size": 40,
+      "fields": {
+        "shader flags": {
+          "offset": 0,
+          "size": 2,
+          "type": "ShaderFlags"
+        },
+        "detail level": {
+          "offset": 2,
+          "size": 2,
+          "type": "ShaderDetailLevel"
+        },
+        "power": {
+          "offset": 4,
+          "size": 4,
+          "type": "float"
+        },
+        "color of emitted light": {
+          "offset": 8,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "tint color": {
+          "offset": 20,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "physics flags": {
+          "offset": 32,
+          "size": 2,
+          "type": "ShaderPhysicsFlags"
+        },
+        "material type": {
+          "offset": 34,
+          "size": 2,
+          "type": "MaterialType"
+        },
+        "shader type": {
+          "offset": 36,
+          "size": 2,
+          "type": "uint16"
+        }
+      }
+    },
+    "ShaderModel": {
+      "size": 440,
+      "fields": {
+        "shader model flags": {
+          "offset": 40,
+          "size": 2,
+          "type": "ShaderModelFlags"
+        },
+        "translucency": {
+          "offset": 56,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "change color source": {
+          "offset": 76,
+          "size": 2,
+          "type": "FunctionNameNullable"
+        },
+        "shader model more flags": {
+          "offset": 108,
+          "size": 2,
+          "type": "ShaderModelMoreFlags"
+        },
+        "color source": {
+          "offset": 112,
+          "size": 2,
+          "type": "FunctionNameNullable"
+        },
+        "animation function": {
+          "offset": 114,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "animation period": {
+          "offset": 116,
+          "size": 4,
+          "type": "float"
+        },
+        "animation color lower bound": {
+          "offset": 120,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "animation color upper bound": {
+          "offset": 132,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "map u scale": {
+          "offset": 156,
+          "size": 4,
+          "type": "float"
+        },
+        "map v scale": {
+          "offset": 160,
+          "size": 4,
+          "type": "float"
+        },
+        "base map": {
+          "offset": 164,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "multipurpose map": {
+          "offset": 188,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "detail function": {
+          "offset": 212,
+          "size": 2,
+          "type": "ShaderDetailFunction"
+        },
+        "detail mask": {
+          "offset": 214,
+          "size": 2,
+          "type": "ShaderModelDetailMask"
+        },
+        "detail map scale": {
+          "offset": 216,
+          "size": 4,
+          "type": "float"
+        },
+        "detail map": {
+          "offset": 220,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "detail map v scale": {
+          "offset": 236,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation source": {
+          "offset": 252,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "u animation function": {
+          "offset": 254,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "u animation period": {
+          "offset": 256,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation phase": {
+          "offset": 260,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation scale": {
+          "offset": 264,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation source": {
+          "offset": 268,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "v animation function": {
+          "offset": 270,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "v animation period": {
+          "offset": 272,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation phase": {
+          "offset": 276,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation scale": {
+          "offset": 280,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation source": {
+          "offset": 284,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "rotation animation function": {
+          "offset": 286,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "rotation animation period": {
+          "offset": 288,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation phase": {
+          "offset": 292,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation scale": {
+          "offset": 296,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation center": {
+          "offset": 300,
+          "size": 8,
+          "type": "Point2D"
+        },
+        "reflection falloff distance": {
+          "offset": 316,
+          "size": 4,
+          "type": "float"
+        },
+        "reflection cutoff distance": {
+          "offset": 320,
+          "size": 4,
+          "type": "float"
+        },
+        "perpendicular brightness": {
+          "offset": 324,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "perpendicular tint color": {
+          "offset": 328,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "parallel brightness": {
+          "offset": 340,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "parallel tint color": {
+          "offset": 344,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "reflection cube map": {
+          "offset": 356,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "unknown": {
+          "offset": 388,
+          "size": 4,
+          "type": "float"
+        }
+      }
+    }
+  }
+}

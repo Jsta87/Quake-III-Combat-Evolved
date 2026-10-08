@@ -13,6 +13,7 @@ jobs:
       - run: ./scripts/test-headshots.sh
       - run: python3 ./tests/profile.py
       - run: python3 ./tests/halo-extraction.py
+      - run: python3 ./tests/halo-assets.py
       - run: ./scripts/test-grenades.sh
       - run: ./scripts/test-needles.sh
       - run: ./scripts/test-heat.sh

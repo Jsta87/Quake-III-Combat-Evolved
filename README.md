@@ -40,6 +40,14 @@ stage native modules and disable pure checking for development. Use
 Networking uses QCE protocol **93**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
+## Halo assets
+
+The uploaded Xbox maps now have an offline [asset converter](docs/ASSET-CONVERSION.md)
+for textures, audio, and static weapon inspection models. Generated art and PK3s
+stay local under `assets/`. The optional Blood Gulch package enables Halo firing
+sounds; animated weapon/player models, materials, effects and HUD integration
+remain in progress.
+
 ## Controls
 
 | Action | Control |

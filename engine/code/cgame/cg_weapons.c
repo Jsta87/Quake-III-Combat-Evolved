@@ -815,6 +815,37 @@ void CG_RegisterWeapon( int weaponNum ) {
 		weaponInfo->flashSound[0] = trap_S_RegisterSound( "sound/weapons/rocket/rocklf1a.wav", qfalse );
 		break;
 	}
+	/* Locally converted Halo audio is optional. Keep arena sounds if absent. */
+	{
+		const char *haloName = NULL;
+		char soundPath[MAX_QPATH];
+		int variation;
+		switch ( weaponNum ) {
+		case WP_MACHINEGUN: haloName = "machinegun"; break;
+		case WP_SHOTGUN: haloName = "shotgun"; break;
+		case WP_ROCKET_LAUNCHER: haloName = "rocket"; break;
+		case WP_RAILGUN: haloName = "railgun"; break;
+		case WP_PLASMAGUN: haloName = "plasma"; break;
+		case WP_LIGHTNING: haloName = "lightning"; break;
+		case WP_BFG: haloName = "bfg"; break;
+		case WP_GRENADE_LAUNCHER: haloName = "grenade"; break;
+		default: break;
+		}
+		if ( haloName ) {
+			Com_sprintf( soundPath, sizeof(soundPath), "sound/qce/halo/fire/%s1.wav", haloName );
+			if ( trap_FS_FOpenFile( soundPath, NULL, FS_READ ) > 0 ) {
+				memset( weaponInfo->flashSound, 0, sizeof(weaponInfo->flashSound) );
+				for ( variation = 0; variation < 4; variation++ ) {
+					Com_sprintf( soundPath, sizeof(soundPath), "sound/qce/halo/fire/%s%d.wav", haloName, variation + 1 );
+					if ( trap_FS_FOpenFile( soundPath, NULL, FS_READ ) <= 0 ) break;
+					weaponInfo->flashSound[variation] = trap_S_RegisterSound( soundPath, qfalse );
+				}
+				/* Quake's continuous hum loops do not accompany Halo shots. */
+				weaponInfo->firingSound = 0;
+				weaponInfo->readySound = 0;
+			}
+		}
+	}
 }
 
 /*
