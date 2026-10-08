@@ -24,6 +24,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // executed by a key binding
 
 #include "cg_local.h"
+#include "../qcommon/qce_color.h"
+static void CG_QceColor_f(void) {
+ byte color[4];char input[64];
+ if(trap_Argc()!=4) {CG_Printf("Usage: qce_color R G B (0..255)\n");return;}
+ Com_sprintf(input,sizeof(input),"%s",CG_Argv(1));Q_strcat(input,sizeof(input)," ");Q_strcat(input,sizeof(input),CG_Argv(2));Q_strcat(input,sizeof(input)," ");Q_strcat(input,sizeof(input),CG_Argv(3));
+ if(!QCE_ParseRGB(input,color)){CG_Printf("RGB values must be integers from 0 to 255.\n");return;}
+ trap_Cvar_Set("qce_colorRGB",input);
+}
+
+static void CG_QceColorHex_f(void) {
+ char hex[16];int i,value=0;byte color[3];
+ trap_Argv(1,hex,sizeof(hex));
+ if(trap_Argc()!=2 || strlen(hex)!=6){CG_Printf("Usage: qce_color_hex RRGGBB\n");return;}
+ for(i=0;i<6;i++) {
+  int digit=hex[i]>='0' && hex[i]<='9'?hex[i]-'0':hex[i]>='a' && hex[i]<='f'?hex[i]-'a'+10:hex[i]>='A' && hex[i]<='F'?hex[i]-'A'+10:-1;
+  if(digit<0){CG_Printf("Expected six hexadecimal digits.\n");return;}
+  value=value*16+digit;if(i&1){color[i/2]=(byte)value;value=0;}
+ }
+ trap_Cvar_Set("qce_colorRGB",va("%d %d %d",color[0],color[1],color[2]));
+}
+
 #ifdef MISSIONPACK
 #include "../ui/ui_shared.h"
 extern menuDef_t *menuScoreboard;
@@ -451,6 +472,8 @@ typedef struct {
 } consoleCommand_t;
 
 static consoleCommand_t	commands[] = {
+ {"qce_color",CG_QceColor_f},
+ {"qce_color_hex",CG_QceColorHex_f},
 	{ "testgun", CG_TestGun_f },
 	{ "testmodel", CG_TestModel_f },
 	{ "nextframe", CG_TestModelNextFrame_f },

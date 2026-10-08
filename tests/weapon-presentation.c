@@ -2,14 +2,19 @@
 #include <assert.h>
 #include <stdio.h>
 #include "../engine/code/cgame/cg_local.h"
+#include "../engine/code/qcommon/qce_color.h"
 #include "../engine/code/cgame/cg_halo_present.h"
 int main(void) {
  qceViewClip_t clips[QCE_VIEW_CLIPS];
  qceViewPlayback_t p;
  qceViewInput_t in;
  qceViewSound_t sound;
+ byte rgb[4]={1,2,3,4};
  int i,oldframe,frame;
  float backlerp;
+ assert(QCE_ParseRGB("255 0 127",rgb) && rgb[0]==255 && rgb[1]==0 && rgb[2]==127 && rgb[3]==255);
+ assert(!QCE_ParseRGB("256 0 0",rgb) && !QCE_ParseRGB("-1 0 0",rgb) && !QCE_ParseRGB("1 2",rgb) && !QCE_ParseRGB("1 2 3 extra",rgb));
+ assert(rgb[0]==255 && rgb[2]==127);
  memset(&p,0,sizeof(p));memset(&in,0,sizeof(in));memset(&sound,0,sizeof(sound));
  for(i=0;i<QCE_VIEW_CLIPS;i++) {clips[i].first=i*100;clips[i].count=30;clips[i].fps=30;clips[i].loop=0;}
  in.weapon=WP_MACHINEGUN;in.state=WEAPON_RELOADING;in.now=1000;in.magazine=0;in.weaponTime=3000;in.phaseMs=3000;in.reloadRounds=60;
@@ -29,9 +34,11 @@ int main(void) {
  in.weapon=WP_LIGHTNING;in.state=WEAPON_READY;in.phaseMs=0;in.charge=300;in.chargeMs=600;in.now=4000;
  assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGE_ENTER);
  in.charge=600;in.now=4300;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGE);
- in.charge=0;in.hot=1;in.chargedFire=1;in.fireTime=4400;in.now=4400;
- assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGED_FIRE); /* fire before hot */
- in.now=5401;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGED_HOT);
+ in.charge=0;in.hot=1;in.chargedFire=1;in.fireTime=4400;in.now=4400;in.state=WEAPON_FIRING;
+ assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGED_HOT && p.start==4400); /* immediate cooling on final shot */
+ sound.frame=0;sound.count=1;assert(QCE_ViewSoundDue(&p,0,&clips[QCE_VIEW_CHARGED_HOT],&sound,0));
+ in.now=4500;in.state=WEAPON_READY;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_CHARGED_HOT && p.start==4400);
+ assert(!QCE_ViewSoundDue(&p,100,&clips[QCE_VIEW_CHARGED_HOT],&sound,0)); /* firing cooldown cannot replay heat audio */
  in.now=6500;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_HOT_IDLE);
  in.hot=0;in.now=6600;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_RECOVER);
  in.now=7601;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_IDLE);

@@ -37,13 +37,14 @@ static void setup(void) {
 int main(void) {
  setup();G_QceSwapWeapon(&g_entities[0]);
  assert(drops==1 && pickups==1 && selects==1 && client.ps.weapon==WP_SHOTGUN);
+ assert(client.qcePickupLatched);
  assert(client.ps.eventSequence==0); /* replacement must not trigger empty-ammo selection */
  assert(drop.count==45 && drop.qceDroppedMagazine==13 && drop.s.time==3000);
  assert(BG_QceSlot(&client.ps,WP_MACHINEGUN)<0 && BG_QceMagazine(&client.ps,WP_SHOTGUN)==10);
  assert(BG_QceSlot(&client.ps,WP_ROCKET_LAUNCHER)>=0 && client.ps.ammo[WP_ROCKET_LAUNCHER]==4);
- setup();wall=1;G_QceSwapWeapon(&g_entities[0]);assert(!drops && !pickups);
+ setup();wall=1;G_QceSwapWeapon(&g_entities[0]);assert(!drops && !pickups && !client.qcePickupLatched);
  setup();g_entities[MAX_CLIENTS].r.currentOrigin[0]=70;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
- setup();g_entities[MAX_CLIENTS].r.currentOrigin[0]=-40;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
+ setup();g_entities[MAX_CLIENTS].r.currentOrigin[0]=-40;G_QceSwapWeapon(&g_entities[0]);assert(pickups==1);
  setup();client.ps.weaponTime=1;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
  setup();g_entities[MAX_CLIENTS].s.time=2000;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
  setup();g_entities[0].health=0;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
@@ -60,5 +61,5 @@ int main(void) {
  assert(drop.qceDroppedBattery==499123 && drop.qceDroppedRate==5678 && drop.qceDroppedRateRemainder==-321 && drop.qceDroppedOverheatTime==1234);
  assert(drop.qceDroppedError==7000 && drop.qceDroppedErrorRemainder==-432);
  assert(drop.qceDroppedHeat==10000 && drop.qceDroppedHeatRemainder==321 && drop.qceDroppedOverheated==1 && drop.qceDroppedHeatTime==level.time);
- puts("PASS: nearby weapon replacement, loaded/total ammo preservation, select feedback, free slot, facing/range/LOS, owner lock and action guards");return 0;
+ puts("PASS: nearby weapon replacement, loaded/total ammo preservation, select feedback, free slot, any direction/range/LOS, owner lock and action guards");return 0;
 }

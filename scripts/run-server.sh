@@ -12,4 +12,4 @@ exec "$root/build/server/RelWithDebInfo/ioq3ded" +set fs_basepath "$data" \
   +set fs_homepath "$root/runtime" +set fs_game baseq3 \
   +set sv_pure 0 +set vm_game 0 \
   +set dedicated 1 +set sv_hostname "Quake III Combat Evolved - development" \
-  +set g_gametype 0 +map "${QCE_MAP:-q3dm1}" "$@"
+  +set g_gametype 0 +set g_qceCombat 1 +set g_qceMovement 1 +devmap "${QCE_MAP:-q3dm1}" "$@"

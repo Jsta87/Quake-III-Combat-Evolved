@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_players.c -- handle the media and animation for player entities
 #include "cg_local.h"
+#define QCE_ParseRGB CG_PlayerParseRGB
+#include "../qcommon/qce_color.h"
 
 char	*cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {
 	"*death1.wav",
@@ -897,6 +899,8 @@ void CG_NewClientInfo( int clientNum ) {
 	Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
 
 	// colors
+ QCE_ParseRGB(Info_ValueForKey(configstring,"qce_rgb"),newInfo.haloColor);
+ if(cg_debugAnim.integer)CG_Printf("QCE armor client=%d RGB=%d %d %d\n",clientNum,newInfo.haloColor[0],newInfo.haloColor[1],newInfo.haloColor[2]);
 	v = Info_ValueForKey( configstring, "c1" );
 	CG_ColorFromString( v, newInfo.color1 );
 
@@ -2284,6 +2288,7 @@ void CG_Player( centity_t *cent ) {
 	}
 
 
+	if(CG_HaloPlayer(cent,renderfx))return;
 	memset( &legs, 0, sizeof(legs) );
 	memset( &torso, 0, sizeof(torso) );
 	memset( &head, 0, sizeof(head) );
@@ -2633,3 +2638,41 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 	}
 }
 
+
+/* A single Halo skeleton replaces the three Quake body pieces for every player. */
+qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
+ refEntity_t body,gun;clientInfo_t *ci;vec3_t angles,velocity,forward,right;orientation_t hand;
+ qceViewClip_t *clip;int kind=0,legs=cent->currentState.legsAnim&~ANIM_TOGGLEBIT,i;
+ float f,s;
+ if(!cg.snap->ps.stats[STAT_QCE_COMBAT] || !cg_qceWorld.playerModel)return qfalse;
+ ci=&cgs.clientinfo[cent->currentState.clientNum];
+ VectorSet(angles,0,cent->lerpAngles[YAW],0);AngleVectors(angles,forward,right,NULL);
+ VectorCopy(cent->currentState.pos.trDelta,velocity);f=DotProduct(velocity,forward);s=DotProduct(velocity,right);
+ if(cent->currentState.eFlags&EF_DEAD)kind=10;
+ else if(cent->qceMeleeTime>0 && cg.time-cent->qceMeleeTime<1200)kind=8;
+ else if(cent->qceGrenadeTime>0 && cg.time-cent->qceGrenadeTime<1266)kind=9;
+ else if(cent->currentState.groundEntityNum==ENTITYNUM_NONE)kind=7;
+ else if(legs==LEGS_WALKCR || legs==LEGS_IDLECR)kind=VectorLength(velocity)>10?6:5;
+ else if(VectorLength(velocity)>10)kind=fabs(s)>fabs(f)?(s>0?4:3):(f<0?2:1);
+ if(cent->qcePlayerClip!=kind || cg.time<cent->qcePlayerStart){cent->qcePlayerClip=kind;cent->qcePlayerStart=cg.time;}
+ memset(&body,0,sizeof(body));body.hModel=cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
+ VectorCopy(cent->lerpOrigin,body.origin);body.origin[2]-=24;VectorCopy(body.origin,body.oldorigin);VectorCopy(cent->lerpOrigin,body.lightingOrigin);AnglesToAxis(angles,body.axis);
+ memcpy(body.shaderRGBA,ci->haloColor,4);
+ if(ci->team==TEAM_RED) {body.shaderRGBA[0]=220;body.shaderRGBA[1]=40;body.shaderRGBA[2]=40;}
+ if(ci->team==TEAM_BLUE){body.shaderRGBA[0]=40;body.shaderRGBA[1]=90;body.shaderRGBA[2]=230;}
+ body.shaderRGBA[3]=255;
+ clip=&cg_qceWorld.playerClips[kind];
+ CG_HaloWorldFrames(clip,kind>=7,cg.time-cent->qcePlayerStart,&body.oldframe,&body.frame,&body.backlerp);
+ CG_PlayerSprites(cent);CG_PlayerSplash(cent);CG_AddRefEntityWithPowerups(&body,&cent->currentState,ci->team);
+ if(!(cent->currentState.eFlags&EF_DEAD) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
+  CG_RegisterWeapon(cent->currentState.weapon);memset(&gun,0,sizeof(gun));gun.hModel=cg_weapons[cent->currentState.weapon].weaponModel;gun.renderfx=body.renderfx;
+  if(trap_R_LerpTag(&hand,body.hModel,body.oldframe,body.frame,1-body.backlerp,"tag_hand")) {
+   VectorCopy(body.origin,gun.origin);
+   for(i=0;i<3;i++)VectorMA(gun.origin,hand.origin[i],body.axis[i],gun.origin);
+   /* World models share Halo's forward axis; initial grip placement follows the hand. */
+   AxisCopy(body.axis,gun.axis);VectorCopy(gun.origin,gun.oldorigin);VectorCopy(body.lightingOrigin,gun.lightingOrigin);memcpy(gun.shaderRGBA,body.shaderRGBA,4);
+   trap_R_AddRefEntityToScene(&gun);
+  }
+ }
+ return qtrue;
+}

@@ -37,7 +37,7 @@ profiles unless overridden. `QCE_MAP` selects another installed arena. Launchers
 stage native modules and disable pure checking for development. Use
 `+connect localhost` to join a running local dedicated server.
 
-Networking uses QCE protocol **94**. Rebuild both engines and all modules together;
+Networking uses QCE protocol **95**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
 ## Halo assets
@@ -126,3 +126,5 @@ SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy ./scripts/run-client.sh +set r_m
 See [Halo data workflow](docs/HALO-DATA.md), [integration](docs/INTEGRATION.md)
 and [source provenance/licensing](docs/UPSTREAM.md). Upstream notices and GPL
 license remain under `engine/`.
+
+Recent playtest fixes and console controls: [PLAYTEST-FIXES.md](docs/PLAYTEST-FIXES.md).

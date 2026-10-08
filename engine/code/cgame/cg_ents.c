@@ -278,6 +278,7 @@ static void CG_Item( centity_t *cent ) {
 	// models, so we need to offset them or they will rotate
 	// eccentricly
 	if ( item->giType == IT_WEAPON ) {
+  CG_RegisterWeapon(item->giTag);
 		wi = &cg_weapons[item->giTag];
 		cent->lerpOrigin[0] -= 
 			wi->weaponMidpoint[0] * ent.axis[0][0] +
@@ -301,6 +302,7 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	ent.hModel = cg_items[es->modelindex].models[0];
+ if(cg.snap->ps.stats[STAT_QCE_COMBAT] && item->giType==IT_WEAPON) {CG_RegisterWeapon(item->giTag);ent.hModel=cg_weapons[item->giTag].weaponModel;}
 
 	VectorCopy( cent->lerpOrigin, ent.origin);
 	VectorCopy( cent->lerpOrigin, ent.oldorigin);
@@ -327,7 +329,7 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	// increase the size of the weapons when they are presented as items
-	if ( item->giType == IT_WEAPON ) {
+	if ( item->giType == IT_WEAPON && !cg.snap->ps.stats[STAT_QCE_COMBAT] ) {
 		VectorScale( ent.axis[0], 1.5, ent.axis[0] );
 		VectorScale( ent.axis[1], 1.5, ent.axis[1] );
 		VectorScale( ent.axis[2], 1.5, ent.axis[2] );
@@ -421,7 +423,21 @@ static void CG_Missile( centity_t *cent ) {
 	if ( s1->weapon >= WP_NUM_WEAPONS ) {
 		s1->weapon = 0;
 	}
-	weapon = &cg_weapons[s1->weapon];
+	CG_RegisterWeapon(s1->weapon);
+ weapon = &cg_weapons[s1->weapon];
+ if(cg.snap->ps.stats[STAT_QCE_COMBAT] && (s1->weapon==WP_GRENADE_LAUNCHER || s1->weapon==WP_PLASMAGUN) && (s1->generic1==1 || s1->generic1==2)) {
+  int type=s1->generic1-1;memset(&ent,0,sizeof(ent));
+  ent.hModel=cg_qceWorld.grenadeModels[type];
+  if(!ent.hModel)ent.hModel=cg_weapons[WP_GRENADE_LAUNCHER].missileModel;
+  VectorCopy(cent->lerpOrigin,ent.origin);VectorCopy(ent.origin,ent.oldorigin);
+  VectorSet(cent->lerpAngles,cg.time*0.3f,cg.time*0.2f,0);AnglesToAxis(cent->lerpAngles,ent.axis);
+  memset(ent.shaderRGBA,255,4);ent.renderfx=RF_NOSHADOW;trap_R_AddRefEntityToScene(&ent);
+  if(type) {
+   trap_R_AddLightToScene(ent.origin,100,0.1f,0.4f,1);
+   if(cg_qceWorld.grenadeLoop)trap_S_AddLoopingSound(s1->number,ent.origin,vec3_origin,cg_qceWorld.grenadeLoop);
+  }
+  return;
+ }
 
 	// calculate the axis
 	VectorCopy( s1->angles, cent->lerpAngles);

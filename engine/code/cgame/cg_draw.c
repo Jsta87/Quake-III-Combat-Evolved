@@ -264,11 +264,11 @@ CG_Draw3DModel
 
 ================
 */
-void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles ) {
+static void CG_Draw3DModelColored( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles, const byte *color ) {
 	refdef_t		refdef;
 	refEntity_t		ent;
 
-	if ( !cg_draw3dIcons.integer || !cg_drawIcons.integer ) {
+	if ( (!cg_draw3dIcons.integer && !color) || !cg_drawIcons.integer ) {
 		return;
 	}
 
@@ -281,6 +281,7 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 	VectorCopy( origin, ent.origin );
 	ent.hModel = model;
 	ent.customSkin = skin;
+ if(color)memcpy(ent.shaderRGBA,color,4);
 	ent.renderfx = RF_NOSHADOW;		// no stencil shadows
 
 	refdef.rdflags = RDF_NOWORLDMODEL;
@@ -302,6 +303,10 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 	trap_R_RenderScene( &refdef );
 }
 
+void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles ) {
+ CG_Draw3DModelColored(x,y,w,h,model,skin,origin,angles,NULL);
+}
+
 /*
 ================
 CG_DrawHead
@@ -315,11 +320,13 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
 	float			len;
 	vec3_t			origin;
 	vec3_t			mins, maxs;
+ qboolean halo=cg.snap && cg.snap->ps.stats[STAT_QCE_COMBAT] && cg_qceWorld.headModel;
+ byte color[4];
 
 	ci = &cgs.clientinfo[ clientNum ];
 
-	if ( cg_draw3dIcons.integer ) {
-		cm = ci->headModel;
+	if ( cg_draw3dIcons.integer || halo ) {
+		cm = halo?cg_qceWorld.headModel:ci->headModel;
 		if ( !cm ) {
 			return;
 		}
@@ -336,9 +343,13 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
 		origin[0] = len / 0.268;	// len / tan( fov/2 )
 
 		// allow per-model tweaking
-		VectorAdd( origin, ci->headOffset, origin );
+		if(!halo)VectorAdd( origin, ci->headOffset, origin );
 
-		CG_Draw3DModel( x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles );
+		memcpy(color,ci->haloColor,4);
+  if(ci->team==TEAM_RED){color[0]=220;color[1]=40;color[2]=40;}
+  if(ci->team==TEAM_BLUE){color[0]=40;color[1]=90;color[2]=230;}
+  color[3]=255;
+  CG_Draw3DModelColored(x,y,w,h,cm,halo?0:ci->headSkin,origin,headAngles,halo?color:NULL);
 	} else if ( cg_drawIcons.integer ) {
 		CG_DrawPic( x, y, w, h, ci->modelIcon );
 	}

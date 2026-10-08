@@ -94,7 +94,9 @@ int main(void) {
  advance(&ps,0,60);BG_QceToggleGrenade(&ps);action(&ps,BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);
  assert(BG_QceGrenadeCount(&ps,0)==2 && BG_QceGrenadeCount(&ps,1)==1);
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;BG_QceAddWeapon(&ps,WP_MACHINEGUN,60);
- meleeTarget=100;seq=ps.eventSequence;predicted=ps;
+ meleeTarget=100;seq=ps.eventSequence;
+ action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);assert(ps.velocity[0]<1); /* CE default never lunges */
+ init(&ps,0);ps.stats[STAT_QCE_COMBAT]=3;BG_QceAddWeapon(&ps,WP_MACHINEGUN,60);seq=ps.eventSequence;predicted=ps;
  action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);action(&predicted,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
  assert(!memcmp(&ps,&predicted,sizeof(ps)) && ps.velocity[0]>490 && ps.eventSequence==seq+1);
  for(i=0;i<5;i++)action(&ps,0,WP_MACHINEGUN,16);

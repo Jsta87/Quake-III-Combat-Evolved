@@ -739,7 +739,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 			// powerups and team items will have a separate global sound, this one
 			// will be played at prediction time
-			if ( item->giType == IT_POWERUP || item->giType == IT_TEAM) {
+			if(cg.snap->ps.stats[STAT_QCE_COMBAT] && (item->giType==IT_WEAPON || item->giType==IT_AMMO) && item->giTag>WP_NONE && item->giTag<WP_NUM_WEAPONS) {
+    CG_RegisterWeapon(item->giTag);
+    trap_S_StartSound(NULL,es->number,CHAN_AUTO,cg_weapons[item->giTag].haloPickupSound?cg_weapons[item->giTag].haloPickupSound:trap_S_RegisterSound(item->pickup_sound,qfalse));
+   } else if ( item->giType == IT_POWERUP || item->giType == IT_TEAM) {
 				trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.n_healthSound );
 			} else if (item->giType == IT_PERSISTANT_POWERUP) {
 #ifdef MISSIONPACK
@@ -826,6 +829,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_QCE_GRENADE:
 		DEBUGNAME("EV_QCE_GRENADE");
+  if(cg_qceWorld.grenadeThrow)trap_S_StartSound(NULL,es->number,CHAN_WEAPON,cg_qceWorld.grenadeThrow);
 		cent->qceGrenadeTime = cg.time;
 		break;
 
@@ -928,6 +932,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_GRENADE_BOUNCE:
 		DEBUGNAME("EV_GRENADE_BOUNCE");
+  if((es->generic1==1 || es->generic1==2) && cg_qceWorld.grenadeBounce[0]) {trap_S_StartSound(NULL,es->number,CHAN_AUTO,cg_qceWorld.grenadeBounce[es->eventParm&1]);break;}
 		if ( rand() & 1 ) {
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.hgrenb1aSound );
 		} else {
@@ -986,18 +991,21 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	//
 	case EV_MISSILE_HIT:
 		DEBUGNAME("EV_MISSILE_HIT");
+  if((es->weapon==WP_GRENADE_LAUNCHER || es->weapon==WP_PLASMAGUN) && (es->generic1==1 || es->generic1==2)) {CG_HaloGrenadeExplosion(es->generic1,position);break;}
 		ByteToDir( es->eventParm, dir );
 		CG_MissileHitPlayer( es->weapon, position, dir, es->otherEntityNum );
 		break;
 
 	case EV_MISSILE_MISS:
 		DEBUGNAME("EV_MISSILE_MISS");
+  if((es->weapon==WP_GRENADE_LAUNCHER || es->weapon==WP_PLASMAGUN) && (es->generic1==1 || es->generic1==2)) {CG_HaloGrenadeExplosion(es->generic1,position);break;}
 		ByteToDir( es->eventParm, dir );
 		CG_MissileHitWall( es->weapon, 0, position, dir, IMPACTSOUND_DEFAULT );
 		break;
 
 	case EV_MISSILE_MISS_METAL:
 		DEBUGNAME("EV_MISSILE_MISS_METAL");
+  if((es->weapon==WP_GRENADE_LAUNCHER || es->weapon==WP_PLASMAGUN) && (es->generic1==1 || es->generic1==2)) {CG_HaloGrenadeExplosion(es->generic1,position);break;}
 		ByteToDir( es->eventParm, dir );
 		CG_MissileHitWall( es->weapon, 0, position, dir, IMPACTSOUND_METAL );
 		break;

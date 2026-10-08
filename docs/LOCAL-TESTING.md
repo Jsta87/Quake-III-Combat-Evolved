@@ -92,7 +92,7 @@ still outstanding; see [Weapon presentation](WEAPON-PRESENTATION.md).
 ## Updating and multiplayer
 
 After pulling gameplay changes, rebuild client/server modules together. This
-pass uses QCE protocol **94**, including explicit shotgun reload states; older
+pass uses QCE protocol **95**, including explicit shotgun reload states; older
 project builds and stock Quake/ioquake3 clients are incompatible. The client build
 also produces a dedicated server, or build it separately with
 `./scripts/build.sh server`. Every participating machine needs its own Quake data
@@ -104,3 +104,6 @@ Quake's pak files in that directory too.
 
 Removing `zzz-qce-halo.pk3` restores Quake weapon presentation and sounds while
 keeping the project's Halo gameplay enabled.
+
+See [playtest fixes and controls](PLAYTEST-FIXES.md) for Spartan colors, optional
+lunge, movement/view scale tuning and development cheats.

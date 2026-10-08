@@ -337,7 +337,7 @@ qboolean G_QceGrenadeImpact(gentity_t *ent,trace_t *trace) {
   if(!ent->qceFuseArmed && (def->timer_start==1 || (def->timer_start==2 && ent->s.pos.trType==TR_STATIONARY))) {
    ent->qceFuseArmed=1;ent->nextthink=level.time+def->fuse_ms;
   }
-  G_AddEvent(ent,EV_GRENADE_BOUNCE,0);return qtrue;
+  G_AddEvent(ent,EV_GRENADE_BOUNCE,(trace->surfaceFlags&SURF_METALSTEPS)?1:0);return qtrue;
  }
  if(ent->qceGrenadeType>0 && BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky && !ent->qceStuck) {
   vec3_t offset,angles,forward,right,up;

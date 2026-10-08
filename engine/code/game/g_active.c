@@ -847,10 +847,13 @@ void ClientThink_real( gentity_t *ent ) {
 		client->ps.pm_type = PM_NORMAL;
 	}
 
+	if(client->ps.stats[STAT_QCE_COMBAT])client->ps.stats[STAT_QCE_COMBAT]=1|(g_qceMeleeLunge.integer?2:0);
+	if(!(ucmd->buttons&BUTTON_QCE_PICKUP))client->qcePickupLatched=qfalse;
+ else if(!client->qcePickupLatched)G_QceSwapWeapon(ent);
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
-	client->ps.stats[STAT_QCE_MOVEMENT] = g_qceMovement.integer == 1;
+	client->ps.stats[STAT_QCE_MOVEMENT] = g_qceMovement.integer==1 ? (int)(Com_Clamp(0.5f,2.0f,g_qceMovementScale.value)*100+0.5f) : 0;
 	client->ps.speed = client->ps.stats[STAT_QCE_MOVEMENT] ? (int)BG_QceMovementDef()->forward : g_speed.value;
 
 #ifdef MISSIONPACK

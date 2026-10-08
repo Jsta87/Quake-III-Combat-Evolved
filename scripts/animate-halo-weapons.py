@@ -416,7 +416,7 @@ def materials(cache,assets,models):
             if spec and brightness>0:
                 stages.append(f' {{ map {spec_path}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen const ( {brightness:g} {brightness:g} {brightness:g} )\n alphaGen lightingSpecular\n }}')
                 approximations.append('Quake specular lobe; view-dependent Halo cubemap reflection deferred')
-            text.append(name+'\n{\n '+('cull none' if flags&2 else 'cull back')+'\n'+'\n'.join(stages)+'\n}\n')
+            text.append(name+'\n{\n '+('cull none' if flags&2 else '')+'\n'+'\n'.join(stages)+'\n}\n')
             parameters = {k:value(k) for k in ('shader model flags','detail function','detail mask','detail map scale','detail map v scale','perpendicular brightness','parallel brightness','perpendicular tint color','parallel tint color','animation period','animation color lower bound','animation color upper bound','map u scale','map v scale')}
             records.append({'shader':shader['path'],'id':shader['id'],'parameters':parameters,'channel_order':'Xbox RGBA specular/illumination/color-change/auxiliary','approximations':approximations,'runtime_shader':name})
     assets.files.pop('scripts/qce-halo.shader',None)
@@ -464,6 +464,7 @@ def animation_sounds(cache,graph,clips,assets,records,runtime,overrides=None):
             source=override['source'] if override else refs[clip['sound_index']]
             if not source or source['class']!='snd!':raise a.halo.CacheError('Invalid animation sound reference')
             frame=override['frame'] if override else clip['sound_frame']
+            if action in ('overheat','chargedhot'):frame=0 # heat feedback begins on the final shot
             if not 0<=frame<clip['count']:raise a.halo.CacheError('Animation sound frame outside clip')
             candidates=[r for r in records if r['id']==source['id'] and 'permutation' in r and r['range']==0]
             for i,record in enumerate(candidates[:4]):
@@ -524,8 +525,11 @@ def main():
                 meta = json.loads((args.output/source_mesh).read_text())
                 if meta['id']!=model['id']:raise a.halo.CacheError('Mismatched model source sidecar')
                 models.append({'id':model['id'],'source_mesh':source_mesh})
+        models.extend(report.get('world_presentation',{}).get('models',[]))
         assets.files = {k:v for k,v in report['files'].items() if not k.startswith('textures/qce/material/')}
         report['materials'] = materials(cache,assets,models);report['files'] = assets.files
+        if report.get('world_presentation'):
+            spec = importlib.util.spec_from_file_location('halo_world',ROOT/'scripts/convert-halo-world.py');world = importlib.util.module_from_spec(spec);spec.loader.exec_module(world);world.export(cache,assets,report)
         (args.output/'manifest.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');assets.package(args.pk3)
         print('Rebuilt Halo materials:',args.pk3);return
     models = assets.weapon_models(enriched)
@@ -602,6 +606,8 @@ def main():
         print(runtime,len(frame_list),'frames',len(surfaces),'surfaces',len(attached),'attachments',flush=True)
     report['schema_version'] = 2;report['files'] = assets.files;report['animated_weapons'] = exports;report['materials'] = material_report
     report['limitations'] = ['Additive movement/ammunition/aim overlays pending','Animation sound gain/pitch/attenuation pending','Halo cubemap reflection and biased/masked detail approximated/deferred','Runtime animation transitions and retail view calibration require comparison']
+    spec = importlib.util.spec_from_file_location('halo_world',ROOT/'scripts/convert-halo-world.py')
+    world = importlib.util.module_from_spec(spec);spec.loader.exec_module(world);world.export(cache,assets,report)
     (args.output/'manifest.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');assets.package(args.pk3)
     print('Packaged animated Halo weapons:',args.pk3)
 

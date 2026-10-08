@@ -1198,6 +1198,7 @@ void G_QceThrowGrenade(gentity_t *ent, int type) {
  grenade->qceFuseArmed=def->timer_start==0;
  grenade->nextthink=level.time+(grenade->qceFuseArmed?def->fuse_ms:def->max_flight_ms);
  grenade->s.weapon=type==1?WP_PLASMAGUN:WP_GRENADE_LAUNCHER;
+ grenade->s.generic1=type+1;
  grenade->s.eFlags=def->sticky?0:EF_BOUNCE_HALF;
  VectorScale(dir,def->throw_speed,grenade->s.pos.trDelta);SnapVector(grenade->s.pos.trDelta);
 }

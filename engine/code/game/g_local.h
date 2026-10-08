@@ -287,6 +287,7 @@ struct gclient_s {
 	// sum up damage over an entire frame, so
 	// shotgun blasts give a single big kick
 	int qceShieldNextTick;
+ qboolean qcePickupLatched;
  int qceShieldRemainder;
 	int			damage_armor;		// damage absorbed by armor
 	int			damage_blood;		// damage taken out of health
@@ -742,6 +743,8 @@ extern	vmCvar_t	g_gravity;
 extern	vmCvar_t	g_speed;
 extern vmCvar_t g_qceMovement;
 extern vmCvar_t g_qceCombat;
+extern vmCvar_t g_qceMeleeLunge;
+extern vmCvar_t g_qceMovementScale;
 extern	vmCvar_t	g_knockback;
 extern	vmCvar_t	g_quadfactor;
 extern	vmCvar_t	g_forcerespawn;

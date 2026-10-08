@@ -15,4 +15,4 @@ export MESA_SHADER_CACHE_DIR="$root/runtime-client/mesa-cache"
 exec "$root/build/client/RelWithDebInfo/ioquake3" \
  +set fs_basepath "$data" +set fs_homepath "$root/runtime-client" \
  +set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 \
- +exec qce-controls.cfg +set g_qceCombat 1 +set g_qceMovement 1 +set sv_master1 "" +map "${QCE_MAP:-q3dm1}" "$@"
+ +exec qce-controls.cfg +set g_qceCombat 1 +set g_qceMovement 1 +set sv_master1 "" +devmap "${QCE_MAP:-q3dm1}" "$@"

@@ -126,6 +126,8 @@ vmCvar_t	cg_footsteps;
 vmCvar_t	cg_addMarks;
 vmCvar_t	cg_brassTime;
 vmCvar_t cg_qceFlashlight;
+static vmCvar_t cg_qceColorRGB;
+vmCvar_t cg_qceWeaponScale;
 vmCvar_t	cg_viewsize;
 vmCvar_t	cg_drawGun;
 vmCvar_t	cg_gun_frame;
@@ -234,6 +236,8 @@ static cvarTable_t cvarTable[] = {
 	{ &cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE },
 	{ &cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE },
 	{ &cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE },
+ { &cg_qceWeaponScale, "cg_qceWeaponScale", "0.9", CVAR_ARCHIVE },
+ { &cg_qceColorRGB, "qce_colorRGB", "40 180 70", CVAR_ARCHIVE | CVAR_USERINFO },
  { &cg_qceFlashlight, "cg_qceFlashlight", "0", CVAR_ARCHIVE },
 	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
 	{ &cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE },
@@ -1914,6 +1918,7 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	CG_LoadingString( "graphics" );
 
 	CG_RegisterGraphics();
+ CG_RegisterHaloWorld();
 
 	CG_LoadingString( "clients" );
 

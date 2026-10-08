@@ -29,7 +29,7 @@ grenades during the action but can be cancelled by switching weapons.
 Plasma-pistol presentation distinguishes charging, charged hold, charged fire,
 secondary overheat entry, hot hold and recovery. Charged hold keeps the ending
 pose while its additive jitter overlay remains deferred. A shot that locks the weapon hot
-finishes its firing clip before entering overheat. Out-of-range retail loop
+enters overheat immediately on its final shot, retaining the firing sound. Out-of-range retail loop
 indices are retained in the manifest and mapped to local clip frame zero; their
 linked-track semantics still require retail comparison.
 
@@ -38,6 +38,8 @@ skin for each predicted magazine count from 00 through 60. Reloading updates the
 display when ammunition is actually transferred. It does not rely on global
 shader remaps, which could change another player's weapon. The world-model
 counter remains static; mechanical ammunition/needle overlays are still pending.
+World weapons and Spartan/RGB presentation are described in
+[PLAYTEST-FIXES.md](PLAYTEST-FIXES.md).
 
 Animation graph sound references and their source frame indices become runtime
 sound events, played once per clip instance. Repeated shots and shell insertions
@@ -73,7 +75,7 @@ and charged jitter overlays, retail view/FOV placement, interrupted-pose blendin
 linked-animation loop semantics and exact ejection event scheduling remain.
 Sound gain/pitch/attenuation, charge-track fades, randomized event delay rules and
 third-person source animation sounds require further work. Halo cubemap
-reflection, transparent map combiners, color change and several detail modes
+reflection, transparent map combiners, weapon color change and several detail modes
 still need renderer work.
 
 Use `cg_debuganim 1` to report clip changes and sound events. `testgun
@@ -90,7 +92,7 @@ recovery priority, interpolation and once-per-instance sound scheduling.
 IQM meshes include orthogonal tangents required by OpenGL 2. Renderer tests
 exercise actual IQM tag interpolation in OpenGL 1 and 2, including
 endpoints, reverse interpolation and child bind transforms. Gameplay tests cover
-shotgun phases, interruption, conservation, prediction and protocol-94 state.
+shotgun phases, interruption, conservation, prediction and protocol-95 state.
 
 Native/QVM client and dedicated-server builds pass. Local offscreen runs in
 OpenGL 1 and 2 validate source audio loading,

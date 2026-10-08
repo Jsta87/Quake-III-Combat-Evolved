@@ -37,6 +37,10 @@ int main(void) {
  for(i=0;i<25;i++)step(&ps,0,0,0,0);assert(ps.viewheight==26 && !ps.qceCrouch);
  init(&ps,1);step(&ps,127,0,0,0);assert(fabs(ps.velocity[0]-6.144)<0.01);
  for(i=0;i<100;i++)step(&ps,127,0,0,0);for(i=0;i<30;i++)step(&ps,0,0,0,0);assert(fabs(ps.velocity[0])<0.01);
+ init(&ps,1);ps.stats[STAT_QCE_MOVEMENT]=110;copy=ps;
+ for(i=0;i<100;i++){step(&ps,127,0,0,0);step(&copy,127,0,0,0);assert(!memcmp(&ps,&copy,sizeof(ps)));}
+ assert(fabs(ps.velocity[0]-BG_QceMovementDef()->forward*1.1f)<1.0f && ps.gravity==(int)(BG_QceMovementDef()->gravity*1.1f+0.5f));
+ step(&ps,0,0,127,0);assert(ps.velocity[2]>BG_QceMovementDef()->jump);
  assert(BG_QceDamage(WP_SHOTGUN,0,0)==8 && BG_QceDamage(WP_SHOTGUN,1,1)==25);
  puts("PASS: frame-independent fire-rate ramps, fractional battery, authoritative zoom cycles/scoped shot capture, full/empty reload, melee keyframe and imported directional movement/crouch camera/braking");return 0;
 }

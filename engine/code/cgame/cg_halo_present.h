@@ -24,12 +24,12 @@ static int QCE_ViewSelect( qceViewPlayback_t *p, const qceViewInput_t *in, const
  }
  else if(in->state==WEAPON_MELEEING) {clip=QCE_VIEW_MELEE;start=in->meleeTime>0?in->meleeTime:in->now;}
  else if(in->grenadeTime>0 && in->now-in->grenadeTime<QCE_ViewDuration(&clips[QCE_VIEW_GRENADE])) {clip=QCE_VIEW_GRENADE;start=in->grenadeTime;}
- /* A charged bolt can lock the weapon hot immediately; finish its fire clip first. */
- else if(in->fireTime>0 && in->now-in->fireTime<QCE_ViewDuration(&clips[fire])) {clip=fire;start=in->fireTime;}
+ /* Heat is authoritative on the final shot: enter cooling immediately. */
  else if(in->hot) {
   clip=in->chargedFire && clips[QCE_VIEW_CHARGED_HOT].count>0?QCE_VIEW_CHARGED_HOT:QCE_VIEW_OVERHEAT;
   if(p->hot && (p->clip==QCE_VIEW_HOT_IDLE || ((p->clip==QCE_VIEW_OVERHEAT || p->clip==QCE_VIEW_CHARGED_HOT) && in->now-p->start>=QCE_ViewDuration(&clips[clip]))))clip=QCE_VIEW_HOT_IDLE;
  }
+ else if(in->fireTime>0 && in->now-in->fireTime<QCE_ViewDuration(&clips[fire])) {clip=fire;start=in->fireTime;}
  else if(in->charge>0) {
   start=in->now-in->charge;
   clip= in->charge<in->chargeMs && clips[QCE_VIEW_CHARGE_ENTER].count>0 ? QCE_VIEW_CHARGE_ENTER : QCE_VIEW_CHARGE;
@@ -37,7 +37,8 @@ static int QCE_ViewSelect( qceViewPlayback_t *p, const qceViewInput_t *in, const
  else if(p->recoveryStart>0 && in->now-p->recoveryStart<QCE_ViewDuration(&clips[QCE_VIEW_RECOVER])) {clip=QCE_VIEW_RECOVER;start=p->recoveryStart;}
  if(clips[clip].count<=0 && clip==QCE_VIEW_RELOAD_EMPTY)clip=QCE_VIEW_RELOAD_FULL;
  if(clips[clip].count<=0)clip=QCE_VIEW_IDLE;
- if(clip!=p->clip || in->state!=p->state || restart) {
+ /* Firing ends during cooling; that state change must not restart its clip/audio. */
+ if(clip!=p->clip || (in->state!=p->state && in->phaseMs>0) || restart) {
   p->start=start;p->clip=clip;
   if(in->phaseMs>0 && in->weaponTime>0) {
    int elapsed=in->phaseMs-in->weaponTime;

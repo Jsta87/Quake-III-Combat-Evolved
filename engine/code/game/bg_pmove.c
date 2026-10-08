@@ -238,7 +238,12 @@ Handles user intended acceleration
 ==============
 */
 static qboolean PM_QceMovement( void ) {
-	return pm->ps->pm_type == PM_NORMAL && pm->ps->stats[STAT_QCE_MOVEMENT] == 1;
+	return pm->ps->pm_type == PM_NORMAL && pm->ps->stats[STAT_QCE_MOVEMENT] != 0;
+}
+
+static float PM_QceMovementScale(void) {
+ int percent=pm->ps->stats[STAT_QCE_MOVEMENT];
+ return percent>1?Com_Clamp(0.5f,2.0f,percent/100.0f):1.0f;
 }
 
 /* Halo absolute acceleration approaches desired velocity, including braking. */
@@ -256,7 +261,7 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 		delta[2] = 0;
 		distance = VectorNormalize( delta );
 		if(!pml.walking && wishspeed==0)return;
-		step = (pml.walking ? ((pm->ps->pm_flags&PMF_DUCKED)?BG_QceMovementDef()->crouch_acceleration:BG_QceMovementDef()->acceleration) : BG_QceMovementDef()->air_acceleration) * pml.frametime;
+		step = (pml.walking ? ((pm->ps->pm_flags&PMF_DUCKED)?BG_QceMovementDef()->crouch_acceleration:BG_QceMovementDef()->acceleration) : BG_QceMovementDef()->air_acceleration) * pml.frametime * PM_QceMovementScale();
 		if ( step > distance ) step = distance;
 		for ( i = 0; i < 2; i++ ) pm->ps->velocity[i] += step * delta[i];
 		return;
@@ -378,7 +383,7 @@ static qboolean PM_CheckJump( void ) {
 	pm->ps->pm_flags |= PMF_JUMP_HELD;
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
-	pm->ps->velocity[2] = PM_QceMovement() ? BG_QceMovementDef()->jump : JUMP_VELOCITY;
+	pm->ps->velocity[2] = PM_QceMovement() ? BG_QceMovementDef()->jump*PM_QceMovementScale() : JUMP_VELOCITY;
 	PM_AddEvent( EV_JUMP );
 
 	if ( pm->cmd.forwardmove >= 0 ) {
@@ -638,6 +643,7 @@ static void PM_AirMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  limit*=PM_QceMovementScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -762,6 +768,7 @@ static void PM_WalkMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  limit*=PM_QceMovementScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -920,6 +927,7 @@ static void PM_NoclipMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
+  limit*=PM_QceMovementScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -1729,7 +1737,7 @@ static void PM_Weapon( void ) {
    VectorMA(start,def->lunge_reach,dir,end);
    pm->trace(&hit,start,NULL,NULL,end,pm->ps->clientNum,MASK_SHOT);
    PM_AddEvent(EV_QCE_MELEE);
-   if(!hit.startsolid && !hit.allsolid && hit.fraction<1 && (hit.contents&CONTENTS_BODY) &&
+   if((pm->ps->stats[STAT_QCE_COMBAT]&2) && !hit.startsolid && !hit.allsolid && hit.fraction<1 && (hit.contents&CONTENTS_BODY) &&
       hit.entityNum<ENTITYNUM_WORLD && hit.fraction*def->lunge_reach>def->melee_reach) {
     VectorScale(dir,def->lunge_speed,pm->ps->velocity);
     pm->ps->pm_time=def->melee_impact_ms;pm->ps->pm_flags|=PMF_TIME_KNOCKBACK;
@@ -1933,7 +1941,7 @@ static void PM_Animate( void ) {
 			PM_StartTorsoAnim( TORSO_PATROL );
 			pm->ps->torsoTimer = 600;	//TIMER_GESTURE;
 		}
-	} else if ( pm->cmd.buttons & BUTTON_FOLLOWME ) {
+	} else if ( !pm->ps->stats[STAT_QCE_COMBAT] && (pm->cmd.buttons & BUTTON_FOLLOWME) ) {
 		if ( pm->ps->torsoTimer == 0 ) {
 			PM_StartTorsoAnim( TORSO_FOLLOWME );
 			pm->ps->torsoTimer = 600;	//TIMER_GESTURE;
@@ -2157,7 +2165,7 @@ void PmoveSingle (pmove_t *pmove) {
 	PM_SetWaterLevel();
 	pml.previous_waterlevel = pmove->waterlevel;
 
-	if(PM_QceMovement()) {pm->ps->gravity=(int)(BG_QceMovementDef()->gravity+0.5f);pm->ps->speed=(int)(BG_QceMovementDef()->forward+0.5f);}
+	if(PM_QceMovement()) {pm->ps->gravity=(int)(BG_QceMovementDef()->gravity*PM_QceMovementScale()+0.5f);pm->ps->speed=(int)(BG_QceMovementDef()->forward*PM_QceMovementScale()+0.5f);}
 	// set mins, maxs, and viewheight
 	PM_CheckDuck ();
 

@@ -1733,18 +1733,19 @@ void G_QceSwapWeapon(gentity_t *ent) {
  playerState_t *ps=&ent->client->ps,trial;
  gentity_t *item,*best=NULL;
  float nearest=65.0f,distance;
- vec3_t delta,forward,start;
+ vec3_t delta,start;
  trace_t trace;
  int i,weapon;
  if(!ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
     ent->client->noclip || ps->weaponTime>0 || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
- AngleVectors(ps->viewangles,forward,NULL,NULL);VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
+ VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
   item=&g_entities[i];
   if(!item->inuse || !item->r.linked || item->s.eType!=ET_ITEM ||
      !(item->r.contents&CONTENTS_TRIGGER) || !item->item || item->item->giType!=IT_WEAPON)continue;
   weapon=item->item->giTag;
   if(!BG_QceCapacity(weapon))continue;
+  if((item->flags&FL_DROPPED_ITEM) && item->s.otherEntityNum==ps->clientNum && item->s.time>level.time)continue;
   if(BG_QceSlot(ps,weapon)>=0 && !(weapon==ps->weapon && BG_QceWeaponDef(weapon)->reload_rounds==0))continue;
   trial=*ps;
   if((weapon==trial.weapon && BG_QceWeaponDef(weapon)->reload_rounds==0) || !BG_QceCanCarry(&trial,weapon)) {
@@ -1753,7 +1754,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
   }
   if(!BG_CanItemBeGrabbed(g_gametype.integer,&item->s,&trial))continue;
   VectorSubtract(item->r.currentOrigin,ps->origin,delta);distance=VectorNormalize(delta);
-  if(distance>64.0f || distance>=nearest || DotProduct(delta,forward)<0.25f)continue;
+  if(distance>64.0f || distance>=nearest)continue;
   trap_Trace(&trace,start,NULL,NULL,item->r.currentOrigin,ent->s.number,CONTENTS_SOLID);
   if(trace.startsolid || trace.allsolid || trace.fraction<1.0f)continue;
   best=item;nearest=distance;
@@ -1767,6 +1768,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  }
  Touch_Item(best,ent,NULL);
  if(BG_QceSlot(ps,weapon)>=0) {
+  ent->client->qcePickupLatched=qtrue;
   ps->weapon=weapon;ps->weaponstate=WEAPON_RAISING;ps->weaponTime=BG_QceWeaponDef(weapon)->ready_ms;ps->qceZoom&=4;
   trap_SendServerCommand(ent-g_entities,va("qce_select %d",weapon));
  }

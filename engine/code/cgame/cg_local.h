@@ -168,6 +168,7 @@ typedef struct centity_s {
 	qboolean		currentValid;	// true if cg.frame holds this entity
 
 	int				muzzleFlashTime;	// move to playerEntity?
+	int qcePlayerClip,qcePlayerStart;
 	int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
 	int				previousEvent;
 	int				teleportFlag;
@@ -315,6 +316,7 @@ typedef struct {
 	int				botSkill;		// 0 = not bot, 1-5 = bot
 
 	vec3_t			color1;
+ byte haloColor[4];
 	vec3_t			color2;
 	
 	byte c1RGBA[4];
@@ -394,6 +396,17 @@ typedef struct {
  int weapon, state, now, magazine, weaponTime, hot, charge, chargeMs;
  int fireTime, chargedFire, grenadeTime, meleeTime, reloadRounds, phaseMs;
 } qceViewInput_t;
+typedef struct {
+ qhandle_t playerModel,headModel,grenadeModels[2],grenadeShader;
+ qceViewClip_t playerClips[11];
+ sfxHandle_t grenadeLoop,grenadeThrow,grenadeExplode[2],grenadeBounce[2];
+} qceWorldMedia_t;
+extern qceWorldMedia_t cg_qceWorld;
+void CG_RegisterHaloWorld(void);
+void CG_HaloWorldFrames(const qceViewClip_t *clip,int oneshot,int elapsed,int *oldframe,int *frame,float *backlerp);
+void CG_HaloGrenadeExplosion(int type,vec3_t origin);
+qboolean CG_HaloPlayer(centity_t *cent,int renderfx);
+
 typedef struct weaponInfo_s {
 	qboolean		registered;
 	gitem_t			*item;
@@ -405,7 +418,7 @@ typedef struct weaponInfo_s {
 	qhandle_t haloViewModel;
 	qceViewClip_t haloClips[QCE_VIEW_CLIPS];
  qceViewSound_t haloSounds[QCE_VIEW_CLIPS];
- sfxHandle_t haloStopSound;
+ sfxHandle_t haloStopSound,haloPickupSound;
  char haloName[16];
  qboolean haloAmmoCounter;
  qhandle_t haloAmmoSkins[61];
@@ -1147,6 +1160,7 @@ extern	vmCvar_t		cg_footsteps;
 extern	vmCvar_t		cg_addMarks;
 extern	vmCvar_t		cg_brassTime;
 extern vmCvar_t cg_qceFlashlight;
+extern vmCvar_t cg_qceWeaponScale;
 extern	vmCvar_t		cg_gun_frame;
 extern	vmCvar_t		cg_gun_x;
 extern	vmCvar_t		cg_gun_y;
@@ -1711,5 +1725,3 @@ void	CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, 
 void	CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duration, int sizeStart, int sizeEnd);
 extern qboolean		initparticles;
 int CG_NewParticleArea ( int num );
-
-

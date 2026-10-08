@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "g_local.h"
+#include "../qcommon/qce_color.h"
 #include "bg_qce_shield.h"
 
 // g_client.c -- client functions that don't happen every frame
@@ -866,7 +867,17 @@ void ClientUserinfoChanged( int clientNum ) {
 			client->pers.maxHealth, client->sess.wins, client->sess.losses, teamTask, teamLeader);
 	}
 
-	trap_SetConfigstring( CS_PLAYERS+clientNum, s );
+	{
+  char config[MAX_INFO_STRING],rgb[32];byte color[4];
+  const char *input=Info_ValueForKey(userinfo,"qce_colorRGB");
+  static const char *palette[]={"40 180 70","220 40 40","40 90 230","230 190 30","150 60 200","30 190 200","230 120 30","220 220 220"};
+  if(!QCE_ParseRGB(input,color))input=palette[clientNum%8];
+  QCE_ParseRGB(input,color);Com_sprintf(rgb,sizeof(rgb),"%d %d %d",color[0],color[1],color[2]);
+  /* Legacy player config strings omit the leading separator. Info_SetValueForKey
+   * prepends entries, so canonicalize before adding RGB or the name joins its value. */
+  Com_sprintf(config,sizeof(config),"\\%s",s);Info_SetValueForKey(config,"qce_rgb",rgb);
+  trap_SetConfigstring(CS_PLAYERS+clientNum,config);
+ }
 
 	// this is not the userinfo, more like the configstring actually
 	G_LogPrintf( "ClientUserinfoChanged: %i %s\n", clientNum, s );

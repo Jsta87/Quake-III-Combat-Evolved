@@ -221,8 +221,8 @@ typedef enum {
 	STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)
 	STAT_CLIENTS_READY,				// bit mask of clients wishing to exit the intermission (FIXME: configstring?)
 	STAT_MAX_HEALTH,				// health / armor limit, changeable by handicap
-	STAT_QCE_MOVEMENT,			// replicated experimental movement profile
-	STAT_QCE_COMBAT,
+	STAT_QCE_MOVEMENT,			// 0=stock, 1=legacy imported scale, otherwise percentage
+	STAT_QCE_COMBAT,             // bit 0=combat enabled, bit 1=optional melee lunge
 	STAT_QCE_SHIELD,
 	STAT_QCE_SLOTS,
 	STAT_QCE_MAG0,

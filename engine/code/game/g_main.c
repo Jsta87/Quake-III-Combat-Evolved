@@ -52,6 +52,8 @@ vmCvar_t	g_dedicated;
 vmCvar_t	g_speed;
 vmCvar_t g_qceMovement;
 vmCvar_t g_qceCombat;
+vmCvar_t g_qceMeleeLunge;
+vmCvar_t g_qceMovementScale;
 vmCvar_t	g_gravity;
 vmCvar_t	g_cheats;
 vmCvar_t	g_knockback;
@@ -142,6 +144,8 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_speed, "g_speed", "320", 0, 0, qtrue  },
 	{ &g_qceMovement, "g_qceMovement", "0", CVAR_SERVERINFO, 0, qtrue },
+	{ &g_qceMovementScale, "g_qceMovementScale", "1.1", CVAR_SERVERINFO, 0, qtrue },
+	{ &g_qceMeleeLunge, "g_qceMeleeLunge", "0", CVAR_SERVERINFO, 0, qtrue },
 	{ &g_qceCombat, "g_qceCombat", "0", CVAR_SERVERINFO, 0, qtrue },
 	{ &g_gravity, "g_gravity", "800", 0, 0, qtrue  },
 	{ &g_knockback, "g_knockback", "1000", 0, 0, qtrue  },
