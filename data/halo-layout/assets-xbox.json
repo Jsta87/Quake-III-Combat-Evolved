@@ -1334,6 +1334,741 @@
           "type": "float"
         }
       }
+    },
+    "ShaderTransparentChicagoMap": {
+      "size": 220,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 2,
+          "type": "ShaderTransparentChicagoMapFlags"
+        },
+        "color function": {
+          "offset": 44,
+          "size": 2,
+          "type": "ShaderColorFunctionType"
+        },
+        "alpha function": {
+          "offset": 46,
+          "size": 2,
+          "type": "ShaderColorFunctionType"
+        },
+        "map u scale": {
+          "offset": 84,
+          "size": 4,
+          "type": "float"
+        },
+        "map v scale": {
+          "offset": 88,
+          "size": 4,
+          "type": "float"
+        },
+        "map u offset": {
+          "offset": 92,
+          "size": 4,
+          "type": "float"
+        },
+        "map v offset": {
+          "offset": 96,
+          "size": 4,
+          "type": "float"
+        },
+        "map rotation": {
+          "offset": 100,
+          "size": 4,
+          "type": "float"
+        },
+        "mipmap bias": {
+          "offset": 104,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "map": {
+          "offset": 108,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "u animation source": {
+          "offset": 164,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "u animation function": {
+          "offset": 166,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "u animation period": {
+          "offset": 168,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation phase": {
+          "offset": 172,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation scale": {
+          "offset": 176,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation source": {
+          "offset": 180,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "v animation function": {
+          "offset": 182,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "v animation period": {
+          "offset": 184,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation phase": {
+          "offset": 188,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation scale": {
+          "offset": 192,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation source": {
+          "offset": 196,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "rotation animation function": {
+          "offset": 198,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "rotation animation period": {
+          "offset": 200,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation phase": {
+          "offset": 204,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation scale": {
+          "offset": 208,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation center": {
+          "offset": 212,
+          "size": 8,
+          "type": "Point2D"
+        }
+      }
+    },
+    "ShaderTransparentChicago": {
+      "size": 108,
+      "fields": {
+        "numeric counter limit": {
+          "offset": 40,
+          "size": 1,
+          "type": "uint8"
+        },
+        "shader transparent chicago flags": {
+          "offset": 41,
+          "size": 1,
+          "type": "ShaderTransparentGenericFlags"
+        },
+        "first map type": {
+          "offset": 42,
+          "size": 2,
+          "type": "ShaderFirstMapType"
+        },
+        "framebuffer blend function": {
+          "offset": 44,
+          "size": 2,
+          "type": "FramebufferBlendFunction"
+        },
+        "framebuffer fade mode": {
+          "offset": 46,
+          "size": 2,
+          "type": "FramebufferFadeMode"
+        },
+        "framebuffer fade source": {
+          "offset": 48,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "lens flare spacing": {
+          "offset": 52,
+          "size": 4,
+          "type": "float"
+        },
+        "lens flare": {
+          "offset": 56,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "extra layers": {
+          "offset": 72,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ShaderTransparentExtraLayer"
+        },
+        "maps": {
+          "offset": 84,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ShaderTransparentChicagoMap"
+        },
+        "extra flags": {
+          "offset": 96,
+          "size": 4,
+          "type": "ShaderTransparentChicagoExtraFlags"
+        }
+      }
+    },
+    "ShaderTransparentGenericMap": {
+      "size": 100,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 2,
+          "type": "ShaderTransparentGenericMapFlag"
+        },
+        "map u scale": {
+          "offset": 4,
+          "size": 4,
+          "type": "float"
+        },
+        "map v scale": {
+          "offset": 8,
+          "size": 4,
+          "type": "float"
+        },
+        "map u offset": {
+          "offset": 12,
+          "size": 4,
+          "type": "float"
+        },
+        "map v offset": {
+          "offset": 16,
+          "size": 4,
+          "type": "float"
+        },
+        "map rotation": {
+          "offset": 20,
+          "size": 4,
+          "type": "float"
+        },
+        "mipmap bias": {
+          "offset": 24,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "map": {
+          "offset": 28,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "u animation source": {
+          "offset": 44,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "u animation function": {
+          "offset": 46,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "u animation period": {
+          "offset": 48,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation phase": {
+          "offset": 52,
+          "size": 4,
+          "type": "float"
+        },
+        "u animation scale": {
+          "offset": 56,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation source": {
+          "offset": 60,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "v animation function": {
+          "offset": 62,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "v animation period": {
+          "offset": 64,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation phase": {
+          "offset": 68,
+          "size": 4,
+          "type": "float"
+        },
+        "v animation scale": {
+          "offset": 72,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation source": {
+          "offset": 76,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "rotation animation function": {
+          "offset": 78,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "rotation animation period": {
+          "offset": 80,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation phase": {
+          "offset": 84,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation scale": {
+          "offset": 88,
+          "size": 4,
+          "type": "float"
+        },
+        "rotation animation center": {
+          "offset": 92,
+          "size": 8,
+          "type": "Point2D"
+        }
+      }
+    },
+    "ShaderTransparentGenericStage": {
+      "size": 112,
+      "fields": {
+        "flags": {
+          "offset": 0,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageFlags"
+        },
+        "color0 source": {
+          "offset": 4,
+          "size": 2,
+          "type": "FunctionNameNullable"
+        },
+        "color0 animation function": {
+          "offset": 6,
+          "size": 2,
+          "type": "WaveFunction"
+        },
+        "color0 animation period": {
+          "offset": 8,
+          "size": 4,
+          "type": "float"
+        },
+        "color0 animation lower bound": {
+          "offset": 12,
+          "size": 16,
+          "type": "ColorARGB"
+        },
+        "color0 animation upper bound": {
+          "offset": 28,
+          "size": 16,
+          "type": "ColorARGB"
+        },
+        "color1": {
+          "offset": 44,
+          "size": 16,
+          "type": "ColorARGB"
+        },
+        "input a": {
+          "offset": 60,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputColor"
+        },
+        "input a mapping": {
+          "offset": 62,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input b": {
+          "offset": 64,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputColor"
+        },
+        "input b mapping": {
+          "offset": 66,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input c": {
+          "offset": 68,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputColor"
+        },
+        "input c mapping": {
+          "offset": 70,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input d": {
+          "offset": 72,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputColor"
+        },
+        "input d mapping": {
+          "offset": 74,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "output ab": {
+          "offset": 76,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output ab function": {
+          "offset": 78,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutputFunction"
+        },
+        "output bc": {
+          "offset": 80,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output cd function": {
+          "offset": 82,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutputFunction"
+        },
+        "output ab cd mux sum": {
+          "offset": 84,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output mapping color": {
+          "offset": 86,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutputMapping"
+        },
+        "input a alpha": {
+          "offset": 88,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputAlpha"
+        },
+        "input a mapping alpha": {
+          "offset": 90,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input b alpha": {
+          "offset": 92,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputAlpha"
+        },
+        "input b mapping alpha": {
+          "offset": 94,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input c alpha": {
+          "offset": 96,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputAlpha"
+        },
+        "input c mapping alpha": {
+          "offset": 98,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "input d alpha": {
+          "offset": 100,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputAlpha"
+        },
+        "input d mapping alpha": {
+          "offset": 102,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageInputMappingColor"
+        },
+        "output ab alpha": {
+          "offset": 104,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output cd alpha": {
+          "offset": 106,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output ab cd mux sum alpha": {
+          "offset": 108,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutput"
+        },
+        "output mapping alpha": {
+          "offset": 110,
+          "size": 2,
+          "type": "ShaderTransparentGenericStageOutputMapping"
+        }
+      }
+    },
+    "ShaderTransparentGeneric": {
+      "size": 108,
+      "fields": {
+        "numeric counter limit": {
+          "offset": 40,
+          "size": 1,
+          "type": "uint8"
+        },
+        "shader transparent generic flags": {
+          "offset": 41,
+          "size": 1,
+          "type": "ShaderTransparentGenericFlags"
+        },
+        "first map type": {
+          "offset": 42,
+          "size": 2,
+          "type": "ShaderFirstMapType"
+        },
+        "framebuffer blend function": {
+          "offset": 44,
+          "size": 2,
+          "type": "FramebufferBlendFunction"
+        },
+        "framebuffer fade mode": {
+          "offset": 46,
+          "size": 2,
+          "type": "FramebufferFadeMode"
+        },
+        "framebuffer fade source": {
+          "offset": 48,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "lens flare spacing": {
+          "offset": 52,
+          "size": 4,
+          "type": "float"
+        },
+        "lens flare": {
+          "offset": 56,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "extra layers": {
+          "offset": 72,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ShaderTransparentExtraLayer"
+        },
+        "maps": {
+          "offset": 84,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ShaderTransparentGenericMap"
+        },
+        "stages": {
+          "offset": 96,
+          "size": 12,
+          "type": "TagReflexive",
+          "struct": "ShaderTransparentGenericStage"
+        }
+      }
+    },
+    "ShaderTransparentGlass": {
+      "size": 480,
+      "fields": {
+        "shader transparent glass flags": {
+          "offset": 40,
+          "size": 2,
+          "type": "ShaderTransparentGlassFlags"
+        },
+        "background tint color": {
+          "offset": 84,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "background tint map scale": {
+          "offset": 96,
+          "size": 4,
+          "type": "float"
+        },
+        "background tint map": {
+          "offset": 100,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "reflection type": {
+          "offset": 138,
+          "size": 2,
+          "type": "ShaderTransparentGlassReflectionType"
+        },
+        "perpendicular brightness": {
+          "offset": 140,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "perpendicular tint color": {
+          "offset": 144,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "parallel brightness": {
+          "offset": 156,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "parallel tint color": {
+          "offset": 160,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "reflection map": {
+          "offset": 172,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "bump map scale": {
+          "offset": 188,
+          "size": 4,
+          "type": "float"
+        },
+        "bump map": {
+          "offset": 192,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "diffuse map scale": {
+          "offset": 340,
+          "size": 4,
+          "type": "float"
+        },
+        "diffuse map": {
+          "offset": 344,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "diffuse detail map scale": {
+          "offset": 360,
+          "size": 4,
+          "type": "float"
+        },
+        "diffuse detail map": {
+          "offset": 364,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "specular map scale": {
+          "offset": 412,
+          "size": 4,
+          "type": "float"
+        },
+        "specular map": {
+          "offset": 416,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "specular detail map scale": {
+          "offset": 432,
+          "size": 4,
+          "type": "float"
+        },
+        "specular detail map": {
+          "offset": 436,
+          "size": 16,
+          "type": "TagDependency"
+        }
+      }
+    },
+    "ShaderTransparentMeter": {
+      "size": 260,
+      "fields": {
+        "meter flags": {
+          "offset": 40,
+          "size": 2,
+          "type": "ShaderTransparentMeterFlags"
+        },
+        "map": {
+          "offset": 76,
+          "size": 16,
+          "type": "TagDependency"
+        },
+        "gradient min color": {
+          "offset": 124,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "gradient max color": {
+          "offset": 136,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "background color": {
+          "offset": 148,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "flash color": {
+          "offset": 160,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "meter tint color": {
+          "offset": 172,
+          "size": 12,
+          "type": "ColorRGB"
+        },
+        "meter transparency": {
+          "offset": 184,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "background transparency": {
+          "offset": 188,
+          "size": 4,
+          "type": "Fraction"
+        },
+        "meter brightness source": {
+          "offset": 216,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "flash brightness source": {
+          "offset": 218,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "value source": {
+          "offset": 220,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "gradient source": {
+          "offset": 222,
+          "size": 2,
+          "type": "FunctionOut"
+        },
+        "flash extension source": {
+          "offset": 224,
+          "size": 2,
+          "type": "FunctionOut"
+        }
+      }
     }
   }
 }

@@ -7,6 +7,10 @@ Original maps, extracted art, mesh sidecars, manifests and PK3s stay under the
 Git-ignored `assets/` directory. Only the converter, layouts, tests, client hooks
 and documentation belong in Git.
 
+The second conversion stage now enables animated first-person weapons with
+Spartan arms, moving attachment points and layered materials. See
+[Weapon presentation](WEAPON-PRESENTATION.md) for behavior and remaining limits.
+
 ## Reproduce
 
 From the repository root:
@@ -18,7 +22,11 @@ python3 scripts/convert-halo-assets.py assets/halo/bloodgulch.map \
 python3 scripts/convert-halo-assets.py assets/halo/ui.map \
   --output assets/halo/converted/ui \
   --pk3 assets/halo/converted/ui.pk3
+python3 scripts/animate-halo-weapons.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/bloodgulch \
+  --pk3 assets/baseq3/zzz-qce-halo.pk3
 python3 tests/halo-assets.py
+python3 tests/halo-animation.py
 ./scripts/build.sh client
 ./scripts/run-client.sh
 ```
@@ -75,8 +83,9 @@ testgun models/qce/halo/fp_3c512e26221960b7.md3
 ```
 
 Use `testgun` without a filename to clear it. The generated manifest lists the
-other model names. Animation, muzzle/attachment tags, view placement and material
-validation must precede enabling the models in regular gameplay.
+other model names. These static inspection models remain available. The second stage exports
+compact skeletal IQM models for regular first-person gameplay; their names and
+action bindings appear in `animated_weapons` in the manifest.
 
 ## Provenance and inspection
 
@@ -99,8 +108,8 @@ reference files or executes map contents at runtime.
 
 ## Remaining conversion work
 
-- Decode/retarget weapon animation tracks and preserve animation event timing;
-  export animated models and engine attachment tags.
+- Compose additive movement/aim/ammunition overlays and schedule source animation
+  sound events; refine transitions and retail view placement.
 - Convert player geometry/animation and animated head/collision references.
 - Reproduce multipurpose/detail/reflection/transparency shader behavior, including
   Xbox channel semantics and animated weapon displays.

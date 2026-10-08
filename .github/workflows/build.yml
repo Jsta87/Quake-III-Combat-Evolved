@@ -14,6 +14,7 @@ jobs:
       - run: python3 ./tests/profile.py
       - run: python3 ./tests/halo-extraction.py
       - run: python3 ./tests/halo-assets.py
+      - run: python3 ./tests/halo-animation.py
       - run: ./scripts/test-grenades.sh
       - run: ./scripts/test-needles.sh
       - run: ./scripts/test-heat.sh

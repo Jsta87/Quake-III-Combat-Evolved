@@ -819,12 +819,14 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_QCE_MELEE:
 		DEBUGNAME("EV_QCE_MELEE");
+		cent->qceMeleeTime = cg.time;
 		CG_RegisterWeapon(WP_GAUNTLET);
 		trap_S_StartSound(NULL,es->number,CHAN_WEAPON,cg_weapons[WP_GAUNTLET].flashSound[0]);
 		break;
 
 	case EV_QCE_GRENADE:
 		DEBUGNAME("EV_QCE_GRENADE");
+		cent->qceGrenadeTime = cg.time;
 		break;
 
 	case EV_FIRE_WEAPON:

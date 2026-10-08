@@ -14,6 +14,7 @@ import math
 from pathlib import Path
 import re
 import struct
+import tempfile
 import wave
 import zipfile
 
@@ -421,10 +422,17 @@ class Assets:
         return list(converted.values())
     def package(self,path):
         # Include only this run's recorded files; stale output files never enter the PK3.
-        with zipfile.ZipFile(path,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
-            for name in sorted(self.files):
-                entry = zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED;entry.external_attr=0o644<<16
-                archive.writestr(entry,(self.output/name).read_bytes())
+        path = Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent,prefix='.qce-assets-',suffix='.tmp',delete=False) as file:
+            temporary = Path(file.name)
+        try:
+            with zipfile.ZipFile(temporary,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
+                for name in sorted(self.files):
+                    entry = zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED;entry.external_attr=0o644<<16
+                    archive.writestr(entry,(self.output/name).read_bytes())
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def main():

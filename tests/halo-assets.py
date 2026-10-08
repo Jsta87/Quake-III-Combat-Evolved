@@ -144,4 +144,13 @@ class AssetTests(unittest.TestCase):
                 self.assertEqual(archive.namelist(),['textures/qce/test.tga'])
                 self.assertEqual(archive.testzip(),None)
 
+    def test_failed_package_preserves_previous_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out=Path(tmp);assets=a.Assets(None,out)
+            assets.write('test.bin',b'old',{});assets.package(out/'game.pk3')
+            original=(out/'game.pk3').read_bytes();(out/'test.bin').unlink()
+            with self.assertRaises(FileNotFoundError):assets.package(out/'game.pk3')
+            self.assertEqual((out/'game.pk3').read_bytes(),original)
+            self.assertEqual(list(out.glob('.qce-assets-*')),[])
+
 if __name__=='__main__':unittest.main()

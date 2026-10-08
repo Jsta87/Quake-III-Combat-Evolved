@@ -43,10 +43,11 @@ stock Quake/ioquake3 and older project connections/demos are incompatible.
 ## Halo assets
 
 The uploaded Xbox maps now have an offline [asset converter](docs/ASSET-CONVERSION.md)
-for textures, audio, and static weapon inspection models. Generated art and PK3s
-stay local under `assets/`. The optional Blood Gulch package enables Halo firing
-sounds; animated weapon/player models, materials, effects and HUD integration
-remain in progress.
+for textures, audio, and weapon models. The second stage adds
+[animated weapons and Spartan arms](docs/WEAPON-PRESENTATION.md), moving attachment
+points, and layered Halo materials. Generated art and PK3s stay local under
+`assets/`. Player models, effects, HUD integration and remaining retail material/
+animation fidelity are still in progress.
 
 ## Controls
 

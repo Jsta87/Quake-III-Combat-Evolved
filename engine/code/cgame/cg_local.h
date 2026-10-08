@@ -168,6 +168,7 @@ typedef struct centity_s {
 	qboolean		currentValid;	// true if cg.frame holds this entity
 
 	int				muzzleFlashTime;	// move to playerEntity?
+	int qceMeleeTime, qceGrenadeTime, qceChargedFire;
 	int				previousEvent;
 	int				teleportFlag;
 
@@ -378,6 +379,11 @@ typedef struct {
 // each WP_* weapon enum has an associated weaponInfo_t
 // that contains media references necessary to present the
 // weapon and its effects
+enum { QCE_VIEW_IDLE, QCE_VIEW_FIRE, QCE_VIEW_READY, QCE_VIEW_PUTAWAY,
+ QCE_VIEW_RELOAD_FULL, QCE_VIEW_RELOAD_EMPTY, QCE_VIEW_MELEE, QCE_VIEW_GRENADE,
+ QCE_VIEW_OVERHEAT, QCE_VIEW_CHARGE, QCE_VIEW_CHARGED_FIRE, QCE_VIEW_RECOVER,
+ QCE_VIEW_RELOAD_ENTER, QCE_VIEW_RELOAD_EXIT, QCE_VIEW_CLIPS };
+typedef struct { int first, count, fps, loop; } qceViewClip_t;
 typedef struct weaponInfo_s {
 	qboolean		registered;
 	gitem_t			*item;
@@ -386,6 +392,8 @@ typedef struct weaponInfo_s {
 	qhandle_t		weaponModel;
 	qhandle_t		barrelModel;
 	qhandle_t		flashModel;
+	qhandle_t haloViewModel;
+	qceViewClip_t haloClips[QCE_VIEW_CLIPS];
 
 	vec3_t			weaponMidpoint;		// so it will rotate centered instead of by tag
 
@@ -639,6 +647,7 @@ typedef struct {
 	refEntity_t		testModelEntity;
 	char			testModelName[MAX_QPATH];
 	qboolean		testGun;
+	int qceViewWeapon, qceViewState, qceViewClip, qceViewStart;
 
 } cg_t;
 
