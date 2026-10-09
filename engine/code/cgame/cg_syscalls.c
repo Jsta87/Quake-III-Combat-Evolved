@@ -300,6 +300,10 @@ int		trap_R_LerpTag( orientation_t *tag, clipHandle_t mod, int startFrame, int e
 	return syscall( CG_R_LERPTAG, tag, mod, startFrame, endFrame, PASSFLOAT(frac), tagName );
 }
 
+int trap_R_LerpTagRef(orientation_t *tag,const refEntity_t *entity,const char *name) {
+ return syscall(CG_R_LERPTAG_REF,tag,entity,name);
+}
+
 void	trap_R_RemapShader( const char *oldShader, const char *newShader, const char *timeOffset ) {
 	syscall( CG_R_REMAP_SHADER, oldShader, newShader, timeOffset );
 }

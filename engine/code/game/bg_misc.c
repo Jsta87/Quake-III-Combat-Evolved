@@ -1052,6 +1052,7 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 	switch( item->giType ) {
 	case IT_WEAPON:
 		if (ps->stats[STAT_QCE_COMBAT]) {
+   if(ps->qceVariantFlags&8)return qfalse;
    if(BG_QceSlot(ps,item->giTag)>=0 && (BG_QceWeaponDef(item->giTag)->reload_rounds==0 || ps->ammo[item->giTag]>=BG_QceAmmoLimit(ps,item->giTag)))return qfalse;
    return BG_QceCanCarry(ps, item->giTag);
   }
@@ -1646,20 +1647,36 @@ void BG_QceSetGrenadeCount(playerState_t *ps,int type,int count) {
  ps->stats[STAT_QCE_GRENADES]=(ps->stats[STAT_QCE_GRENADES]&~(7<<shift))|(count<<shift);
 }
 void BG_QceToggleGrenade(playerState_t *ps) {ps->stats[STAT_QCE_GRENADES]^=512;}
+int BG_QceHeldLimit(const playerState_t *ps) {
+ /* Zero-initialized legacy state defaults to two. 9 encodes the all-weapons variant. */
+ return ps->qceMaxHeldWeapons==9?8:ps->qceMaxHeldWeapons>0?ps->qceMaxHeldWeapons:2;
+}
+int BG_QceHeldWeapon(const playerState_t *ps,int slot) {
+ if(slot<0 || slot>=8)return WP_NONE;
+ return slot<2?(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15:ps->qceExtraSlots[slot-2];
+}
+void BG_QceSetMagazine(playerState_t *ps,int slot,int value) {
+ if(slot<0 || slot>=8)return;
+ if(slot<2)ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=value;
+ else ps->qceExtraMags[slot-2]=value;
+}
 int BG_QceSlot(const playerState_t *ps, int weapon) {
  int i;
  if(weapon <= WP_GAUNTLET || weapon >= WP_NUM_WEAPONS) return -1;
- for(i=0;i<2;i++) if(((ps->stats[STAT_QCE_SLOTS]>>(i*4))&15)==weapon) return i;
+ for(i=0;i<8;i++) if(BG_QceHeldWeapon(ps,i)==weapon) return i;
  return -1;
 }
 qboolean BG_QceCanCarry(const playerState_t *ps, int weapon) {
- if(weapon==WP_GAUNTLET) return qtrue;
+ int i,count=0;
+ if(weapon==WP_GAUNTLET) return ps->stats[STAT_QCE_COMBAT]?qfalse:qtrue;
  if(!BG_QceCapacity(weapon)) return qfalse;
- return BG_QceSlot(ps,weapon)>=0 || !(ps->stats[STAT_QCE_SLOTS]&15) || !(ps->stats[STAT_QCE_SLOTS]&240);
+ if(BG_QceSlot(ps,weapon)>=0)return qtrue;
+ for(i=0;i<8;i++)if(BG_QceHeldWeapon(ps,i))count++;
+ return count<BG_QceHeldLimit(ps);
 }
 int BG_QceMagazine(const playerState_t *ps, int weapon) {
  int slot=BG_QceSlot(ps,weapon);
- return slot<0 ? 0 : ps->stats[slot ? STAT_QCE_MAG1 : STAT_QCE_MAG0];
+ return slot<0?0:slot<2?ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]:ps->qceExtraMags[slot-2];
 }
 int BG_QceAmmoLimit(const playerState_t *ps,int weapon) {
  const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
@@ -1672,8 +1689,10 @@ qboolean BG_QceAddWeapon(playerState_t *ps, int weapon, int ammo) {
  if(weapon==WP_GAUNTLET) {ps->stats[STAT_WEAPONS]|=1<<weapon;ps->ammo[weapon]=-1;return qtrue;}
  slot=BG_QceSlot(ps,weapon);
  if(slot<0) {
-  slot=(ps->stats[STAT_QCE_SLOTS]&15)?1:0;
-  ps->stats[STAT_QCE_SLOTS]|=weapon<<(slot*4);
+  for(slot=0;slot<8;slot++)if(!BG_QceHeldWeapon(ps,slot))break;
+  if(slot>=8)return qfalse;
+  if(slot<2)ps->stats[STAT_QCE_SLOTS]|=weapon<<(slot*4);
+  else ps->qceExtraSlots[slot-2]=weapon;
   ps->ammo[weapon]=0;
   ps->qceOverheatTime[slot]=0;
   ps->qceRate[slot]=ps->qceRateRemainder[slot]=0;
@@ -1682,7 +1701,7 @@ qboolean BG_QceAddWeapon(playerState_t *ps, int weapon, int ammo) {
   ps->qceError[slot]=ps->qceErrorRemainder[slot]=0;
   ps->qceHeat[slot]=ps->qceHeatRemainder[slot]=0;ps->qceOverheated&=~(1<<slot);
   capacity=BG_QceCapacity(weapon);
-  ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=ammo<capacity?ammo:capacity;
+  BG_QceSetMagazine(ps,slot,ammo<capacity?ammo:capacity);
  }
  ps->stats[STAT_WEAPONS]|=1<<weapon;
  ps->ammo[weapon]+=ammo;
@@ -1697,7 +1716,7 @@ void BG_QceReload(playerState_t *ps) {
  int slot=BG_QceSlot(ps,ps->weapon),cap=BG_QceCapacity(ps->weapon);
  if(slot<0)return;
  cap=BG_QceMagazine(ps,ps->weapon)+BG_QceWeaponDef(ps->weapon)->reload_rounds<cap?BG_QceMagazine(ps,ps->weapon)+BG_QceWeaponDef(ps->weapon)->reload_rounds:cap;
- ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=ps->ammo[ps->weapon]<cap?ps->ammo[ps->weapon]:cap;
+ BG_QceSetMagazine(ps,slot,ps->ammo[ps->weapon]<cap?ps->ammo[ps->weapon]:cap);
 }
 int BG_QceRemoveWeapon(playerState_t *ps, int weapon) {
  int slot=BG_QceSlot(ps,weapon),ammo;
@@ -1708,8 +1727,8 @@ int BG_QceRemoveWeapon(playerState_t *ps, int weapon) {
  ps->qceError[slot]=ps->qceErrorRemainder[slot]=0;
   ps->qceHeat[slot]=ps->qceHeatRemainder[slot]=0;ps->qceOverheated&=~(1<<slot);
  ammo=ps->ammo[weapon];ps->ammo[weapon]=0;
- ps->stats[STAT_QCE_SLOTS]&=~(15<<(slot*4));
- ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=0;
+ if(slot<2)ps->stats[STAT_QCE_SLOTS]&=~(15<<(slot*4));else ps->qceExtraSlots[slot-2]=0;
+ BG_QceSetMagazine(ps,slot,0);
  ps->stats[STAT_WEAPONS]&=~(1<<weapon);
  return ammo;
 }
@@ -1742,9 +1761,9 @@ void BG_QceCoolWeapon(int weapon,int ammo,int elapsed,int *heat,int *remainder,i
 void BG_QceCoolWeapons(playerState_t *ps,int elapsed) {
  int slot,weapon,locked;
  if(!ps->stats[STAT_QCE_COMBAT])return;
- for(slot=0;slot<2;slot++) {
+ for(slot=0;slot<8;slot++) {
   ps->qceOverheatTime[slot]-=elapsed;if(ps->qceOverheatTime[slot]<0)ps->qceOverheatTime[slot]=0;
-  weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
+  weapon=BG_QceHeldWeapon(ps,slot);
   if(weapon==ps->weapon && BG_QceWeaponDef(weapon)->charge_ms>0 && ps->qceChargeMs>=BG_QceWeaponDef(weapon)->charge_ms)continue;
   locked=(ps->qceOverheated>>slot)&1;
   BG_QceCoolWeapon(weapon,ps->ammo[weapon],elapsed,&ps->qceHeat[slot],&ps->qceHeatRemainder[slot],&locked);
@@ -1779,8 +1798,8 @@ void BG_QceUpdateError(int weapon,int elapsed,int growing,int *error,int *remain
 void BG_QceUpdateSpread(playerState_t *ps,int elapsed,int buttons) {
  int slot,weapon,growing;
  if(!ps->stats[STAT_QCE_COMBAT])return;
- for(slot=0;slot<2;slot++) {
-  weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
+ for(slot=0;slot<8;slot++) {
+  weapon=BG_QceHeldWeapon(ps,slot);
   growing=weapon==ps->weapon && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0 &&
    !(ps->pm_flags&PMF_RESPAWNED) && ((buttons&BUTTON_ATTACK) || ps->weaponstate==WEAPON_FIRING);
   BG_QceUpdateError(weapon,elapsed,growing,&ps->qceError[slot],&ps->qceErrorRemainder[slot]);
@@ -1809,8 +1828,8 @@ float BG_QceDistanceDamageScale(int weapon,float distance) {
 void BG_QceUpdateRate(playerState_t *ps,int elapsed,int buttons) {
  int slot,weapon,rate,total,part,time;
  if(!ps->stats[STAT_QCE_COMBAT])return;
- for(slot=0;slot<2;slot++) {
-  weapon=(ps->stats[STAT_QCE_SLOTS]>>(slot*4))&15;
+ for(slot=0;slot<8;slot++) {
+  weapon=BG_QceHeldWeapon(ps,slot);
   rate=weapon==ps->weapon && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0 &&
    !(ps->pm_flags&PMF_RESPAWNED) && (buttons&BUTTON_ATTACK)?
    BG_QceWeaponDef(weapon)->rate_grow:-BG_QceWeaponDef(weapon)->rate_recover;
@@ -1836,11 +1855,11 @@ int BG_QceFireTime(const playerState_t *ps) {
 void BG_QceBatteryShot(playerState_t *ps,int charged) {
  const qce_weapondef_t *def=BG_QceWeaponDef(ps->weapon);
  int slot=BG_QceSlot(ps,ps->weapon),remaining;
- if(slot<0 || !def->battery_cost)return;
+ if(slot<0 || !def->battery_cost || (ps->qceVariantFlags&1))return;
  ps->qceBattery[slot]-=charged?def->charged_battery_cost:def->battery_cost;
  if(ps->qceBattery[slot]<0)ps->qceBattery[slot]=0;
  remaining=(ps->qceBattery[slot]+def->battery_cost-1)/def->battery_cost;
- ps->ammo[ps->weapon]=ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]=remaining;
+ ps->ammo[ps->weapon]=remaining;BG_QceSetMagazine(ps,slot,remaining);
 }
 float BG_QceDamage(int weapon,float scale,float fraction) {
  const qce_weapondef_t *def=BG_QceWeaponDef(weapon);

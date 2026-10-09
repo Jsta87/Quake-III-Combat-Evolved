@@ -267,7 +267,11 @@ void Cmd_Give_f (gentity_t *ent)
 
 	if (give_all || Q_stricmp(name, "weapons") == 0)
 	{
-		ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_NUM_WEAPONS) - 1 - 
+		if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+   BG_QceAddWeapon(&ent->client->ps,WP_MACHINEGUN,BG_QceWeaponDef(WP_MACHINEGUN)->ammo_initial);
+   BG_QceAddWeapon(&ent->client->ps,WP_BFG,BG_QceWeaponDef(WP_BFG)->ammo_initial);
+   for(i=WP_MACHINEGUN;i<=WP_BFG;i++)BG_QceAddWeapon(&ent->client->ps,i,BG_QceWeaponDef(i)->ammo_initial);
+  } else ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_NUM_WEAPONS) - 1 -
 			( 1 << WP_GRAPPLING_HOOK ) - ( 1 << WP_NONE );
 		if (!give_all)
 			return;
@@ -275,16 +279,24 @@ void Cmd_Give_f (gentity_t *ent)
 
 	if (give_all || Q_stricmp(name, "ammo") == 0)
 	{
-		for ( i = 0 ; i < MAX_WEAPONS ; i++ ) {
-			ent->client->ps.ammo[i] = 999;
-		}
+  if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+   for(i=0;i<8;i++) {
+    int weapon=BG_QceHeldWeapon(&ent->client->ps,i);
+    if(!weapon)continue;
+    ent->client->ps.ammo[weapon]=BG_QceWeaponDef(weapon)->ammo_max;
+    BG_QceSetMagazine(&ent->client->ps,i,BG_QceCapacity(weapon));
+    if(BG_QceWeaponDef(weapon)->battery_cost)ent->client->ps.qceBattery[i]=1000000;
+   }
+  } else for ( i = 0 ; i < MAX_WEAPONS ; i++ )ent->client->ps.ammo[i] = 999;
+
 		if (!give_all)
 			return;
 	}
 
 	if (give_all || Q_stricmp(name, "armor") == 0)
 	{
-		ent->client->ps.stats[STAT_ARMOR] = 200;
+		if(ent->client->ps.stats[STAT_QCE_COMBAT])ent->client->ps.stats[STAT_QCE_SHIELD]=ent->client->ps.qceMaxShield;
+  else ent->client->ps.stats[STAT_ARMOR] = 200;
 
 		if (!give_all)
 			return;
@@ -1713,7 +1725,7 @@ static void QceDropWeapon(gentity_t *ent, qboolean notify) {
  playerState_t *ps=&ent->client->ps;
  gentity_t *drop;
  int weapon=ps->weapon,mag=BG_QceMagazine(ps,weapon),ammo,slot;
- if(!ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR || BG_QceSlot(ps,weapon)<0 || ps->weaponTime>0) return;
+ if(!GV(GV_DROP) || !ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR || BG_QceSlot(ps,weapon)<0 || ps->weaponTime>0) return;
  drop=Drop_Item(ent,BG_FindItemForWeapon(weapon),0);
  if(!drop)return;
  slot=BG_QceSlot(ps,weapon);
@@ -1727,7 +1739,9 @@ static void QceDropWeapon(gentity_t *ent, qboolean notify) {
  drop->qceDroppedMagazine=mag+1;
  drop->s.otherEntityNum=ps->clientNum;
  drop->s.time=level.time+2000;
- ps->weapon=WP_GAUNTLET;ps->weaponstate=WEAPON_READY;
+ ps->weapon=ps->stats[STAT_QCE_SLOTS]&15;
+ if(!ps->weapon) {int held;for(held=1;held<8;held++)if((ps->weapon=BG_QceHeldWeapon(ps,held))!=WP_NONE)break;}
+ ps->weaponstate=WEAPON_RAISING;ps->weaponTime=BG_QceWeaponDef(ps->weapon)->ready_ms;
  if(notify)BG_AddPredictableEventToPlayerstate(EV_NOAMMO,0,ps);
 }
 
@@ -1739,7 +1753,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  vec3_t delta,start;
  trace_t trace;
  int i,weapon;
- if(!ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
+ if(!GV(GV_PICKUP) || !ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
     ent->client->noclip || (ps->weaponTime>0 && ps->weaponstate!=WEAPON_RELOADING && ps->weaponstate!=WEAPON_RELOAD_ENTER && ps->weaponstate!=WEAPON_RELOAD_EXIT && ps->weaponstate!=WEAPON_RELOAD_EXIT_EMPTY) || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
  VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
@@ -1780,7 +1794,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
 
 static void Cmd_QceGrenadeType_f(gentity_t *ent) {
  playerState_t *ps=&ent->client->ps;
- if(ps->stats[STAT_QCE_COMBAT] && ent->health>0 && ps->pm_type==PM_NORMAL && ps->weaponTime<=0)
+ if(ps->stats[STAT_QCE_COMBAT] && ent->health>0 && ps->pm_type==PM_NORMAL)
   BG_QceToggleGrenade(ps);
 }
 
@@ -1862,9 +1876,19 @@ void ClientCommand( int clientNum ) {
 		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d error=%d,%d rate=%d,%d battery=%d,%d zoom=%d crouch=%d recovery=%d,%d profile=%s\n\"",
 			ps->stats[STAT_QCE_COMBAT],ps->weapon,BG_QceWeaponName(ps->weapon),ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,
 			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,ps->qceHeat[0],ps->qceHeat[1],ps->qceOverheated,ps->qceChargeMs,ps->qceError[0],ps->qceError[1],ps->qceRate[0],ps->qceRate[1],ps->qceBattery[0],ps->qceBattery[1],ps->qceZoom&3,ps->qceCrouch,ps->qceOverheatTime[0],ps->qceOverheatTime[1],BG_QceProfileHash()));
+  trap_SendServerCommand(clientNum,va("print \"QCE inventory limit=%d mode=%s held=%d,%d,%d,%d,%d,%d,%d,%d\n\"",
+   BG_QceHeldLimit(ps),ps->qceMaxHeldWeapons==9?"all":"Halo",BG_QceHeldWeapon(ps,0),BG_QceHeldWeapon(ps,1),BG_QceHeldWeapon(ps,2),BG_QceHeldWeapon(ps,3),BG_QceHeldWeapon(ps,4),BG_QceHeldWeapon(ps,5),BG_QceHeldWeapon(ps,6),BG_QceHeldWeapon(ps,7)));
 	}
 	else if (Q_stricmp(cmd,"qce_swap")==0)
   G_QceSwapWeapon(ent);
+ else if (Q_stricmp(cmd,"qce_zoom_in")==0 || Q_stricmp(cmd,"qce_zoom_out")==0) {
+  playerState_t *ps=&ent->client->ps;
+  int zoom=ps->qceZoom&3, levels=BG_QceWeaponDef(ps->weapon)->zoom_levels;
+  if(ps->stats[STAT_QCE_COMBAT] && ps->pm_type==PM_NORMAL && (ps->weaponstate==WEAPON_READY || ps->weaponstate==WEAPON_FIRING)) {
+   zoom+=Q_stricmp(cmd,"qce_zoom_in")==0?1:-1;
+   if(zoom<0)zoom=0;if(zoom>levels)zoom=levels;ps->qceZoom=zoom;
+  }
+ }
  else if (Q_stricmp(cmd,"qce_grenade_type")==0)
   Cmd_QceGrenadeType_f(ent);
 	else if (Q_stricmp (cmd, "qce_drop") == 0)

@@ -74,9 +74,11 @@ latest presentation. Conversion takes a few minutes. Quit the game before
 regenerating its PK3. There is no need to convert Quake's PK3s.
 
 The client starts q3dm1 with Halo movement/combat enabled. Pick up a second weapon
-and use number keys or the wheel to switch. R reloads, F melees, G throws a grenade,
-T changes grenade type, E replaces a nearby gun, Q drops, and right mouse cycles
-zoom. L toggles the local flashlight preview where a light marker is available.
+and use number keys or Q to switch. R reloads, F melees, right mouse throws a
+grenade, G changes grenade type, E replaces a nearby gun, Ctrl crouches, and the
+wheel zooms in/out. `qce_drop` drops the current weapon from the console. L toggles
+the local flashlight preview where a light marker is available.
+
 
 The assault rifle should show 60 on its weapon display when full, decrement with
 predicted shots and refill after reloading. The shotgun reload should open,
@@ -92,7 +94,7 @@ still outstanding; see [Weapon presentation](WEAPON-PRESENTATION.md).
 ## Updating and multiplayer
 
 After pulling gameplay changes, rebuild client/server modules together. This
-pass uses QCE protocol **96**, including explicit shotgun reload states; older
+pass uses QCE protocol **98**, including the larger entity pool and replicated variant traits; older
 project builds and stock Quake/ioquake3 clients are incompatible. The client build
 also produces a dedicated server, or build it separately with
 `./scripts/build.sh server`. Every participating machine needs its own Quake data
@@ -108,5 +110,17 @@ keeping the project's Halo gameplay enabled.
 See [playtest fixes and controls](PLAYTEST-FIXES.md) for Spartan colors, optional
 lunge, movement/view scale tuning and development cheats.
 
-See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for protocol 96, 128 slots,
+See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for the previous protocol changes, 128 slots,
 reload interruption, new material conversion and scoreboard controls.
+
+See [game variants and the next playtest pass](GAME-VARIANTS.md) for all 29 variant
+cvars, save/load, Spartan bot batches and the current large-lobby limits.
+
+## Combat presentation pass
+
+Reconvert the Halo assets and rebuild both engines/modules for protocol **98**.
+Try `set qce_visorRGB "30 160 255"` for a blue visor. Bots always use gold.
+`set gv_maxHeldWeapons 0` followed by `map_restart 0` enables all eight Halo guns;
+`give weapons` fills them when cheats are enabled. Restore `2` and restart for
+normal Halo inventory. See [combat presentation](COMBAT-PRESENTATION.md) for
+behavior, conversion commands, validation and remaining retail-parity limits.

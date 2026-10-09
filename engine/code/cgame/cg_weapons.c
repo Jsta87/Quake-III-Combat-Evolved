@@ -607,7 +607,7 @@ The server says this item is used on this level
 =================
 */
 static void CG_RegisterHaloView( weaponInfo_t *weapon, const char *name ) {
- char path[MAX_QPATH], text[1024], *cursor, *token;
+ char path[MAX_QPATH], text[16384], *cursor, *token;
  fileHandle_t file;
  int length, i, j, eventVersion, eventCount;
  qceViewClip_t clips[QCE_VIEW_CLIPS];
@@ -634,6 +634,13 @@ static void CG_RegisterHaloView( weaponInfo_t *weapon, const char *name ) {
  memcpy(weapon->haloClips,clips,sizeof(clips));Q_strncpyz(weapon->haloName,name,sizeof(weapon->haloName));
  Com_sprintf(path,sizeof(path),"models/qce/halo/view/%s_60.skin",name);
  weapon->haloAmmoCounter=trap_FS_FOpenFile(path,NULL,FS_READ)>0;
+ Com_sprintf(path,sizeof(path),"models/qce/halo/view/%s.bob",name);
+ length=trap_FS_FOpenFile(path,&file,FS_READ);
+ if(length>0 && length<sizeof(text)) {
+  trap_FS_Read(text,length,file);trap_FS_FCloseFile(file);text[length]=0;cursor=text;
+  if(atoi(COM_Parse(&cursor))==1)weapon->haloMovingJoints=atoi(COM_Parse(&cursor));
+  if(weapon->haloMovingJoints<1 || weapon->haloMovingJoints>64)weapon->haloMovingJoints=0;
+ } else if(file)trap_FS_FCloseFile(file);
  weapon->haloStopSound=trap_S_RegisterSound("sound/qce/halo/events/stop.wav",qfalse);
  Com_sprintf(path,sizeof(path),"models/qce/halo/view/%s.events",name);
  length=trap_FS_FOpenFile(path,&file,FS_READ);
@@ -1448,7 +1455,7 @@ Add the weapon, and flash for the player's view
 static qboolean CG_HaloAttachment( refEntity_t *gun, const char *name, orientation_t *world ) {
  orientation_t local;
  int i;
- if(!trap_R_LerpTag(&local,gun->hModel,gun->oldframe,gun->frame,1.0f-gun->backlerp,name))return qfalse;
+ if(!trap_R_LerpTagRef(&local,gun,name))return qfalse;
  VectorCopy(gun->origin,world->origin);
  for(i=0;i<3;i++)VectorMA(world->origin,local.origin[i],gun->axis[i],world->origin);
  MatrixMultiply(local.axis,gun->axis,world->axis);
@@ -1526,20 +1533,27 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  case WEAPON_MELEEING:phaseMs=def->melee_ms;break;
  default:break;
  }
+ {
+  usercmd_t movement;
+  qboolean available=!(ps->pm_flags&PMF_FOLLOW) && !cg.demoPlayback && trap_GetUserCmd(trap_GetCurrentCmdNumber(),&movement);
+  input.moving=ps->groundEntityNum!=ENTITYNUM_NONE && (available?
+   movement.forwardmove*movement.forwardmove+movement.rightmove*movement.rightmove>161:
+   ps->velocity[0]*ps->velocity[0]+ps->velocity[1]*ps->velocity[1]>4);
+ }
  input.phaseMs=phaseMs;previous=view->clip;
  /* Cut embedded reload audio when a switch cancels the corresponding action. */
  if(weapon->haloStopSound && (
     ((previous==QCE_VIEW_RELOAD_FULL || previous==QCE_VIEW_RELOAD_EMPTY || previous==QCE_VIEW_RELOAD_ENTER || previous==QCE_VIEW_CHARGE_ENTER || previous==QCE_VIEW_CHARGE) &&
-     (view->weapon!=ps->weapon || ps->weaponstate==WEAPON_DROPPING || ps->weaponstate==WEAPON_MELEEING || ps->weaponstate==WEAPON_RAISING)) ||
+     (view->weapon!=ps->weapon || ps->weaponstate==WEAPON_DROPPING || ps->weaponstate==WEAPON_MELEEING || ps->weaponstate==WEAPON_RAISING || input.grenadeTime>view->time)) ||
     ((previous==QCE_VIEW_CHARGE_ENTER || previous==QCE_VIEW_CHARGE) && input.charge<=0 && input.fireTime<=view->time)))
   trap_S_StartSound(NULL,ps->clientNum,CHAN_WEAPON,weapon->haloStopSound);
  clip=QCE_ViewSelect(view,&input,weapon->haloClips);
  anim=&weapon->haloClips[clip];elapsed=cg.time-view->start;
- if(clip==QCE_VIEW_IDLE)phaseMs=0;
+ if(clip==QCE_VIEW_IDLE || clip==QCE_VIEW_MOVING)phaseMs=0;
  if(clip==QCE_VIEW_CHARGE_ENTER)phaseMs=def->charge_ms;
  if(clip==QCE_VIEW_RELOAD_FULL || clip==QCE_VIEW_RELOAD_EMPTY)phaseMs=clip==QCE_VIEW_RELOAD_EMPTY?def->reload_empty_ms:def->reload_ms;
  if(previous!=clip && cg_debugAnim.integer)CG_Printf("QCE view weapon=%d clip=%d first=%d count=%d fps=%d\n",ps->weapon,clip,anim->first,anim->count,anim->fps);
- if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs) && clip!=QCE_VIEW_FIRE && clip!=QCE_VIEW_CHARGED_FIRE) {
+ if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs) && clip!=QCE_VIEW_CHARGED_FIRE && (clip!=QCE_VIEW_FIRE || weapon->haloSounds[clip].frame>0)) {
   qceViewSound_t *event=&weapon->haloSounds[clip];
   trap_S_StartSound(NULL,ps->clientNum,CHAN_WEAPON,event->sounds[rand()%event->count]);
   if(cg_debugAnim.integer)CG_Printf("QCE animation sound weapon=%d clip=%d source_frame=%d\n",ps->weapon,clip,event->frame);
@@ -1550,6 +1564,12 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  if(!cg_drawGun.integer || cg.testGun || cg.renderingThirdPerson)return qtrue;
  memset(&gun,0,sizeof(gun));gun.hModel=weapon->haloViewModel;
  QCE_ViewFrames(anim,clip,elapsed,phaseMs,&gun.oldframe,&gun.frame,&gun.backlerp);
+ if(weapon->haloMovingJoints && weapon->haloClips[QCE_VIEW_MOVING].count>0) {
+  qceViewClip_t *moving=&weapon->haloClips[QCE_VIEW_MOVING];
+  QCE_ViewMovement(view,cg.time,input.moving,ps->weaponstate);
+  gun.qceOverlayWeight=view->moveWeight;gun.qceOverlayJoints=weapon->haloMovingJoints;
+  QCE_ViewFrames(moving,QCE_VIEW_MOVING,view->moveElapsed,0,&gun.qceOverlayOldFrame,&gun.qceOverlayFrame,&gun.qceOverlayBacklerp);
+ }
  VectorCopy(cg.refdef.vieworg,gun.origin);VectorCopy(gun.origin,gun.lightingOrigin);AxisCopy(cg.refdef.viewaxis,gun.axis);
  VectorMA(gun.origin,cg_gun_x.value,gun.axis[0],gun.origin);
  VectorMA(gun.origin,cg_gun_y.value,gun.axis[1],gun.origin);
@@ -1690,6 +1710,8 @@ void CG_DrawWeaponSelect( void ) {
 	const char	*name;
 	float	*color;
 
+	if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && cg.predictedPlayerState.qceMaxHeldWeapons!=9)return;
+
 	// don't display if dead
 	if ( cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 ) {
 		return;
@@ -1759,7 +1781,8 @@ CG_WeaponSelectable
 ===============
 */
 static qboolean CG_WeaponSelectable( int i ) {
-	if ( !cg.snap->ps.ammo[i] ) {
+	if ( cg.snap->ps.stats[STAT_QCE_COMBAT] && i == WP_GAUNTLET ) return qfalse;
+	if ( !cg.snap->ps.stats[STAT_QCE_COMBAT] && !cg.snap->ps.ammo[i] ) {
 		return qfalse;
 	}
 	if ( ! (cg.snap->ps.stats[ STAT_WEAPONS ] & ( 1 << i ) ) ) {
@@ -1858,7 +1881,7 @@ void CG_Weapon_f( void ) {
 
 	num = atoi( CG_Argv( 1 ) );
 
-	if ( num < 1 || num > MAX_WEAPONS-1 ) {
+	if ( num < 1 || num > MAX_WEAPONS-1 || (cg.snap->ps.stats[STAT_QCE_COMBAT] && num==WP_GAUNTLET) ) {
 		return;
 	}
 
@@ -1880,6 +1903,7 @@ The current weapon has just run out of ammo
 */
 void CG_OutOfAmmoChange( void ) {
 	int		i;
+ if(cg.snap && cg.snap->ps.stats[STAT_QCE_COMBAT])return;
 
 	cg.weaponSelectTime = cg.time;
 
@@ -1921,7 +1945,8 @@ void CG_FireWeapon( centity_t *cent ) {
 		CG_Error( "CG_FireWeapon: ent->weapon >= WP_NUM_WEAPONS" );
 		return;
 	}
-	weap = &cg_weapons[ ent->weapon ];
+	CG_RegisterWeapon(ent->weapon);
+ weap = &cg_weapons[ ent->weapon ];
 
 	// mark the entity as muzzle flashing, so when it is added it will
 	// append the flash to the weapon model
@@ -1946,15 +1971,22 @@ void CG_FireWeapon( centity_t *cent ) {
 		trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound );
 	}
 
- /* Shot audio is dispatched exactly once at the predicted/remote fire event.
-    CHAN_AUTO survives reload/ready sound cancellation on CHAN_WEAPON. */
- if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && weap->haloSounds[cent->qceChargedFire?QCE_VIEW_CHARGED_FIRE:QCE_VIEW_FIRE].count>0) {
-  qceViewSound_t *shot=&weap->haloSounds[cent->qceChargedFire?QCE_VIEW_CHARGED_FIRE:QCE_VIEW_FIRE];
+ /* The graph's fire sound is mechanical (pump/bolt/recoil), not the
+    firing-effect gunshot. Play both; never substitute one for the other. */
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && cent->qceChargedFire && weap->haloSounds[QCE_VIEW_CHARGED_FIRE].count>0) {
+  qceViewSound_t *shot=&weap->haloSounds[QCE_VIEW_CHARGED_FIRE];
   trap_S_StartSound(NULL,ent->number,CHAN_AUTO,shot->sounds[rand()%shot->count]);
  } else {
   for(c=0;c<4 && weap->flashSound[c];c++);
   if(c>0)trap_S_StartSound(NULL,ent->number,CHAN_AUTO,weap->flashSound[rand()%c]);
+  if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && weap->haloSounds[QCE_VIEW_FIRE].count>0 &&
+     (weap->haloSounds[QCE_VIEW_FIRE].frame==0 || ent->number!=cg.predictedPlayerState.clientNum)) {
+   qceViewSound_t *mechanical=&weap->haloSounds[QCE_VIEW_FIRE];
+   trap_S_StartSound(NULL,ent->number,CHAN_WEAPON,mechanical->sounds[rand()%mechanical->count]);
+  }
  }
+
+ if(cg_debugAnim.integer)CG_Printf("QCE fire weapon=%d effect_sound=%d mechanical_sound=%d charged=%d\n",ent->weapon,weap->flashSound[0],weap->haloSounds[QCE_VIEW_FIRE].count?weap->haloSounds[QCE_VIEW_FIRE].sounds[0]:0,cent->qceChargedFire);
 	// Local Halo brass uses the current skeleton's ejection marker when drawn.
 	if ( weap->ejectBrassFunc && cg_brassTime.integer > 0 &&
       !(ent->number==cg.predictedPlayerState.clientNum && cg.predictedPlayerState.stats[STAT_QCE_COMBAT] &&
@@ -1986,6 +2018,18 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 	int				duration;
 	vec3_t			sprOrg;
 	vec3_t			sprVel;
+
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && (weapon==WP_PLASMAGUN || weapon==WP_LIGHTNING || weapon==WP_GRENADE_LAUNCHER || weapon==WP_ROCKET_LAUNCHER)) {
+  if(weapon==WP_ROCKET_LAUNCHER)CG_HaloGrenadeExplosion(1,origin);
+  else {
+   le=CG_MakeExplosion(origin,dir,0,cg_qceWorld.plasmaExplosionShader,300,qtrue);
+   le->color[0]=weapon==WP_GRENADE_LAUNCHER?0.8f:weapon==WP_LIGHTNING?0.3f:0.3f;
+   le->color[1]=weapon==WP_GRENADE_LAUNCHER?0.3f:weapon==WP_LIGHTNING?1:0.65f;
+   le->color[2]=weapon==WP_LIGHTNING?0.3f:1;
+   trap_S_StartSound(origin,ENTITYNUM_WORLD,CHAN_AUTO,weapon==WP_GRENADE_LAUNCHER?cg_qceWorld.needleImpact:cg_qceWorld.plasmaImpact);
+  }
+  return;
+ }
 
 	mod = 0;
 	shader = 0;
@@ -2176,9 +2220,12 @@ CG_MissileHitPlayer
 =================
 */
 void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum ) {
-	CG_Bleed( origin, entityNum );
+	if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && (weapon==WP_PLASMAGUN || weapon==WP_LIGHTNING || weapon==WP_GRENADE_LAUNCHER || weapon==WP_ROCKET_LAUNCHER)) {
+  CG_MissileHitWall(weapon,0,origin,dir,IMPACTSOUND_FLESH);return;
+ }
+ CG_Bleed( origin, entityNum );
 
-	// some weapons will make an explosion with the blood, while
+ // some weapons will make an explosion with the blood, while
 	// others will just make the blood
 	switch ( weapon ) {
 	case WP_GRENADE_LAUNCHER:
@@ -2499,6 +2546,43 @@ qceWorldMedia_t cg_qceWorld;
 void CG_RegisterHaloWorld(void) {
  fileHandle_t file;int length,i,j;char buffer[4096],*text,*token,path[MAX_QPATH];
  memset(&cg_qceWorld,0,sizeof(cg_qceWorld));
+ if(trap_FS_FOpenFile("models/qce/halo/player/body.skin",NULL,FS_READ)>0) {
+  cg_qceWorld.bodySkin=trap_R_RegisterSkin("models/qce/halo/player/body.skin");cg_qceWorld.visorSkin=trap_R_RegisterSkin("models/qce/halo/player/visor.skin");
+ }
+ cg_qceWorld.shieldHitSound=trap_S_RegisterSound("sound/qce/halo/combat/shield-hit.wav",qfalse);
+ cg_qceWorld.shieldBreakSound=trap_S_RegisterSound("sound/qce/halo/combat/shield-break.wav",qfalse);
+ cg_qceWorld.plasmaImpact=trap_S_RegisterSound("sound/qce/halo/combat/plasma-impact.wav",qfalse);
+ cg_qceWorld.needleImpact=trap_S_RegisterSound("sound/qce/halo/combat/needle-impact.wav",qfalse);
+ cg_qceWorld.plasmaFlyby=trap_S_RegisterSound("sound/qce/halo/combat/plasma-flyby.wav",qfalse);
+ cg_qceWorld.needleFlyby=trap_S_RegisterSound("sound/qce/halo/combat/needle-flyby.wav",qfalse);
+ cg_qceWorld.shieldViewShader=trap_R_RegisterShader("qce/halo/shield-view");
+ cg_qceWorld.shieldShader=trap_R_RegisterShader("qce/halo/shield-shell");
+ cg_qceWorld.shieldBreakShader=trap_R_RegisterShader("qce/halo/shield-break");
+ cg_qceWorld.plasmaShaders[0]=trap_R_RegisterShader("qce/halo/plasma-volume");
+ cg_qceWorld.plasmaShaders[1]=cg_qceWorld.plasmaShaders[0];
+ for(i=0;i<3;i++) {Com_sprintf(path,sizeof(path),"models/qce/halo/world/plasma-volume-%d.md3",i);if(trap_FS_FOpenFile(path,NULL,FS_READ)>0)cg_qceWorld.plasmaModels[i]=trap_R_RegisterModel(path);}
+ {int n=trap_FS_FOpenFile("models/qce/halo/world/plasma-volumes.cfg",&file,FS_READ);
+  if(n>0 && n<sizeof(buffer)){trap_FS_Read(buffer,n,file);buffer[n]=0;text=buffer;for(i=0;i<3;i++)for(j=0;j<14;j++)cg_qceWorld.plasmaVolumes[i][j]=atof(COM_Parse(&text));}
+  if(n>=0)trap_FS_FCloseFile(file);
+ }
+ if(trap_FS_FOpenFile("models/qce/halo/world/needle-projectile.md3",NULL,FS_READ)>0)cg_qceWorld.projectileModels[0]=trap_R_RegisterModel("models/qce/halo/world/needle-projectile.md3");
+ if(trap_FS_FOpenFile("models/qce/halo/world/rocket-projectile.md3",NULL,FS_READ)>0)cg_qceWorld.projectileModels[1]=trap_R_RegisterModel("models/qce/halo/world/rocket-projectile.md3");
+ {char reticles[24000],*input;int n=trap_FS_FOpenFile("ui/qce/halo-crosshairs.cfg",&file,FS_READ);
+  if(n>0 && n<sizeof(reticles)) {
+   trap_FS_Read(reticles,n,file);reticles[n]=0;input=reticles;
+   while(*(token=COM_Parse(&input))) {
+    int w=atoi(token),index;float values[6];qhandle_t shader;
+    if(w<0 || w>=WP_NUM_WEAPONS || cg_qceWorld.crosshairCount[w]>=32)break;
+    shader=trap_R_RegisterShaderNoMip(COM_Parse(&input));
+    for(j=0;j<6;j++)values[j]=atof(COM_Parse(&input));
+    index=cg_qceWorld.crosshairCount[w]++;cg_qceWorld.crosshairs[w][index].shader=shader;
+    cg_qceWorld.crosshairs[w][index].width=values[0];cg_qceWorld.crosshairs[w][index].height=values[1];
+    cg_qceWorld.crosshairs[w][index].x=values[2];cg_qceWorld.crosshairs[w][index].y=values[3];
+    cg_qceWorld.crosshairs[w][index].flags=(int)values[4];cg_qceWorld.crosshairs[w][index].frame=(int)values[5];
+   }
+  }
+  if(n>=0)trap_FS_FCloseFile(file);
+ }
  length=trap_FS_FOpenFile("models/qce/halo/player/spartan.cfg",&file,FS_READ);
  if(length>0 && length<(int)sizeof(buffer)) {
   trap_FS_Read(buffer,length,file);buffer[length]=0;text=buffer;

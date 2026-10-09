@@ -20,9 +20,27 @@ static void reload_interrupt_tests(void) {
   assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==(i?60:10));assert(ps.ammo[WP_MACHINEGUN]==120);
  }
 }
+static void inventory_limits(void) {
+ playerState_t ps,predicted;int limit,w,count;
+ for(limit=1;limit<=9;limit++) {
+  memset(&ps,0,sizeof(ps));ps.stats[STAT_QCE_COMBAT]=1;ps.qceMaxHeldWeapons=limit;count=0;
+  for(w=WP_MACHINEGUN;w<=WP_BFG;w++) {
+   if(BG_QceAddWeapon(&ps,w,BG_QceWeaponDef(w)->ammo_initial))count++;
+  }
+  assert(count==(limit>=8?8:limit));
+  for(w=WP_MACHINEGUN;w<=WP_BFG;w++)if(BG_QceSlot(&ps,w)>=0) {
+   int slot=BG_QceSlot(&ps,w);ps.weapon=w;predicted=ps;
+   if(BG_QceWeaponDef(w)->reload_rounds>0) {BG_QceSetMagazine(&ps,slot,0);BG_QceSetMagazine(&predicted,slot,0);}
+   BG_QceReload(&ps);BG_QceReload(&predicted);assert(!memcmp(&ps,&predicted,sizeof(ps)));
+   assert(BG_QceMagazine(&ps,w)>0);
+  }
+  assert(BG_QceRemoveWeapon(&ps,WP_MACHINEGUN)>0);
+  assert(BG_QceAddWeapon(&ps,WP_MACHINEGUN,10));assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==10);
+ }
+}
 int main(void) {
  playerState_t ps,predicted;entityState_t item;int seq,i;
- reload_interrupt_tests();
+ reload_interrupt_tests();inventory_limits();
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;
  assert(BG_QceAddWeapon(&ps,WP_MACHINEGUN,120));
  assert(BG_QceAddWeapon(&ps,WP_SHOTGUN,10));
@@ -42,14 +60,15 @@ int main(void) {
  assert(!(ps.eFlags&EF_FIRING));
  ps.stats[STAT_QCE_GRENADES]=2;
  action(&ps,BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);
- assert((ps.stats[STAT_QCE_GRENADES]&7)==2);
- advance(&ps,BUTTON_ATTACK,60);
- assert(ps.eventSequence==seq && ps.ammo[WP_MACHINEGUN]==119);
- advance(&ps,0,160);
+ assert((ps.stats[STAT_QCE_GRENADES]&7)==1 && ps.eventSequence==seq+1);
+ assert(ps.weaponstate==WEAPON_READY && ps.qceReloadCommit==0);
+ assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==59 && ps.ammo[WP_MACHINEGUN]==119);
+ advance(&ps,0,60);action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);
+ advance(&ps,0,240);
  assert(ps.weaponstate==WEAPON_READY && BG_QceMagazine(&ps,WP_MACHINEGUN)==60);
- assert(ps.ammo[WP_MACHINEGUN]==119); /* reload must not mint ammo */
+ assert(ps.ammo[WP_MACHINEGUN]==119); /* cancelled/restarted reload conserves ammo */
  ps.stats[STAT_QCE_MAG0]=0;ps.ammo[WP_MACHINEGUN]=3;
- action(&ps,BUTTON_ATTACK,WP_MACHINEGUN,16);assert(ps.weaponstate==WEAPON_RELOADING);
+ action(&ps,0,WP_MACHINEGUN,16);assert(ps.weaponstate==WEAPON_RELOADING);
  advance(&ps,0,240);assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==3);
  ps.stats[STAT_QCE_GRENADES]=2;seq=ps.eventSequence;
  action(&ps,BUTTON_QCE_GRENADE,WP_MACHINEGUN,16);

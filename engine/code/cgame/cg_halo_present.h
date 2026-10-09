@@ -50,9 +50,21 @@ static int QCE_ViewSelect( qceViewPlayback_t *p, const qceViewInput_t *in, const
  p->state=in->state;p->magazine=in->magazine;p->weaponTime=in->weaponTime;p->hot=in->hot;p->time=in->now;
  return clip;
 }
+/* Retail starts movement immediately and interpolates back over six 30-Hz ticks. */
+static void QCE_ViewMovement(qceViewPlayback_t *p,int now,int moving,int state) {
+ int delta=p->moveLastTime?now-p->moveLastTime:0;
+ if(delta<0)delta=0;
+ if(moving) {
+  if(!p->moving)p->moveStart=now;
+  p->moveElapsed=now-p->moveStart;p->moveWeight=1;
+ } else if(state==WEAPON_READY) {
+  p->moveWeight-=delta/200.0f;if(p->moveWeight<0)p->moveWeight=0;
+ } else p->moveWeight=0;
+ p->moving=moving;p->moveLastTime=now;
+}
 static void QCE_ViewFrames( const qceViewClip_t *clip, int kind, int elapsed, int phaseMs, int *oldframe, int *frame, float *backlerp ) {
  float value;
- int step,loop=kind==QCE_VIEW_IDLE || kind==QCE_VIEW_CHARGE || kind==QCE_VIEW_HOT_IDLE;
+ int step,loop=kind==QCE_VIEW_IDLE || kind==QCE_VIEW_MOVING || kind==QCE_VIEW_CHARGE || kind==QCE_VIEW_HOT_IDLE;
  /* Charging enters the authored pose; charged jitter is an additive overlay. */
  if(kind==QCE_VIEW_CHARGE) {
   *oldframe=*frame=clip->first+clip->count-1;*backlerp=0;return;

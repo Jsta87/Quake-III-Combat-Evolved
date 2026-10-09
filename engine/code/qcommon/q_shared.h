@@ -1082,7 +1082,7 @@ typedef enum {
 #define	MAX_CLIENTS			128		// absolute limit
 #define MAX_LOCATIONS		64
 
-#define	GENTITYNUM_BITS		10		// don't need to send any more
+#define	GENTITYNUM_BITS		12		// don't need to send any more
 #define	MAX_GENTITIES		(1<<GENTITYNUM_BITS)
 
 // entitynums are communicated with GENTITY_BITS, so any reserved
@@ -1145,11 +1145,13 @@ typedef struct playerState_s {
 	vec3_t		origin;
 	vec3_t		velocity;
 	int			weaponTime;
- int qceHeat[2], qceHeatRemainder[2], qceOverheated, qceChargeMs;
- int qceError[2], qceErrorRemainder[2];
- int qceRate[2], qceRateRemainder[2], qceBattery[2];
- int qceZoom, qceCrouch, qceOverheatTime[2];
+ int qceHeat[8], qceHeatRemainder[8], qceOverheated, qceChargeMs;
+ int qceError[8], qceErrorRemainder[8];
+ int qceRate[8], qceRateRemainder[8], qceBattery[8];
+ int qceZoom, qceCrouch, qceOverheatTime[8];
  int qceReloadCommit, qceReloadEmpty;
+ int qceExtraSlots[6], qceExtraMags[6], qceMaxHeldWeapons;
+ int qceVariantScale[3], qceVariantFlags, qceMaxShield;
 	int			gravity;
 	int			speed;
 	int			delta_angles[3];	// add to command angles to get view direction

@@ -64,6 +64,11 @@ int main(void) {
  step(&server,127,0,0,0);step(&client,127,0,0,0);
  assert(server.velocity[0]>0 && server.velocity[0]<client.velocity[0]);
  assert(server.velocity[2]>client.velocity[2]);
+ init(&server,1);server.qceVariantScale[0]=501;for(i=0;i<250;i++)step(&server,127,0,0,0);
+ assert(server.velocity[0]>89 && server.velocity[0]<91);
+ server.qceVariantScale[0]=1;step(&server,127,0,0,0);assert(server.velocity[0]==0 && server.velocity[1]==0);
+ init(&server,1);server.qceVariantScale[2]=1;server.origin[2]=1000;server.velocity[2]=50;for(i=0;i<50;i++)step(&server,0,0,0,0);assert(server.velocity[2]==50);
+ init(&server,1);server.qceVariantScale[1]=2001;step(&server,0,0,127,0);assert(server.velocity[2]>230 && server.velocity[2]<240);
  init(&server,0);step(&server,0,0,127,0);assert(server.velocity[2]>260 && server.velocity[2]<270);
  printf("PASS: speed cap, turning, crouch speed, jump arc, held-jump landing, deterministic replay, reduced air control, stock jump fallback\n");
  return 0;

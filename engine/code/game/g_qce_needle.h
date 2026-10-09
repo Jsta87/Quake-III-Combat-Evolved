@@ -28,6 +28,7 @@ qboolean G_QceNeedleImpact(gentity_t *ent,trace_t *trace) {
  int i,count;
  if(!ent->qceNeedle)return qfalse;
  target=&g_entities[trace->entityNum];def=BG_QceWeaponDef(WP_GRENADE_LAUNCHER);
+ vectoangles(ent->s.pos.trDelta,ent->s.angles);
  ent->qceStuck=1;ent->qceAttachEntity=trace->entityNum;
  ent->qceAttachSerial=target->qceEntitySerial;
  ent->qceAttachSpawn=target->client?target->client->ps.persistant[PERS_SPAWN_COUNT]:0;

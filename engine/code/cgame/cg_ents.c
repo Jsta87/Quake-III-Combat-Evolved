@@ -441,7 +441,40 @@ static void CG_Missile( centity_t *cent ) {
   return;
  }
 
-	// calculate the axis
+	if(cg.snap->ps.stats[STAT_QCE_COMBAT] && (s1->weapon==WP_PLASMAGUN || s1->weapon==WP_LIGHTNING || s1->weapon==WP_GRENADE_LAUNCHER || s1->weapon==WP_ROCKET_LAUNCHER)) {
+  vec3_t velocity;memset(&ent,0,sizeof(ent));VectorCopy(cent->lerpOrigin,ent.origin);VectorCopy(ent.origin,ent.oldorigin);
+  memset(ent.shaderRGBA,255,4);ent.renderfx=RF_NOSHADOW;
+  BG_EvaluateTrajectoryDelta(&s1->pos,cg.time,velocity);
+  if(s1->weapon==WP_GRENADE_LAUNCHER && cg_qceWorld.needleFlyby)trap_S_AddLoopingSound(s1->number,ent.origin,velocity,cg_qceWorld.needleFlyby);
+  if((s1->weapon==WP_PLASMAGUN || s1->weapon==WP_LIGHTNING) && cg_qceWorld.plasmaFlyby)trap_S_AddLoopingSound(s1->number,ent.origin,velocity,cg_qceWorld.plasmaFlyby);
+  if(s1->weapon==WP_GRENADE_LAUNCHER || s1->weapon==WP_ROCKET_LAUNCHER) {
+   ent.hModel=cg_qceWorld.projectileModels[s1->weapon==WP_ROCKET_LAUNCHER];
+   if(s1->pos.trType==TR_STATIONARY)VectorCopy(s1->angles,cent->lerpAngles);else vectoangles(velocity,cent->lerpAngles);AnglesToAxis(cent->lerpAngles,ent.axis);
+   if(ent.hModel)trap_R_AddRefEntityToScene(&ent);
+  } else {
+   int k,count,type=s1->generic1==3?2:s1->weapon==WP_LIGHTNING?1:0;
+   float *volume=cg_qceWorld.plasmaVolumes[type];vec3_t direction;
+   count=(int)volume[0];if(count<1)count=1;if(count>20)count=20;
+   VectorCopy(velocity,direction);VectorNormalize(direction);
+   ent.reType=RT_SPRITE;ent.customShader=cg_qceWorld.plasmaShaders[0];
+   if(cg_qceWorld.plasmaModels[type]) {
+    ent.reType=RT_MODEL;ent.customShader=0;ent.hModel=cg_qceWorld.plasmaModels[type];vectoangles(velocity,cent->lerpAngles);AnglesToAxis(cent->lerpAngles,ent.axis);
+    trap_R_AddRefEntityToScene(&ent);
+   } else for(k=0;k<count;k++) {
+    float t=count>1?k/(float)(count-1):0;int channel;
+    ent.radius=volume[3]+(volume[4]-volume[3])*(volume[5]<2?t*sqrt(t):t*t*t*t*t);if(ent.radius<1)ent.radius=1;
+    VectorMA(cent->lerpOrigin,volume[1]+volume[2]*t,direction,ent.origin);
+    for(channel=0;channel<4;channel++) {
+     float value=volume[6+channel]*(1-t)+volume[10+channel]*t;
+     ent.shaderRGBA[channel==0?3:channel-1]=(byte)(value*255);
+    }
+    trap_R_AddRefEntityToScene(&ent);
+   }
+  }
+  trap_R_AddLightToScene(ent.origin,60,ent.shaderRGBA[0]/255.0f,ent.shaderRGBA[1]/255.0f,ent.shaderRGBA[2]/255.0f);
+  return;
+ }
+ // calculate the axis
 	VectorCopy( s1->angles, cent->lerpAngles);
 
 	// add trails

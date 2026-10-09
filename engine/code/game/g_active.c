@@ -856,6 +856,7 @@ void ClientThink_real( gentity_t *ent ) {
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
+	if(client->ps.stats[STAT_QCE_COMBAT])G_QceVariantPlayer(&client->ps);
 	client->ps.stats[STAT_QCE_MOVEMENT] = g_qceMovement.integer==1 ? (int)(Com_Clamp(0.5f,2.0f,g_qceMovementScale.value)*100+0.5f) : 0;
 	client->ps.speed = client->ps.stats[STAT_QCE_MOVEMENT] ? (int)BG_QceMovementDef()->forward : g_speed.value;
 
@@ -1185,8 +1186,8 @@ void ClientEndFrame( gentity_t *ent ) {
 	// apply all the damage taken this frame
 	P_DamageFeedback (ent);
 	if (ent->client->ps.stats[STAT_QCE_COMBAT]) {
-		QCE_ShieldRecharge(&ent->client->ps.stats[STAT_QCE_SHIELD],
-			&ent->client->qceShieldNextTick, &ent->client->qceShieldRemainder, level.time, ent->health > 0);
+		G_QceVariantPlayer(&ent->client->ps);
+  G_QceVariantRecharge(ent);
 	}
 
 	// add the EF_CONNECTION flag if we haven't gotten commands recently

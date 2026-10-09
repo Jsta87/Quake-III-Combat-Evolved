@@ -410,7 +410,7 @@ static void CG_ItemPickup( int itemNum ) {
 	// see if it should be the grabbed weapon
 	if ( bg_itemlist[itemNum].giType == IT_WEAPON ) {
 		// select it immediately
-		if ( cg_autoswitch.integer && bg_itemlist[itemNum].giTag != WP_MACHINEGUN ) {
+		if ( !cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && cg_autoswitch.integer && bg_itemlist[itemNum].giTag != WP_MACHINEGUN ) {
 			cg.weaponSelectTime = cg.time;
 			cg.weaponSelect = bg_itemlist[itemNum].giTag;
 		}
@@ -808,9 +808,23 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_CHANGE_WEAPON:
 		DEBUGNAME("EV_CHANGE_WEAPON");
-		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.selectSound );
+		if(!cg.predictedPlayerState.stats[STAT_QCE_COMBAT])
+   trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.selectSound );
 		break;
-	case EV_QCE_HEADSHOT:
+	case EV_QCE_SHIELD_HIT:
+ case EV_QCE_SHIELD_BREAK:
+  if(es->otherEntityNum>=0 && es->otherEntityNum<MAX_CLIENTS) {
+   centity_t *player=&cg_entities[es->otherEntityNum];
+   player->qceShieldBreak=event==EV_QCE_SHIELD_BREAK;
+   player->qceShieldTime=cg.time+(player->qceShieldBreak?600:250);
+   if(es->otherEntityNum==cg.clientNum)trap_S_StartLocalSound(player->qceShieldBreak?cg_qceWorld.shieldBreakSound:cg_qceWorld.shieldHitSound,CHAN_LOCAL_SOUND);
+   if(player->qceShieldBreak && cg_qceWorld.shieldBreakShader) {
+    vec3_t normal;ByteToDir(es->eventParm,normal);
+    CG_MakeExplosion(position,normal,0,cg_qceWorld.shieldBreakShader,600,qtrue);
+   }
+  }
+  break;
+ case EV_QCE_HEADSHOT:
 		DEBUGNAME("EV_QCE_HEADSHOT");
 		if (es->otherEntityNum2==cg.clientNum) {
 			CG_CenterPrint("HEADSHOT",SCREEN_HEIGHT*0.30,BIGCHAR_WIDTH);

@@ -21,5 +21,11 @@ int main(void) {
  reset(0,100);G_QceResolveHeadPoint(&g_entities[1],entry,dir,point);assert(point[0]>90 && point[0]<100 && G_QceHeadshot(&g_entities[1],point,MOD_BFG,0));
  entry[1]=213;G_QceResolveHeadPoint(&g_entities[1],entry,dir,point);assert(!G_QceHeadshot(&g_entities[1],point,MOD_BFG,0));
  clients[1].ps.qceZoom=2;shoot((vec3_t){100,200,300},MOD_MACHINEGUN,10,0);assert(!clients[1].ps.qceZoom);
+ reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[1],100,20,100,40,160,NULL,MOD_QCE_FRAG);
+ assert(g_entities[1].health==900); /* Halo explosives do full damage to their owner. */
+ GV(GV_GRENADE_DAMAGE)=2;reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],100,20,100,40,160,NULL,MOD_QCE_FRAG);assert(g_entities[1].health==800);GV(GV_GRENADE_DAMAGE)=1;
+ GV(GV_HEALTH)=0;reset(0,1000);shoot((vec3_t){100,200,300},MOD_MACHINEGUN,100,0);assert(g_entities[1].health==1000);GV(GV_HEALTH)=1;
  puts("PASS: actual radial damage inner/full strength, minimum-damage falloff, outer cutoff, wall occlusion, direct-hit exclusion, precision ray/head intersection and damage dezoom");return 0;
 }

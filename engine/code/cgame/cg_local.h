@@ -170,7 +170,8 @@ typedef struct centity_s {
 	int				muzzleFlashTime;	// move to playerEntity?
 	int qcePlayerClip,qcePlayerStart,qcePlayerPreviousFrame,qcePlayerRenderedFrame,qcePlayerBlendMs;
  qboolean qcePlayerPoseValid;
-	int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
+	int qceShieldTime, qceShieldBreak;
+ int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
 	int				previousEvent;
 	int				teleportFlag;
 
@@ -324,7 +325,7 @@ typedef struct {
 	int				botSkill;		// 0 = not bot, 1-5 = bot
 
 	vec3_t			color1;
- byte haloColor[4];
+ byte haloColor[4], haloVisor[4];
 	vec3_t			color2;
 	
 	byte c1RGBA[4];
@@ -393,18 +394,25 @@ enum { QCE_VIEW_IDLE, QCE_VIEW_FIRE, QCE_VIEW_READY, QCE_VIEW_PUTAWAY,
  QCE_VIEW_RELOAD_FULL, QCE_VIEW_RELOAD_EMPTY, QCE_VIEW_MELEE, QCE_VIEW_GRENADE,
  QCE_VIEW_OVERHEAT, QCE_VIEW_CHARGE, QCE_VIEW_CHARGED_FIRE, QCE_VIEW_RECOVER,
  QCE_VIEW_RELOAD_ENTER, QCE_VIEW_RELOAD_EXIT, QCE_VIEW_RELOAD_EXIT_EMPTY,
- QCE_VIEW_CHARGE_ENTER, QCE_VIEW_HOT_IDLE, QCE_VIEW_CHARGED_HOT, QCE_VIEW_CLIPS };
+ QCE_VIEW_CHARGE_ENTER, QCE_VIEW_HOT_IDLE, QCE_VIEW_CHARGED_HOT, QCE_VIEW_MOVING, QCE_VIEW_CLIPS };
 typedef struct { int first, count, fps, loop; } qceViewClip_t;
 typedef struct { int frame, count, loop; sfxHandle_t sounds[4]; } qceViewSound_t;
 typedef struct {
  int weapon, state, clip, start, time, magazine, weaponTime, hot, recoveryStart;
  int soundClip, soundStart, soundPlayed, ejectSequence;
+ int moving,moveStart,moveElapsed,moveLastTime;float moveWeight;
 } qceViewPlayback_t;
 typedef struct {
  int weapon, state, now, magazine, weaponTime, hot, charge, chargeMs;
- int fireTime, chargedFire, grenadeTime, meleeTime, reloadRounds, phaseMs;
+ int fireTime, chargedFire, grenadeTime, meleeTime, reloadRounds, phaseMs, moving;
 } qceViewInput_t;
 typedef struct {
+ sfxHandle_t shieldHitSound,shieldBreakSound,plasmaFlyby,needleFlyby,plasmaImpact,needleImpact;
+ qhandle_t shieldViewShader;
+ qhandle_t bodySkin,visorSkin,shieldShader,shieldBreakShader,projectileModels[2],plasmaShaders[2],plasmaModels[3];
+ float plasmaVolumes[3][14];
+ struct {qhandle_t shader;float width,height,x,y;int flags,frame;} crosshairs[WP_NUM_WEAPONS][32];
+ int crosshairCount[WP_NUM_WEAPONS];
  qhandle_t playerModel,headModel,grenadeModels[2],grenadeShader,plasmaExplosionShader,grenadeSmokeShader;
  qhandle_t grenadeParticleShaders[3][64];
  int grenadeParticleCounts[3];
@@ -428,6 +436,7 @@ typedef struct weaponInfo_s {
 	qhandle_t		flashModel;
 	qhandle_t haloViewModel;
 	qceViewClip_t haloClips[QCE_VIEW_CLIPS];
+ int haloMovingJoints;
  qceViewSound_t haloSounds[QCE_VIEW_CLIPS];
  sfxHandle_t haloStopSound,haloPickupSound;
  char haloName[16];
@@ -1738,3 +1747,5 @@ void	CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, 
 void	CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duration, int sizeStart, int sizeEnd);
 extern qboolean		initparticles;
 int CG_NewParticleArea ( int num );
+
+int trap_R_LerpTagRef(orientation_t *tag,const refEntity_t *entity,const char *name);

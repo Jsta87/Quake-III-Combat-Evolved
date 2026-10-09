@@ -6,9 +6,9 @@ gentity_t g_entities[MAX_GENTITIES];
 level_locals_t level;
 vmCvar_t g_knockback,g_friendlyFire,g_debugDamage,g_gametype;
 static gclient_t clients[2];
-static int deaths,pains,sameTeam,notices;
-static gentity_t notice;
-gentity_t *G_TempEntity(vec3_t origin,int event) {assert(origin && event==EV_QCE_HEADSHOT);notices++;memset(&notice,0,sizeof(notice));return &notice;}
+static int deaths,pains,sameTeam,notices,shieldHits,shieldBreaks;
+static gentity_t notice,shieldNotice;
+gentity_t *G_TempEntity(vec3_t origin,int event) {assert(origin);if(event==EV_QCE_SHIELD_HIT || event==EV_QCE_SHIELD_BREAK) {if(event==EV_QCE_SHIELD_BREAK)shieldBreaks++;else shieldHits++;memset(&shieldNotice,0,sizeof(shieldNotice));return &shieldNotice;}assert(event==EV_QCE_HEADSHOT);notices++;memset(&notice,0,sizeof(notice));return &notice;}
 void QDECL Com_Printf(const char *fmt,...) {(void)fmt;}
 void QDECL Com_Error(int level,const char *fmt,...) {(void)level;(void)fmt;abort();}
 void QDECL G_Printf(const char *fmt,...) {(void)fmt;}
@@ -22,7 +22,7 @@ static void pain(gentity_t *target,gentity_t *attacker,int damage) {(void)target
 static void reset(int shield,int health) {
  int i;
  memset(g_entities,0,sizeof(g_entities));memset(clients,0,sizeof(clients));memset(&level,0,sizeof(level));
- deaths=pains=sameTeam=notices=0;g_friendlyFire.integer=0;
+ deaths=pains=sameTeam=notices=shieldHits=shieldBreaks=0;g_friendlyFire.integer=0;
  for(i=0;i<2;i++) {
   g_entities[i].client=&clients[i];g_entities[i].s.number=i;g_entities[i].s.eType=ET_PLAYER;
   g_entities[i].health=health;g_entities[i].takedamage=qtrue;g_entities[i].die=died;g_entities[i].pain=pain;
@@ -40,11 +40,12 @@ int main(void) {
  vec3_t head={100,200,330},body={100,200,300},edge={100,200,320.8f};
  reset(100,100);shoot(head,MOD_BFG,50,0);
  assert(g_entities[1].health==100 && clients[1].ps.stats[STAT_QCE_SHIELD]==50 && deaths==0);
- assert(clients[1].qceShieldNextTick==7000);
+ assert(clients[1].qceShieldNextTick==7000);assert(shieldHits==1 && shieldBreaks==0 && shieldNotice.s.otherEntityNum==1);
  reset(20,100);shoot(head,MOD_BFG,50,0);
  assert(g_entities[1].health==0 && clients[1].ps.stats[STAT_QCE_SHIELD]==0 && deaths==1 && notices==1);
  reset(50,100);shoot(head,MOD_BFG,50,0);
  assert(g_entities[1].health==0 && deaths==1 && notices==1); /* exact depletion, no overflow */
+ assert(shieldBreaks==1 && shieldHits==0);
  reset(100,100);shoot(body,MOD_BFG,40,0);shoot(body,MOD_BFG,40,0);
  assert(clients[1].ps.stats[STAT_QCE_SHIELD]==20 && g_entities[1].health==100 && deaths==0);
  shoot(head,MOD_BFG,40,0);assert(g_entities[1].health==0 && deaths==1 && notices==1);

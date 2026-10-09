@@ -103,6 +103,9 @@ typedef struct {
 	float		oldorigin[3];		// also used as MODEL_BEAM's "to"
 	int			oldframe;
 	float		backlerp;			// 0.0 = current, 1.0 = old
+	// QCE masked additive IQM track; zero weight disables it for other models.
+	int qceOverlayFrame, qceOverlayOldFrame, qceOverlayJoints;
+	float qceOverlayBacklerp, qceOverlayWeight;
 
 	// texturing
 	int			skinNum;			// inline skin index

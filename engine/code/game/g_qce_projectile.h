@@ -1,6 +1,6 @@
 /* QCE authoritative projectile travel on Quake BSP geometry. */
 void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon) {
- bolt->qceProjectileWeapon=weapon;bolt->qceProjectileTime=level.time;
+ bolt->s.weapon=weapon;bolt->qceProjectileWeapon=weapon;bolt->qceProjectileTime=level.time;
  bolt->qceOwnerSerial=owner->qceEntitySerial;bolt->qceDamageScale=1;
  bolt->s.pos.trTime=level.time;bolt->s.pos.trType=TR_LINEAR;
 }

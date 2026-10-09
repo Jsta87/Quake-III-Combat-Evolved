@@ -98,8 +98,8 @@ void TossClientItems( gentity_t *self ) {
 	}
 
 	if (self->client->ps.stats[STAT_QCE_COMBAT]) {
-		for (i=0;i<2;i++) {
-			int held=(self->client->ps.stats[STAT_QCE_SLOTS]>>(i*4))&15;
+		for (i=0;GV(GV_DROP) && i<8;i++) {
+			int held=BG_QceHeldWeapon(&self->client->ps,i);
 			if (!held) continue;
 			drop=Drop_Item(self,BG_FindItemForWeapon(held),i*90);
 			drop->count=self->client->ps.ammo[held]?self->client->ps.ammo[held]:-1;
@@ -123,6 +123,7 @@ void TossClientItems( gentity_t *self ) {
 	if ( g_gametype.integer != GT_TEAM ) {
 		angle = 45;
 		for ( i = 1 ; i < PW_NUM_POWERUPS ; i++ ) {
+   if(self->client->ps.stats[STAT_QCE_COMBAT] && GV(GV_INVISIBLE) && i==PW_INVIS)continue;
 			if ( self->client->ps.powerups[ i ] > level.time ) {
 				item = BG_FindItemForPowerup( i );
 				if ( !item ) {
@@ -619,7 +620,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	// don't allow respawn until the death anim is done
 	// g_forcerespawn may force spawning at some later time
-	self->client->respawnTime = level.time + 1700;
+	self->client->respawnTime = level.time + (self->client->ps.stats[STAT_QCE_COMBAT]?(int)(1000*(GV(GV_RESPAWN)+(self==attacker?GV(GV_SUICIDE_PENALTY):0))):1700);
 
 	// remove powerups
 	memset( self->client->ps.powerups, 0, sizeof(self->client->ps.powerups) );
@@ -823,12 +824,20 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	int			asave;
 	int			knockback;
 	int			max;
-	qboolean qceHeadshot = qfalse;
+	int qceOldShield=0;
+ qboolean qceHeadshot = qfalse;
  const qce_weapondef_t *qceHeadDef;
 #ifdef MISSIONPACK
 	vec3_t		bouncedir, impactpoint;
 #endif
 
+	if(targ->client && targ->client->ps.stats[STAT_QCE_COMBAT] && GV(GV_HEALTH)==0 && !(dflags&DAMAGE_NO_PROTECTION))return;
+ if(targ->client && targ->client->ps.stats[STAT_QCE_COMBAT] && mod!=MOD_TELEFRAG && mod!=MOD_SUICIDE) {
+  float scale=GV(GV_DAMAGE);
+  if(mod==MOD_GAUNTLET)scale*=GV(GV_MELEE);
+  if(mod==MOD_QCE_FRAG || mod==MOD_QCE_PLASMA_GRENADE)scale*=GV(GV_GRENADE_DAMAGE);
+  if(scale<=0)return;damage=(int)(damage*scale+0.5f);
+ }
 	if (!targ->takedamage) {
 		return;
 	}
@@ -885,6 +894,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	}
 
 	client = targ->client;
+ if(client && client->ps.stats[STAT_QCE_COMBAT])qceOldShield=client->ps.stats[STAT_QCE_SHIELD];
 
 	if ( client ) {
 		if ( client->noclip ) {
@@ -992,7 +1002,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 	// always give half damage if hurting self
 	// calculated after knockback, so rocket jumping works
-	if ( targ == attacker) {
+	if ( targ == attacker && !(client && client->ps.stats[STAT_QCE_COMBAT])) {
 		damage *= 0.5;
 	}
 
@@ -1009,7 +1019,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
  }
 	if (client && client->ps.stats[STAT_QCE_COMBAT]) {
 		client->ps.qceZoom&=4;
-		client->qceShieldNextTick = level.time + QCE_SHIELD_DELAY;
+		client->qceShieldNextTick = level.time + (int)(QCE_SHIELD_DELAY*GV(GV_RECHARGE_DELAY));
   client->qceShieldRemainder=0;
 		/* Classify the hit now; evaluate shields after this hit is absorbed.
 		 * Existing protection checks already ran above. */
@@ -1064,6 +1074,11 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		notice->s.otherEntityNum = targ->s.number;
 		notice->s.otherEntityNum2 = attacker->s.number;
 	}
+
+ if(client && qceOldShield>client->ps.stats[STAT_QCE_SHIELD]) {
+  gentity_t *effect=G_TempEntity(point?point:targ->r.currentOrigin,client->ps.stats[STAT_QCE_SHIELD]>0?EV_QCE_SHIELD_HIT:EV_QCE_SHIELD_BREAK);
+  effect->s.otherEntityNum=targ->s.number;effect->s.eventParm=dir?DirToByte(dir):0;
+ }
 
 	if ( g_debugDamage.integer ) {
 		G_Printf( "%i: client:%i health:%i damage:%i armor:%i\n", level.time, targ->s.number,

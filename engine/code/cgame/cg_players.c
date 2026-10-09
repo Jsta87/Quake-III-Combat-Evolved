@@ -901,6 +901,7 @@ void CG_NewClientInfo( int clientNum ) {
 
 	// colors
  QCE_ParseRGB(Info_ValueForKey(configstring,"qce_rgb"),newInfo.haloColor);
+ if(!QCE_ParseRGB(Info_ValueForKey(configstring,"qce_visor"),newInfo.haloVisor))QCE_ParseRGB("255 190 30",newInfo.haloVisor);
  if(cg_debugAnim.integer)CG_Printf("QCE armor client=%d RGB=%d %d %d\n",clientNum,newInfo.haloColor[0],newInfo.haloColor[1],newInfo.haloColor[2]);
 	v = Info_ValueForKey( configstring, "c1" );
 	CG_ColorFromString( v, newInfo.color1 );
@@ -2688,7 +2689,18 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   body.backlerp=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
  }
  cent->qcePlayerPoseValid=qtrue;
+ body.customSkin=cg_qceWorld.bodySkin;
  CG_PlayerSprites(cent);CG_PlayerSplash(cent);CG_AddRefEntityWithPowerups(&body,&cent->currentState,ci->team);
+ if(cg_qceWorld.visorSkin) {
+  refEntity_t visor=body;visor.customSkin=cg_qceWorld.visorSkin;memcpy(visor.shaderRGBA,ci->haloVisor,4);
+  CG_AddRefEntityWithPowerups(&visor,&cent->currentState,ci->team);
+ }
+ if(cent->qceShieldTime>cg.time && cg_qceWorld.shieldShader) {
+  refEntity_t shell=body;float fade=(cent->qceShieldTime-cg.time)/(cent->qceShieldBreak?600.0f:250.0f);
+  shell.customSkin=0;shell.customShader=cg_qceWorld.shieldShader;
+  shell.shaderRGBA[0]=255;shell.shaderRGBA[1]=180;shell.shaderRGBA[2]=50;shell.shaderRGBA[3]=(byte)(fade*180);
+  trap_R_AddRefEntityToScene(&shell);
+ }
  if(!(cent->currentState.eFlags&EF_DEAD) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
   CG_RegisterWeapon(cent->currentState.weapon);memset(&gun,0,sizeof(gun));gun.hModel=cg_weapons[cent->currentState.weapon].weaponModel;gun.renderfx=body.renderfx;
   if(trap_R_LerpTag(&hand,body.hModel,body.oldframe,body.frame,1-body.backlerp,"tag_hand")) {
@@ -2696,7 +2708,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
    for(i=0;i<3;i++)VectorMA(gun.origin,hand.origin[i],body.axis[i],gun.origin);
    /* Apply the complete authored grip transform, not just wrist translation. */
    MatrixMultiply(hand.axis,body.axis,gun.axis);VectorCopy(gun.origin,gun.oldorigin);VectorCopy(body.lightingOrigin,gun.lightingOrigin);memcpy(gun.shaderRGBA,body.shaderRGBA,4);
-   trap_R_AddRefEntityToScene(&gun);
+   CG_AddRefEntityWithPowerups(&gun,&cent->currentState,ci->team);
   }
  }
  return qtrue;

@@ -910,6 +910,63 @@ void BotInputToUserCommand(bot_input_t *bi, usercmd_t *ucmd, int delta_angles[3]
 BotUpdateInput
 ==============
 */
+/* Additional Halo actions use the same predicted buttons as human input. */
+void BotQceCombatInput(bot_state_t *bs,int time) {
+ gentity_t *self=&g_entities[bs->client],*enemy;
+ playerState_t *ps=&self->client->ps;
+ vec3_t eye,target,delta,forward,angles;float distance,horizontal,speed,gravity,disc,pitch;
+ trace_t trace;int i,type;
+ if(bs->qceGrenadeAimUntil>time && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0) {
+  bs->lastucmd.angles[PITCH]=ANGLE2SHORT(bs->qceGrenadeAim[PITCH])-ps->delta_angles[PITCH];
+  bs->lastucmd.angles[YAW]=ANGLE2SHORT(bs->qceGrenadeAim[YAW])-ps->delta_angles[YAW];
+  bs->lastucmd.buttons&=~BUTTON_ATTACK;bs->lastucmd.buttons|=BUTTON_QCE_GRENADE;return;
+ }
+ if(bs->qceMeleeUntil>time && ps->pm_type==PM_NORMAL && ps->stats[STAT_HEALTH]>0) {bs->lastucmd.buttons&=~BUTTON_ATTACK;bs->lastucmd.buttons|=BUTTON_QCE_MELEE;return;}
+ if(!ps->stats[STAT_QCE_COMBAT] || ps->pm_type!=PM_NORMAL || ps->stats[STAT_HEALTH]<=0 ||
+    bs->enemy<0 || bs->enemy>=level.maxclients || time<bs->qceCombatNextTime)return;
+ enemy=&g_entities[bs->enemy];
+ if(!enemy->inuse || !enemy->client || enemy->health<=0 || enemy->client->sess.sessionTeam==TEAM_SPECTATOR ||
+    (g_gametype.integer>=GT_TEAM && OnSameTeam(self,enemy)))return;
+ VectorCopy(ps->origin,eye);eye[2]+=ps->viewheight;VectorCopy(enemy->r.currentOrigin,target);
+ VectorSubtract(target,ps->origin,delta);distance=VectorLength(delta);
+ AngleVectors(bs->viewangles,forward,NULL,NULL);VectorNormalize(delta);
+ if(DotProduct(delta,forward)<0.92f)return;
+ trap_Trace(&trace,eye,NULL,NULL,target,bs->client,MASK_SHOT);
+ if(trace.fraction<1 && trace.entityNum!=bs->enemy)return;
+ if(distance<BG_QceWeaponDef(ps->weapon)->melee_reach && ps->weaponstate!=WEAPON_MELEEING && (ps->weaponTime<=100 || ps->weaponstate==WEAPON_RELOADING)) {
+  bs->lastucmd.buttons&=~BUTTON_ATTACK;bs->lastucmd.buttons|=BUTTON_QCE_MELEE;
+  bs->qceMeleeUntil=time+200;bs->qceCombatNextTime=time+BG_QceWeaponDef(ps->weapon)->melee_ms+100;return;
+ }
+ if(distance<260 || distance>650 || (ps->weaponTime>100 && ps->weaponstate!=WEAPON_RELOADING) || (ps->weaponstate!=WEAPON_READY && ps->weaponstate!=WEAPON_FIRING && ps->weaponstate!=WEAPON_RELOADING) || ps->qceVariantFlags&2)return;
+ type=BG_QceGrenadeType(ps);
+ if(!BG_QceGrenadeCount(ps,type)) {type^=1;if(!BG_QceGrenadeCount(ps,type))return;}
+ /* Keep blast zones clear of teammates; this applies even with friendly fire disabled. */
+ for(i=0;i<level.maxclients;i++) {
+  gentity_t *friend=&g_entities[i];vec3_t offset;
+  if(friend==self || friend==enemy || !friend->inuse || !friend->client || friend->health<=0 ||
+     g_gametype.integer<GT_TEAM || !OnSameTeam(self,friend))continue;
+  VectorSubtract(friend->r.currentOrigin,target,offset);if(VectorLength(offset)<240)return;
+ }
+ target[2]+=type?8:enemy->r.mins[2]+4;VectorSubtract(target,eye,delta);
+ horizontal=sqrt(delta[0]*delta[0]+delta[1]*delta[1]);if(horizontal<1)return;
+ speed=BG_QceGrenadeDef(type)->throw_speed;gravity=BG_QceMovementDef()->gravity*BG_QceGrenadeDef(type)->gravity;
+ if(gravity>0) {
+  disc=speed*speed*speed*speed-gravity*(gravity*horizontal*horizontal+2*delta[2]*speed*speed);
+  if(disc<0)return;
+  pitch=atan2(speed*speed-sqrt(disc),gravity*horizontal);
+ } else pitch=atan2(delta[2],horizontal);
+ vectoangles(delta,angles);angles[PITCH]=-pitch*180/M_PI;
+ /* Check the initial arc for low ceilings/nearby obstructions. */
+ AngleVectors(angles,forward,NULL,NULL);VectorMA(eye,100,forward,target);
+ trap_Trace(&trace,eye,NULL,NULL,target,bs->client,MASK_SHOT);if(trace.fraction<1)return;
+ ps->stats[STAT_QCE_GRENADES]=(ps->stats[STAT_QCE_GRENADES]&~512)|(type<<9);
+ bs->lastucmd.angles[PITCH]=ANGLE2SHORT(angles[PITCH])-ps->delta_angles[PITCH];
+ bs->lastucmd.angles[YAW]=ANGLE2SHORT(angles[YAW])-ps->delta_angles[YAW];
+ bs->lastucmd.buttons&=~BUTTON_ATTACK;bs->lastucmd.buttons|=BUTTON_QCE_GRENADE;
+ VectorCopy(angles,bs->qceGrenadeAim);bs->qceGrenadeAimUntil=time+400;
+ bs->qceCombatNextTime=time+2500+(rand()%1500);
+}
+
 void BotUpdateInput(bot_state_t *bs, int time, int elapsed_time) {
 	bot_input_t bi;
 	int j;
@@ -928,6 +985,7 @@ void BotUpdateInput(bot_state_t *bs, int time, int elapsed_time) {
 	}
 	//convert the bot input to a usercmd
 	BotInputToUserCommand(&bi, &bs->lastucmd, bs->cur_ps.delta_angles, time);
+ BotQceCombatInput(bs,time);
 	//subtract the delta angles
 	for (j = 0; j < 3; j++) {
 		bs->viewangles[j] = AngleMod(bs->viewangles[j] - SHORT2ANGLE(bs->cur_ps.delta_angles[j]));
@@ -1607,7 +1665,8 @@ int BotInitLibrary(void) {
 	if (strlen(buf)) trap_BotLibVarSet("max_aaslinks", buf);
 	//maximum number of items in a level
 	trap_Cvar_VariableStringBuffer("max_levelitems", buf, sizeof(buf));
-	if (strlen(buf)) trap_BotLibVarSet("max_levelitems", buf);
+	if(!strlen(buf) || atoi(buf)<MAX_GENTITIES)Com_sprintf(buf,sizeof(buf),"%d",MAX_GENTITIES);
+ trap_BotLibVarSet("max_levelitems", buf);
 	//game type
 	trap_Cvar_VariableStringBuffer("g_gametype", buf, sizeof(buf));
 	if (!strlen(buf)) strcpy(buf, "0");

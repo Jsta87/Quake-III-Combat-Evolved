@@ -126,7 +126,7 @@ NET
 
 #define	MAX_PACKET_USERCMDS		32		// max number of usercmd_t in a packet
 
-#define	MAX_SNAPSHOT_ENTITIES	256
+#define	MAX_SNAPSHOT_ENTITIES	512
 
 #define	PORT_ANY			-1
 
@@ -244,8 +244,8 @@ PROTOCOL
 ==============================================================
 */
 
-#define	PROTOCOL_VERSION	96 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
-#define PROTOCOL_LEGACY_VERSION 0 /* QCE wire layouts require matching protocol-96 peers. */
+#define	PROTOCOL_VERSION	98 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
+#define PROTOCOL_LEGACY_VERSION 0 /* QCE wire layouts require matching protocol-98 peers. */
 // 1.31 - 67
 
 // maintain a list of compatible protocols for demo playing

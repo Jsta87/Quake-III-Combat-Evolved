@@ -699,6 +699,7 @@ void G_CheckBotSpawn( void );
 void G_RemoveQueuedBotBegin( int clientNum );
 qboolean G_BotConnect( int clientNum, qboolean restart );
 void Svcmd_AddBot_f( void );
+void Svcmd_QceBotAdd_f(void);
 void Svcmd_BotList_f( void );
 void BotInterbreedEndMatch( void );
 
@@ -989,3 +990,5 @@ int		trap_GeneticParentsAndChildSelection(int numranks, float *ranks, int *paren
 
 void	trap_SnapVector( float *v );
 
+
+#include "g_qce_variant.h"

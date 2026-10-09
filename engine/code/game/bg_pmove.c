@@ -246,6 +246,11 @@ static float PM_QceMovementScale(void) {
  return percent>1?Com_Clamp(0.5f,2.0f,percent/100.0f):1.0f;
 }
 
+static float PM_QceVariantScale(int axis) {
+ int value=pm->ps->qceVariantScale[axis];return value?(value-1)/1000.0f:1.0f;
+}
+static float PM_QceSpeedScale(void) {return PM_QceMovementScale()*PM_QceVariantScale(0);}
+
 /* Halo absolute acceleration approaches desired velocity, including braking. */
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 	int i;
@@ -253,6 +258,7 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 	if ( PM_QceMovement() ) {
 		vec3_t delta;
 		float distance, step;
+  if(PM_QceSpeedScale()<=0) {pm->ps->velocity[0]=pm->ps->velocity[1]=0;return;}
 		/* Approach the requested velocity vector instead of adding speed along
 		 * its projection. Preserve vertical velocity for jumps and impulses. */
 		for ( i = 0; i < 2; i++ ) {
@@ -261,7 +267,7 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 		delta[2] = 0;
 		distance = VectorNormalize( delta );
 		if(!pml.walking && wishspeed==0)return;
-		step = (pml.walking ? ((pm->ps->pm_flags&PMF_DUCKED)?BG_QceMovementDef()->crouch_acceleration:BG_QceMovementDef()->acceleration) : BG_QceMovementDef()->air_acceleration) * pml.frametime * PM_QceMovementScale();
+		step = (pml.walking ? ((pm->ps->pm_flags&PMF_DUCKED)?BG_QceMovementDef()->crouch_acceleration:BG_QceMovementDef()->acceleration) : BG_QceMovementDef()->air_acceleration) * pml.frametime * PM_QceSpeedScale();
 		if ( step > distance ) step = distance;
 		for ( i = 0; i < 2; i++ ) pm->ps->velocity[i] += step * delta[i];
 		return;
@@ -383,7 +389,7 @@ static qboolean PM_CheckJump( void ) {
 	pm->ps->pm_flags |= PMF_JUMP_HELD;
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
-	pm->ps->velocity[2] = PM_QceMovement() ? BG_QceMovementDef()->jump*PM_QceMovementScale() : JUMP_VELOCITY;
+	pm->ps->velocity[2] = PM_QceMovement() ? BG_QceMovementDef()->jump*PM_QceMovementScale()*sqrt(PM_QceVariantScale(1)) : JUMP_VELOCITY;
 	PM_AddEvent( EV_JUMP );
 
 	if ( pm->cmd.forwardmove >= 0 ) {
@@ -643,7 +649,7 @@ static void PM_AirMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
-  limit*=PM_QceMovementScale();
+  limit*=PM_QceSpeedScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -768,7 +774,7 @@ static void PM_WalkMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
-  limit*=PM_QceMovementScale();
+  limit*=PM_QceSpeedScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -927,7 +933,7 @@ static void PM_NoclipMove( void ) {
   float forwardSpeed=(pm->ps->pm_flags&PMF_DUCKED)?(f>=0?m->crouch_forward:m->crouch_backward):(f>=0?m->forward:m->backward);
   float sideSpeed=(pm->ps->pm_flags&PMF_DUCKED)?m->crouch_sideways:m->sideways;
   float limit=length>0?sqrt(f*f*forwardSpeed*forwardSpeed+side*side*sideSpeed*sideSpeed)/length:0;
-  limit*=PM_QceMovementScale();
+  limit*=PM_QceSpeedScale();
   if(wishspeed>limit)wishspeed=limit;
  }
 
@@ -1518,6 +1524,7 @@ PM_BeginWeaponChange
 ===============
 */
 static void PM_BeginWeaponChange( int weapon ) {
+ if(pm->ps->stats[STAT_QCE_COMBAT] && weapon==WP_GAUNTLET)return;
 	if ( weapon <= WP_NONE || weapon >= WP_NUM_WEAPONS ) {
 		return;
 	}
@@ -1665,6 +1672,9 @@ static void PM_Weapon( void ) {
   pm->ps->qceReloadCommit-=pml.msec;
   if(pm->ps->qceReloadCommit<=0){BG_QceReload(pm->ps);pm->ps->qceReloadCommit=-1;}
  }
+ if(pm->ps->stats[STAT_QCE_COMBAT] && PM_QceReloading() && !(pm->ps->qceVariantFlags&2) && (pm->cmd.buttons&BUTTON_QCE_GRENADE) && !(pm->ps->stats[STAT_QCE_GRENADES]&8) && BG_QceGrenadeCount(pm->ps,BG_QceGrenadeType(pm->ps))>0) {
+  pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;pm->ps->qceReloadCommit=0;
+ }
  if(pm->ps->stats[STAT_QCE_COMBAT] && PM_QceReloading() && (pm->cmd.buttons&BUTTON_QCE_MELEE) && !(pm->ps->stats[STAT_QCE_GRENADES]&QCE_MELEE_HELD)) {
   pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;pm->ps->qceReloadCommit=0;
  }
@@ -1758,16 +1768,16 @@ static void PM_Weapon( void ) {
 			PM_StartTorsoAnim(TORSO_ATTACK2);
 			return;
 		}
-		if ((pm->cmd.buttons & BUTTON_QCE_GRENADE) && !(pm->ps->stats[STAT_QCE_GRENADES]&8) && BG_QceGrenadeCount(pm->ps,BG_QceGrenadeType(pm->ps))>0) {
+		if (!(pm->ps->qceVariantFlags&2) && (pm->cmd.buttons & BUTTON_QCE_GRENADE) && !(pm->ps->stats[STAT_QCE_GRENADES]&8) && BG_QceGrenadeCount(pm->ps,BG_QceGrenadeType(pm->ps))>0) {
 			slot=BG_QceGrenadeType(pm->ps);
-			BG_QceSetGrenadeCount(pm->ps,slot,BG_QceGrenadeCount(pm->ps,slot)-1);
+			if(!(pm->ps->qceVariantFlags&4))BG_QceSetGrenadeCount(pm->ps,slot,BG_QceGrenadeCount(pm->ps,slot)-1);
 			pm->ps->stats[STAT_QCE_GRENADES]|=8;
 			BG_AddPredictableEventToPlayerstate(EV_QCE_GRENADE,slot,pm->ps);
 			pm->ps->weaponTime=800;
 			pm->ps->eFlags &= ~EF_FIRING;
 			return;
 		}
-		if (BG_QceCanReload(pm->ps) && ((pm->cmd.buttons & BUTTON_QCE_RELOAD) || ((pm->cmd.buttons & BUTTON_ATTACK) && !BG_QceMagazine(pm->ps,pm->ps->weapon)))) {
+		if (BG_QceCanReload(pm->ps) && ((pm->cmd.buttons & BUTTON_QCE_RELOAD) || !BG_QceMagazine(pm->ps,pm->ps->weapon))) {
    const qce_weapondef_t *reloadDef=BG_QceWeaponDef(pm->ps->weapon);
    pm->ps->qceReloadEmpty=BG_QceMagazine(pm->ps,pm->ps->weapon)==0;
    pm->ps->qceReloadCommit=reloadDef->reload_rounds>1?(pm->ps->qceReloadEmpty?reloadDef->reload_empty_commit_ms:reloadDef->reload_commit_ms):0;
@@ -1836,11 +1846,11 @@ static void PM_Weapon( void ) {
 	if (pm->ps->stats[STAT_QCE_COMBAT] && BG_QceCapacity(pm->ps->weapon)) {
 		slot=BG_QceSlot(pm->ps,pm->ps->weapon);
 		if (slot<0 || !BG_QceMagazine(pm->ps,pm->ps->weapon)) return;
-		pm->ps->stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0]-=ammoCost;
+		BG_QceSetMagazine(pm->ps,slot,BG_QceMagazine(pm->ps,pm->ps->weapon)-ammoCost);
 	}
 
 	// take an ammo away if not infinite
-	if ( pm->ps->ammo[ pm->ps->weapon ] != -1 ) {
+	if ( pm->ps->ammo[ pm->ps->weapon ] != -1 && !(pm->ps->qceVariantFlags&1) ) {
 		pm->ps->ammo[ pm->ps->weapon ]-=ammoCost;
 	}
 
@@ -2176,7 +2186,7 @@ void PmoveSingle (pmove_t *pmove) {
 	PM_SetWaterLevel();
 	pml.previous_waterlevel = pmove->waterlevel;
 
-	if(PM_QceMovement()) {pm->ps->gravity=(int)(BG_QceMovementDef()->gravity*PM_QceMovementScale()+0.5f);pm->ps->speed=(int)(BG_QceMovementDef()->forward*PM_QceMovementScale()+0.5f);}
+	if(PM_QceMovement()) {pm->ps->gravity=(int)(BG_QceMovementDef()->gravity*PM_QceMovementScale()*PM_QceVariantScale(2)+0.5f);pm->ps->speed=(int)(BG_QceMovementDef()->forward*PM_QceSpeedScale()+0.5f);}
 	// set mins, maxs, and viewheight
 	PM_CheckDuck ();
 

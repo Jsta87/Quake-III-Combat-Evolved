@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // perform the server side effects of a weapon firing
 
 #include "g_local.h"
+#include "bg_qce_aim.h"
 #include "bg_qce_presentation.generated.h"
 
 static	float	s_quadFactor;
@@ -817,6 +818,44 @@ void CalcMuzzlePointOrigin ( gentity_t *ent, vec3_t origin, vec3_t localForward,
 FireWeapon
 ===============
 */
+/* Correct the projectile direction without changing the player's view angles.
+ * Source CE ranks by autoaim first, then magnetism; obstruction rejects a candidate. */
+static void G_QceAimProjectile(gentity_t *ent,vec3_t direction) {
+ vec3_t eye,base,target,delta,bestDirection,desired,perpendicular;
+ float bestAuto=0,bestMagnet=0,zoom=1,distance,angle,a,m,deviation=0,bestDeviation=0,dot,length;
+ int i,levelZoom=ent->client->ps.qceZoom&3,weapon=ent->s.weapon;trace_t trace;
+ const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
+ if(weapon<=WP_NONE || weapon>=WP_NUM_WEAPONS)return;
+ if(qce_aimdefs[weapon].zoomOnly && !levelZoom)return;
+ if(levelZoom)zoom=levelZoom==1?def->zoom_min:def->zoom_max;
+ VectorCopy(ent->client->ps.origin,eye);eye[2]+=ent->client->ps.viewheight;
+ QCE_AimLevels(weapon,zoom,0,0,&a,&m,&bestDeviation);
+ for(i=0;i<level.maxclients;i++) {
+  gentity_t *other=&g_entities[i];
+  if(other==ent || !other->inuse || !other->client || other->health<=0 || other->client->sess.sessionTeam==TEAM_SPECTATOR ||
+     (g_gametype.integer>=GT_TEAM && OnSameTeam(ent,other)) || other->client->ps.powerups[PW_INVIS]>level.time)continue;
+  VectorCopy(other->r.currentOrigin,base);base[2]+=other->r.mins[2]+(other->r.maxs[2]-other->r.mins[2])*0.5f;
+  QCE_AimPill(eye,direction,base,(other->r.maxs[2]-other->r.mins[2])*0.5f,6.4f,target);
+  VectorSubtract(target,eye,delta);distance=VectorNormalize(delta);dot=DotProduct(direction,delta);if(dot<0)continue;if(dot>1)dot=1;
+  angle=atan2(sqrt(1-dot*dot),dot);QCE_AimLevels(weapon,zoom,distance,angle,&a,&m,&deviation);
+  if(a<bestAuto || (a==bestAuto && m<=bestMagnet))continue;
+  trap_Trace(&trace,eye,NULL,NULL,target,ent->s.number,MASK_SHOT);
+  if(trace.fraction<1 && trace.entityNum!=i)continue;
+  bestAuto=a;bestMagnet=m;bestDeviation=deviation;VectorSubtract(target,muzzle,bestDirection);VectorNormalize(bestDirection);
+ }
+ VectorMA(eye,10240,direction,target);trap_Trace(&trace,eye,NULL,NULL,target,ent->s.number,MASK_SHOT);
+ VectorSubtract(trace.endpos,muzzle,desired);if(VectorNormalize(desired)<=0)VectorCopy(direction,desired);
+ VectorScale(desired,1-bestAuto,desired);if(bestAuto>0)VectorMA(desired,bestAuto,bestDirection,desired);VectorNormalize(desired);
+ dot=DotProduct(direction,desired);if(dot>1)dot=1;if(dot< -1)dot= -1;
+ angle=atan2(sqrt(1-dot*dot),dot);
+ if(angle>bestDeviation) {
+  VectorMA(desired,-dot,direction,perpendicular);length=VectorNormalize(perpendicular);
+  if(length<=0)return;
+  VectorScale(direction,cos(bestDeviation),desired);VectorMA(desired,sin(bestDeviation),perpendicular,desired);
+ }
+ VectorCopy(desired,direction);
+}
+
 void FireWeapon( gentity_t *ent,int eventParm ) {
 	if (ent->client->ps.powerups[PW_QUAD] ) {
 		s_quadFactor = g_quadfactor.value;
@@ -849,6 +888,7 @@ void FireWeapon( gentity_t *ent,int eventParm ) {
 
  if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
   const qce_weapondef_t *def=BG_QceWeaponDef(ent->s.weapon);
+  G_QceAimProjectile(ent,forward);
   s_qceError=(eventParm>>1)&127;s_qceSpread=BG_QceWeaponDef(ent->s.weapon)->scoped_error && s_qceError==127?0:BG_QceSpread(ent->s.weapon,s_qceError);
   if(def->fire_kind==QCE_FIRE_PLASMA || def->fire_kind==QCE_FIRE_RAIL || def->fire_kind==QCE_FIRE_ROCKET) {
    VectorMA(forward,crandom()*s_qceSpread/8192,right,forward);

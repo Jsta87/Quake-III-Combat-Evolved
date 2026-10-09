@@ -36,7 +36,7 @@ static char		*g_arenaInfos[MAX_ARENAS];
 #define BOT_BEGIN_DELAY_BASE		2000
 #define BOT_BEGIN_DELAY_INCREMENT	1500
 
-#define BOT_SPAWN_QUEUE_DEPTH	16
+#define BOT_SPAWN_QUEUE_DEPTH	MAX_CLIENTS
 
 typedef struct {
 	int		clientNum;
@@ -663,7 +663,7 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 	}
 	Info_SetValueForKey( userinfo, "name", botname );
 	Info_SetValueForKey( userinfo, "rate", "25000" );
-	Info_SetValueForKey( userinfo, "snaps", "20" );
+	Info_SetValueForKey( userinfo, "snaps", "30" );
 	Info_SetValueForKey( userinfo, "skill", va("%.2f", skill) );
 	Info_SetValueForKey( userinfo, "teampref", team );
 
@@ -727,6 +727,13 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 	// don't send tinfo to bots, they don't parse it
 	Info_SetValueForKey( userinfo, "teamoverlay", "0" );
 
+ if(g_qceCombat.integer) {
+  int serial=trap_Cvar_VariableIntegerValue("qce_botSerial")+1;
+  Info_SetValueForKey(userinfo,"name",va("Spartan %03d",serial));
+  Info_SetValueForKey(userinfo,"qce_colorRGB",va("%d %d %d",32+rand()%224,32+rand()%224,32+rand()%224));
+  Info_SetValueForKey(userinfo,"handicap","100");
+  trap_Cvar_Set("qce_botSerial",va("%d",serial));
+ }
 	// register the userinfo
 	trap_SetUserinfo( clientNum, userinfo );
 
@@ -1059,4 +1066,25 @@ void G_InitBots( qboolean restart ) {
 			G_SpawnBots( Info_ValueForKey( arenainfo, "bots" ), basedelay );
 		}
 	}
+}
+
+/* Each random bot gets an independent draw: 5%,20%,50%,20%,5%. */
+void Svcmd_QceBotAdd_f(void) {
+ char arg[16];int skill=0,count=1,i,roll,j;
+ if(trap_Argc()<2 || trap_Argc()>3) {G_Printf("Usage: bot_add <skill 0..5> [count 1..128]\n");return;}
+ trap_Argv(1,arg,sizeof(arg));
+ if(strlen(arg)!=1 || arg[0]<'0' || arg[0]>'5') {G_Printf("Bot skill must be 0..5 (0=random)\n");return;}
+ skill=atoi(arg);
+ if(trap_Argc()==3) {
+  trap_Argv(2,arg,sizeof(arg));for(j=0;arg[j];j++)if(arg[j]<'0' || arg[j]>'9')break;
+  if(!arg[0] || arg[j]) {G_Printf("Invalid bot count\n");return;}count=atoi(arg);
+ }
+ if(count<1 || count>MAX_CLIENTS) {G_Printf("Bot count must be 1..%d\n",MAX_CLIENTS);return;}
+ for(i=0;i<count;i++) {
+  int chosen=skill,occupied=0;
+  for(j=0;j<level.maxclients;j++)if(level.clients[j].pers.connected!=CON_DISCONNECTED)occupied++;
+  if(occupied>=level.maxclients) {G_Printf("Added %d bots; all %d player slots are occupied\n",i,level.maxclients);break;}
+  if(!chosen) {roll=rand()%100;chosen=roll<5?1:roll<25?2:roll<75?3:roll<95?4:5;}
+  G_AddBot("Sarge",chosen,NULL,0,NULL);
+ }
 }

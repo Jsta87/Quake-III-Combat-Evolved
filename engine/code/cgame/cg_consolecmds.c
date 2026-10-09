@@ -606,7 +606,9 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand ("vosay_team");
 	trap_AddCommand ("votell");
 #endif
-	trap_AddCommand ("give");
+	trap_AddCommand ("qce_zoom_in");
+ trap_AddCommand ("qce_zoom_out");
+ trap_AddCommand ("give");
 	trap_AddCommand ("god");
 	trap_AddCommand ("notarget");
 	trap_AddCommand ("noclip");

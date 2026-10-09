@@ -237,6 +237,7 @@ int Pickup_Ammo (gentity_t *ent, gentity_t *other)
 int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 	int		quantity;
 	int previousSlot = BG_QceSlot(&other->client->ps, ent->item->giTag);
+ if(other->client->ps.stats[STAT_QCE_COMBAT] && !GV(GV_PICKUP))return 0;
 
 	if ( ent->count < 0 ) {
 		quantity = 0; // None for you, sir!
@@ -263,6 +264,10 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 	if (other->client->ps.stats[STAT_QCE_COMBAT]) {
 		if(!(ent->flags&FL_DROPPED_ITEM) && !ent->count)quantity=BG_QceWeaponDef(ent->item->giTag)->ammo_initial;
 		if (!BG_QceAddWeapon(&other->client->ps, ent->item->giTag, quantity)) return 0;
+  if(previousSlot<0) {
+   other->client->ps.weapon=ent->item->giTag;other->client->ps.weaponstate=WEAPON_RAISING;
+   other->client->ps.weaponTime=BG_QceWeaponDef(ent->item->giTag)->ready_ms;other->client->ps.qceReloadCommit=0;
+  }
 		if (previousSlot<0 && ent->qceDroppedMagazine && BG_QceSlot(&other->client->ps, ent->item->giTag)>=0) {
 			int slot = BG_QceSlot(&other->client->ps, ent->item->giTag);
 			int clip = ent->qceDroppedMagazine-1;
@@ -283,9 +288,9 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
    other->client->ps.qceHeat[slot]=heat;other->client->ps.qceHeatRemainder[slot]=remainder;
    other->client->ps.qceOverheated=(other->client->ps.qceOverheated&~(1<<slot))|(locked<<slot);
 			if (clip > other->client->ps.ammo[ent->item->giTag]) clip = other->client->ps.ammo[ent->item->giTag];
-			other->client->ps.stats[slot?STAT_QCE_MAG1:STAT_QCE_MAG0] = clip;
+			BG_QceSetMagazine(&other->client->ps,slot,clip);
 		}
-		return g_weaponRespawn.integer;
+		return (int)GV(GV_WEAPON_RESPAWN);
 	}
 
 	other->client->ps.stats[STAT_WEAPONS] |= ( 1 << ent->item->giTag );
@@ -636,6 +641,7 @@ gentity_t *LaunchItem( gitem_t *item, vec3_t origin, vec3_t velocity ) {
 	}
 
 	dropped->flags = FL_DROPPED_ITEM;
+ dropped->timestamp=level.time;
 
 	trap_LinkEntity (dropped);
 
@@ -917,6 +923,9 @@ be on an entity that hasn't spawned yet.
 ============
 */
 void G_SpawnItem (gentity_t *ent, gitem_t *item) {
+ item=G_QceVariantMapWeapon(item);
+ if(!item) {G_FreeEntity(ent);return;}
+ ent->classname=item->classname;
 	G_SpawnFloat( "random", "0", &ent->random );
 	G_SpawnFloat( "wait", "0", &ent->wait );
 

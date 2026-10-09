@@ -42,6 +42,8 @@ int main(void) {
  in.now=6500;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_HOT_IDLE);
  in.hot=0;in.now=6600;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_RECOVER);
  in.now=7601;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_IDLE);
+ in.moving=1;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_IDLE); /* movement is additive */
+ in.moving=0;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_IDLE);
  QCE_ViewFrames(&clips[0],QCE_VIEW_IDLE,1017,0,&oldframe,&frame,&backlerp);
  assert(oldframe==0 && frame==1 && backlerp>0.48f && backlerp<0.5f);
  QCE_ViewFrames(&clips[1],QCE_VIEW_FIRE,9999,0,&oldframe,&frame,&backlerp);
@@ -57,6 +59,12 @@ int main(void) {
  p.start=8100;assert(QCE_ViewSoundDue(&p,200,&clips[1],&sound,0)); /* repeated shot */
  sound.loop=1;p.start=8200;assert(!QCE_ViewSoundDue(&p,900,&clips[1],&sound,0));
  p.clip=QCE_VIEW_IDLE;sound.count=0;assert(!QCE_ViewSoundDue(&p,900,&clips[0],&sound,0));
+ memset(&p,0,sizeof(p));QCE_ViewMovement(&p,1000,1,WEAPON_READY);assert(p.moveWeight==1 && p.moveElapsed==0);
+ QCE_ViewMovement(&p,1100,1,WEAPON_RELOADING);assert(p.moveWeight==1 && p.moveElapsed==100);
+ QCE_ViewMovement(&p,1150,0,WEAPON_READY);assert(p.moveWeight==0.75f && p.moveElapsed==100);
+ QCE_ViewMovement(&p,1300,0,WEAPON_READY);assert(p.moveWeight==0);
+ QCE_ViewMovement(&p,1400,1,WEAPON_READY);assert(p.moveWeight==1 && p.moveElapsed==0);
+ QCE_ViewMovement(&p,1450,0,WEAPON_FIRING);assert(p.moveWeight==0);
  puts("PASS: reload latching/insertion/cancellation, charge/fire/hot/recovery priority, frame interpolation and once-per-instance sound events");
  return 0;
 }

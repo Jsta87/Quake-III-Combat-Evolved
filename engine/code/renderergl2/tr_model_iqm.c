@@ -1341,7 +1341,7 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 
 
 static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
-			      float backlerp, float *poseMats ) {
+			      float backlerp, float *poseMats, const refEntity_t *overlay ) {
 	iqmTransform_t relativeJoints[IQM_MAX_JOINTS];
 	iqmTransform_t *relativeJoint;
 	const iqmTransform_t *pose;
@@ -1378,6 +1378,29 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
 		}
 	}
 
+
+ if(overlay && overlay->qceOverlayWeight>0 && overlay->qceOverlayFrame>=0 && overlay->qceOverlayFrame<data->num_frames &&
+    overlay->qceOverlayOldFrame>=0 && overlay->qceOverlayOldFrame<data->num_frames && overlay->qceOverlayJoints>0 && overlay->qceOverlayJoints<=data->num_poses) {
+  float weight=Com_Clamp(0,1,overlay->qceOverlayWeight),blend=Com_Clamp(0,1,overlay->qceOverlayBacklerp);
+  const iqmTransform_t *a=&data->poses[overlay->qceOverlayOldFrame*data->num_poses];
+  const iqmTransform_t *b=&data->poses[overlay->qceOverlayFrame*data->num_poses];
+  const quat_t identity={0,0,0,1};
+  for(i=0;i<overlay->qceOverlayJoints;i++) {
+   quat_t delta,rotation,base;int k;
+   relativeJoint=&relativeJoints[i];
+   for(k=0;k<3;k++) {
+    relativeJoint->translate[k]+=(a[i].translate[k]*blend+b[i].translate[k]*(1-blend))*weight;
+    relativeJoint->scale[k]*=1+((a[i].scale[k]*blend+b[i].scale[k]*(1-blend))-1)*weight;
+   }
+   QuatSlerp(a[i].rotate,b[i].rotate,1-blend,delta);QuatSlerp(identity,delta,weight,rotation);QuatCopy(relativeJoint->rotate,base);
+   /* Halo quaternions become transposed matrices on export: base * overlay. */
+   relativeJoint->rotate[0]=base[3]*rotation[0]+base[0]*rotation[3]+base[1]*rotation[2]-base[2]*rotation[1];
+   relativeJoint->rotate[1]=base[3]*rotation[1]-base[0]*rotation[2]+base[1]*rotation[3]+base[2]*rotation[0];
+   relativeJoint->rotate[2]=base[3]*rotation[2]+base[0]*rotation[1]-base[1]*rotation[0]+base[2]*rotation[3];
+   relativeJoint->rotate[3]=base[3]*rotation[3]-base[0]*rotation[0]-base[1]*rotation[1]-base[2]*rotation[2];
+  }
+ }
+
 	// multiply by inverse of bind pose and parent 'pose mat' (bind pose transform matrix)
 	relativeJoint = relativeJoints;
 	jointParent = data->jointParents;
@@ -1399,7 +1422,7 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
 }
 
 static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,
-			      float backlerp, float *mat ) {
+			      float backlerp, float *mat, const refEntity_t *overlay ) {
 	float	*mat1;
 	int	i;
 
@@ -1408,7 +1431,7 @@ static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,
 		return;
 	}
 
-	ComputePoseMats( data, frame, oldframe, backlerp, mat );
+	ComputePoseMats( data, frame, oldframe, backlerp, mat, overlay );
 
 	for( i = 0; i < data->num_joints; i++ ) {
 		float outmat[12];
@@ -1476,7 +1499,7 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
 
 	if ( data->num_poses > 0 ) {
 		// compute interpolated joint matrices
-		ComputePoseMats( data, frame, oldframe, backlerp, poseMats );
+		ComputePoseMats( data, frame, oldframe, backlerp, poseMats, &backEnd.currentEntity->e );
 
 		// compute vertex blend influence matricies
 		for( i = 0; i < surf->num_influences; i++ ) {
@@ -1692,7 +1715,7 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t * surface)
 		int i;
 
 		// compute interpolated joint matrices
-		ComputePoseMats( surface->iqmData, frame, oldframe, backlerp, jointMats );
+		ComputePoseMats( surface->iqmData, frame, oldframe, backlerp, jointMats, &backEnd.currentEntity->e );
 
 		// convert row-major order 3x4 matrix to column-major order 4x4 matrix
 		for ( i = 0; i < data->num_poses; i++ ) {
@@ -1720,9 +1743,9 @@ void RB_IQMSurfaceAnimVao(srfVaoIQModel_t * surface)
 	glState.boneAnimation = 0;
 }
 
-int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
+int R_IQMLerpTagRef( orientation_t *tag, iqmData_t *data,
 		  int startFrame, int endFrame, 
-		  float frac, const char *tagName ) {
+		  float frac, const char *tagName, const refEntity_t *overlay ) {
 	float	jointMats[IQM_MAX_JOINTS * 12];
 	int	joint;
 	char	*names = data->jointNames;
@@ -1740,7 +1763,7 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 	}
 
 	/* Tag API frac interpolates start -> end; pose API takes old-frame weight. */
- ComputeJointMats( data, endFrame, startFrame, 1.0f-frac, jointMats );
+ ComputeJointMats( data, endFrame, startFrame, 1.0f-frac, jointMats, overlay );
 
 	tag->axis[0][0] = jointMats[12 * joint + 0];
 	tag->axis[1][0] = jointMats[12 * joint + 1];
@@ -1756,4 +1779,8 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 	tag->origin[2] = jointMats[12 * joint + 11];
 
 	return qtrue;
+}
+
+int R_IQMLerpTag(orientation_t *tag,iqmData_t *data,int startFrame,int endFrame,float frac,const char *name) {
+ return R_IQMLerpTagRef(tag,data,startFrame,endFrame,frac,name,NULL);
 }

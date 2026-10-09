@@ -423,6 +423,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	srand( randomSeed );
 
 	G_RegisterCvars();
+ G_QceVariantRegister();
 
 	G_ProcessIPBans();
 
@@ -1805,6 +1806,7 @@ void G_RunFrame( int levelTime ) {
 
 	// get any cvar changes
 	G_UpdateCvars();
+ G_QceVariantUpdate();
 
 	//
 	// go through all allocated objects

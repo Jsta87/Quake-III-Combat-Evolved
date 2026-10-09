@@ -30,7 +30,7 @@ def export(cache,assets,report):
         meta=json.loads(source.read_text())
         write(f'models/qce/halo/world/{runtime}.md3',(assets.output/meta['md3']).read_bytes(),{'source':model,'role':'world weapon'})
     deps=[]
-    for path in ('characters\\cyborg\\cyborg','weapons\\frag grenade\\frag grenade','weapons\\plasma grenade\\plasma grenade'):
+    for path in ('characters\\cyborg\\cyborg','weapons\\frag grenade\\frag grenade','weapons\\plasma grenade\\plasma grenade','weapons\\needler\\projectile\\projectile','weapons\\rocket launcher\\projectile\\projectile'):
         tag=next(t for t in cache.index if t['path']==path and t['class']=='mode')
         deps.append({'id':tag['id'],'path':path})
     # Convert extra models without discarding the existing weapon shader declarations.
@@ -39,10 +39,10 @@ def export(cache,assets,report):
     models=assets.weapon_models({'actors':{'models':deps}})
     assets.files.pop('scripts/qce-halo.shader',None)
     if saved:assets.files['scripts/qce-halo.shader']=saved
-    for kind,dep in zip(('spartan','frag','plasma'),deps):
+    for kind,dep in zip(('spartan','frag','plasma','needle-projectile','rocket-projectile'),deps):
         meta=json.loads((assets.output/f'model-sources/{p.a.safe_name(dep["path"])}.json').read_text())
         if kind!='spartan':
-            write(f'models/qce/halo/world/{kind}-grenade.md3',(assets.output/meta['md3']).read_bytes(),{'source':dep})
+            write(f'models/qce/halo/world/{kind if kind.endswith("projectile") else kind+"-grenade"}.md3',(assets.output/meta['md3']).read_bytes(),{'source':dep})
             continue
         # A source-mesh helmet portrait replaces the old Quake face in HUD/scoreboards.
         head_nodes={i for i,b in enumerate(meta['bones']) if b['name']=='bip01 head'}
@@ -166,6 +166,9 @@ def export(cache,assets,report):
             audio,calibration=assets.calibrated_sound(byoutput[raw])
             write(path,audio,{**meta,'calibration':calibration})
     report['world_presentation']={'models':models,'player_clips':PLAYER_CLIPS,'audio':aliases,'limitations':['Root displacement supplied by game movement','Weapon class poses imported; aim overlays and full four-pose transition blending pending','Particle physics, ancillary sparks/decals and point-physics integration remain approximations']}
+    combat_spec=importlib.util.spec_from_file_location('combat',ROOT/'scripts/convert-halo-combat.py')
+    combat=importlib.util.module_from_spec(combat_spec);combat_spec.loader.exec_module(combat)
+    combat.export(p,cache,assets,report,write)
     report['files']=assets.files
     print('World weapons, Spartan animations/RGB materials and grenade media exported',flush=True)
 

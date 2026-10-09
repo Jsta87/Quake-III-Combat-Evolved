@@ -1414,7 +1414,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 	// if the client is on the same subnet as the server and we aren't running an
 	// internet public server, assume they don't need a rate choke
 	if ( Sys_IsLANAddress( cl->netchan.remoteAddress ) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1) {
-		cl->rate = 99999;	// lans should not rate limit
+		cl->rate = 1000000;	// lans should not rate limit
 	} else {
 		val = Info_ValueForKey (cl->userinfo, "rate");
 		if (strlen(val)) {
@@ -1422,8 +1422,8 @@ void SV_UserinfoChanged( client_t *cl ) {
 			cl->rate = i;
 			if (cl->rate < 1000) {
 				cl->rate = 1000;
-			} else if (cl->rate > 90000) {
-				cl->rate = 90000;
+			} else if (cl->rate > 1000000) {
+				cl->rate = 1000000;
 			}
 		} else {
 			cl->rate = 3000;
@@ -1604,7 +1604,7 @@ SV_ClientCommand
 static qboolean SV_ClientCommand( client_t *cl, msg_t *msg ) {
 	int		seq;
 	const char	*s;
-	qboolean clientOk = qtrue;
+	qboolean clientOk = qtrue, qceAction;
 
 	seq = MSG_ReadLong( msg );
 	s = MSG_ReadString( msg );
@@ -1624,6 +1624,13 @@ static qboolean SV_ClientCommand( client_t *cl, msg_t *msg ) {
 		return qfalse;
 	}
 
+ /* Wheel zoom and grenade-type presses are gameplay input, not chat. Keep
+    their budget separate so a two-step zoom is not swallowed on dedicated servers. */
+ qceAction=!strcmp(s,"qce_zoom_in") || !strcmp(s,"qce_zoom_out") || !strcmp(s,"qce_grenade_type");
+ if(qceAction) {
+  if(svs.time-cl->qceActionWindow>=1000 || svs.time<cl->qceActionWindow) {cl->qceActionWindow=svs.time;cl->qceActionCount=0;}
+  if(++cl->qceActionCount>32)clientOk=qfalse;
+ }
 	// malicious users may try using too many string commands
 	// to lag other players.  If we decide that we want to stall
 	// the command, we will stop processing the rest of the packet,
@@ -1631,7 +1638,7 @@ static qboolean SV_ClientCommand( client_t *cl, msg_t *msg ) {
 	// but not other people
 	// We don't do this when the client hasn't been active yet since it's
 	// normal to spam a lot of commands when downloading
-	if ( !com_cl_running->integer && 
+	if ( !qceAction && !com_cl_running->integer &&
 		cl->state >= CS_ACTIVE &&
 		sv_floodProtect->integer && 
 		svs.time < cl->nextReliableTime ) {
@@ -1641,7 +1648,7 @@ static qboolean SV_ClientCommand( client_t *cl, msg_t *msg ) {
 	} 
 
 	// don't allow another command for one second
-	cl->nextReliableTime = svs.time + 1000;
+	if(!qceAction)cl->nextReliableTime = svs.time + 1000;
 
 	SV_ExecuteClientCommand( cl, s, clientOk );
 

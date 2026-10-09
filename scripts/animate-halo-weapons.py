@@ -14,8 +14,8 @@ import struct
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('assets',ROOT/'scripts/convert-halo-assets.py')
 a = importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
-ACTIONS = ('idle','fire','ready','putaway','reloadfull','reloadempty','melee','grenade','overheat','charge','chargedfire','recover','reloadenter','reloadexit','reloadexitempty','chargeenter','hotidle','chargedhot')
-NAMES = {'idle':'idle','fire':'fire-1','ready':'ready','putaway':'put-away','reloadfull':'reload-full','reloadempty':'reload-empty','melee':'melee','grenade':'throw-grenade','overheat':'overheating','charge':'overcharged','chargedfire':'fire-2','recover':'o-h-exit','reloadenter':'enter','reloadexit':'exit-full','reloadexitempty':'exit-empty','chargeenter':'overcharged','hotidle':'overheated','chargedhot':'o-h-s-enter'}
+ACTIONS = ('idle','fire','ready','putaway','reloadfull','reloadempty','melee','grenade','overheat','charge','chargedfire','recover','reloadenter','reloadexit','reloadexitempty','chargeenter','hotidle','chargedhot','moving')
+NAMES = {'idle':'idle','fire':'fire-1','ready':'ready','putaway':'put-away','reloadfull':'reload-full','reloadempty':'reload-empty','melee':'melee','grenade':'throw-grenade','overheat':'overheating','charge':'overcharged','chargedfire':'fire-2','recover':'o-h-exit','reloadenter':'enter','reloadexit':'exit-full','reloadexitempty':'exit-empty','chargeenter':'overcharged','hotidle':'overheated','chargedhot':'o-h-s-enter','moving':'moving'}
 WEAPON_NAMES = ('machinegun','shotgun','rocket','railgun','plasma','lightning','bfg','grenade')
 IDENTITY = ((1.,0.,0.),(0.,1.,0.),(0.,0.,1.))
 
@@ -378,6 +378,10 @@ def materials(cache,assets,models):
                 # First-layer presentation only; do not invent GPU combiner equations.
                 blend = 'blend' if shader['class']=='sgla' else 'add'
                 color='identity'
+                if shader['class']=='sgla':
+                    fields=a.LAYOUT['structs'][kind]['fields']
+                    rgb=struct.unpack_from('<3f',cache.data,shader['offset']+fields['perpendicular tint color']['offset'])
+                    color='const ( '+' '.join(f'{x:g}' for x in rgb)+' )'
                 if shader['class']=='smet':
                     fields=a.LAYOUT['structs'][kind]['fields']
                     rgb=struct.unpack_from('<3f',cache.data,shader['offset']+fields['background color']['offset'])
@@ -612,6 +616,29 @@ def main():
                     deforms.append(skin_matrices(bind,pose))
                 frame_list.poses.append(deforms);tag_list.append(pose_tags(attached,gun_pose,gun_meta['scale']))
             clips.append({'name':animation['name'],'first':start,'count':len(decoded),'fps':25 if animation['flags']&4 else 30,'key_frame':animation['key frame index'],'second_key_frame':animation['second key frame index'],'sound_index':animation['sound'],'sound_frame':animation['sound frame index'],'loop_frame':animation['loop frame index'],'default_sha256':hashlib.sha256(default).hexdigest(),'frames_sha256':hashlib.sha256(frames).hexdigest()})
+        # Preserve retail masked movement as an independent identity-based track.
+        # The renderer composes it with every action before joint hierarchy evaluation.
+        moving = next(((i,c) for i,c in enumerate(values['animations']) if c['name']=='first-person moving'),None)
+        if moving:
+            ai,animation = moving;raw=animation_start+ai*180
+            frames=data_blob(cache,raw+160);cursor=0;start=len(local_frames)
+            masks=[lo|(hi<<32) for lo,hi in (animation[k] for k in ('node rotation flag data','node transform flag data','node scale flag data'))]
+            for fi in range(animation['frame count']):
+                local=[]
+                for ni in range(len(bones)):
+                    r=IDENTITY;t=(0.,0.,0.);scale=1.
+                    if masks[0]&(1<<ni):r=qmatrix(struct.unpack_from('<4h',frames,cursor));cursor+=8
+                    if masks[1]&(1<<ni):t=struct.unpack_from('<3f',frames,cursor);cursor+=12
+                    if masks[2]&(1<<ni):scale=struct.unpack_from('<f',frames,cursor)[0];cursor+=4
+                    local.append((tuple(tuple(x*scale for x in row) for row in r),tuple(x*gun_meta['scale'] for x in t)))
+                local_frames.append(local);world=globals_for(bones,local)
+                gun_pose=[world[names[b['name']]] for b in gun_meta['bones']]
+                frame_list.poses.append([skin_matrices(bind,[world[i] for i in mapping]) for bind,mapping in skin_groups])
+                tag_list.append(pose_tags(attached,gun_pose,gun_meta['scale']))
+            if cursor!=len(frames):raise a.halo.CacheError('Moving overlay buffer length mismatch')
+            clips.append({'name':'first-person moving','first':start,'count':animation['frame count'],'fps':25 if animation['flags']&4 else 30,'key_frame':0,'second_key_frame':0,'sound_index':-1,'sound_frame':0,'loop_frame':animation['loop frame index'],'composition':'independent retail masked additive track'})
+            bob_path=f'models/qce/halo/view/{runtime}.bob';assets.files.pop(bob_path,None)
+            assets.write(bob_path,f'1 {len(bones)}\n'.encode(),{'purpose':'versioned additive movement track skeleton size'})
         assets.files.pop(f'models/qce/halo/view/{runtime}.md3',None)
         path = f'models/qce/halo/view/{runtime}.iqm';assets.files.pop(path,None)
         fallback = globals_for(bones,local_frames[0]);bind_world = [bind_by_name.get(b['name'],fallback[i]) for i,b in enumerate(bones)]
@@ -629,10 +656,10 @@ def main():
         cfg = f'models/qce/halo/view/{runtime}.cfg';assets.files.pop(cfg,None);assets.write(cfg,('\n'.join(config)+'\n').encode(),{'weapon':slot,'actions':ACTIONS})
         event_report = animation_sounds(cache,graph,bound_clips,assets,report['assets'],runtime,weapon_sound_overrides(cache,assets,slot))
         counter = ammunition_skins(assets,surfaces,gun_meta,runtime)
-        exports.append({'sound_events':event_report,'ammo_display':counter,'weapon':slot,'model':path,'config':cfg,'frames':len(frame_list),'surfaces':len(surfaces),'clips':clips,'bindings':bindings,'markers':attached,'overlays_deferred':[c['name'] for c in values['animations'] if c['type']!=0]})
+        exports.append({'sound_events':event_report,'ammo_display':counter,'weapon':slot,'model':path,'config':cfg,'frames':len(frame_list),'surfaces':len(surfaces),'clips':clips,'bindings':bindings,'markers':attached,'overlays_deferred':[c['name'] for c in values['animations'] if c['type']!=0 and c['name']!='first-person moving']})
         print(runtime,len(frame_list),'frames',len(surfaces),'surfaces',len(attached),'attachments',flush=True)
     report['schema_version'] = 2;report['files'] = assets.files;report['animated_weapons'] = exports;report['materials'] = material_report
-    report['limitations'] = ['Additive movement/ammunition/aim overlays pending','Animation sound gain/pitch/attenuation pending','Halo cubemap reflection and biased/masked detail approximated/deferred','Runtime animation transitions and retail view calibration require comparison']
+    report['limitations'] = ['Additive ammunition/aim overlays pending','Retail distance attenuation requires comparison','Halo cubemap reflection and biased/masked detail approximated/deferred','Runtime animation transitions and retail view calibration require comparison']
     spec = importlib.util.spec_from_file_location('halo_world',ROOT/'scripts/convert-halo-world.py')
     world = importlib.util.module_from_spec(spec);spec.loader.exec_module(world);world.export(cache,assets,report)
     (args.output/'manifest.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n');assets.package(args.pk3)

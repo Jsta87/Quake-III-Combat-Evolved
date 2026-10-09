@@ -364,6 +364,7 @@ static void CG_OffsetFirstPersonView( void ) {
 	angles[PITCH] += ratio * cg.fall_value;
 #endif
 
+ if(!cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
 	// add angles based on velocity
 	VectorCopy( cg.predictedPlayerState.velocity, predictedVelocity );
 
@@ -389,6 +390,7 @@ static void CG_OffsetFirstPersonView( void ) {
 		delta = -delta;
 	angles[ROLL] += delta;
 
+ }
 //===================================
 
 	// add view height
@@ -407,7 +409,7 @@ static void CG_OffsetFirstPersonView( void ) {
 		bob = 6;
 	}
 
-	origin[2] += bob;
+	if(!cg.predictedPlayerState.stats[STAT_QCE_COMBAT])origin[2] += bob;
 
 
 	// add fall height

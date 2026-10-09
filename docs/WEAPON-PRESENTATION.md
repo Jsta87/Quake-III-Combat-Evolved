@@ -23,8 +23,8 @@ Shotgun gameplay now has opening (500 ms), per-shell insertion (400 ms), closing
 with ammunition (800 ms) and empty closing (1,400 ms). Durations come from source
 tracks. Pressing fire during insertion when a shell is loaded begins closing
 before firing. Switching to another carried gun cancels reload without granting
-unfinished ammunition. Magazine reloads remain locked against firing/melee/
-grenades during the action but can be cancelled by switching weapons.
+unfinished ammunition. Magazine reloads block firing but are interrupted by melee, grenades, switches
+and pickups. Ammunition already inserted remains loaded when an action interrupts.
 
 Plasma-pistol presentation distinguishes charging, charged hold, charged fire,
 secondary overheat entry, hot hold and recovery. Charged hold keeps the ending
@@ -70,10 +70,10 @@ buffers/events, audio bindings and output hashes remain in the manifest.
 
 ## Remaining fidelity work
 
-Perfect retail parity is not yet established. Additive movement, aim, ammunition
+Perfect retail parity is not yet established. Additive aim, ammunition
 and charged jitter overlays, retail view/FOV placement, interrupted-pose blending,
 linked-animation loop semantics and exact ejection event scheduling remain.
-Sound gain/pitch/attenuation, charge-track fades, randomized event delay rules and
+Exact distance attenuation, charge-track fades, randomized event delay rules and
 third-person source animation sounds require further work. Halo cubemap
 reflection, transparent map combiners, weapon color change and several detail modes
 still need renderer work.
@@ -92,7 +92,7 @@ recovery priority, interpolation and once-per-instance sound scheduling.
 IQM meshes include orthogonal tangents required by OpenGL 2. Renderer tests
 exercise actual IQM tag interpolation in OpenGL 1 and 2, including
 endpoints, reverse interpolation and child bind transforms. Gameplay tests cover
-shotgun phases, interruption, conservation, prediction and protocol-96 state.
+shotgun phases, interruption, conservation, prediction and protocol-98 state.
 
 Native/QVM client and dedicated-server builds pass. Local offscreen runs in
 OpenGL 1 and 2 validate source audio loading,
@@ -106,3 +106,7 @@ against Reclaimer commit `a0a56ca7e95957e4cef165f606ae6ab6b659113a`.
 
 See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for protocol 96, 128 slots,
 reload interruption, new material conversion and scoreboard controls.
+
+The [latest playtest pass](GAME-VARIANTS.md) adds independent additive retail
+movement tracks in both renderers and attachment queries. Gunshots are dispatched
+separately from mechanical animation audio, and camera walk bob is removed.

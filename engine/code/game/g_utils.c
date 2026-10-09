@@ -388,6 +388,18 @@ instead of being removed and recreated, which can cause interpolated
 angles and bad trails.
 =================
 */
+/* At the hard budget, discard the oldest disposable dropped weapon rather
+ * than losing the match. Map items, flags, players and active missiles survive. */
+static gentity_t *G_QceRecycleCandidate(void) {
+ gentity_t *best=NULL,*ent;int i;
+ if(!g_qceCombat.integer)return NULL;
+ for(i=MAX_CLIENTS;i<level.num_entities;i++) {
+  ent=&g_entities[i];
+  if(!ent->inuse || ent->neverFree || !(ent->flags&FL_DROPPED_ITEM) || ent->s.eType!=ET_ITEM || !ent->item || ent->item->giType!=IT_WEAPON)continue;
+  if(!best || ent->timestamp<best->timestamp)best=ent;
+ }
+ return best;
+}
 gentity_t *G_Spawn( void ) {
 	int			i, force;
 	gentity_t	*e;
@@ -417,6 +429,8 @@ gentity_t *G_Spawn( void ) {
 		}
 	}
 	if ( level.num_entities == ENTITYNUM_MAX_NORMAL ) {
+  e=G_QceRecycleCandidate();
+  if(e) {G_FreeEntity(e);G_InitGentity(e);return e;}
 		for (i = 0; i < MAX_GENTITIES; i++) {
 			G_Printf("%4i: %s\n", i, g_entities[i].classname);
 		}
@@ -456,7 +470,7 @@ qboolean G_EntitiesFree( void ) {
 		// slot available
 		return qtrue;
 	}
-	return qfalse;
+	return G_QceRecycleCandidate()!=NULL;
 }
 
 

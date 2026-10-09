@@ -1118,3 +1118,9 @@ void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs ) {
 	VectorClear( mins );
 	VectorClear( maxs );
 }
+
+int R_LerpTagRef(orientation_t *tag,const refEntity_t *entity,const char *name) {
+ model_t *model=R_GetModelByHandle(entity->hModel);
+ if(model->type==MOD_IQM)return R_IQMLerpTagRef(tag,model->modelData,entity->oldframe,entity->frame,1-entity->backlerp,name,entity);
+ return R_LerpTag(tag,entity->hModel,entity->oldframe,entity->frame,1-entity->backlerp,name);
+}

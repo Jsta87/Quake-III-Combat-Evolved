@@ -876,6 +876,9 @@ void ClientUserinfoChanged( int clientNum ) {
   /* Legacy player config strings omit the leading separator. Info_SetValueForKey
    * prepends entries, so canonicalize before adding RGB or the name joins its value. */
   Com_sprintf(config,sizeof(config),"\\%s",s);Info_SetValueForKey(config,"qce_rgb",rgb);
+  input=(ent->r.svFlags&SVF_BOT)?"255 190 30":Info_ValueForKey(userinfo,"qce_visorRGB");
+  if(!QCE_ParseRGB(input,color))QCE_ParseRGB("255 190 30",color);
+  Com_sprintf(rgb,sizeof(rgb),"%d %d %d",color[0],color[1],color[2]);Info_SetValueForKey(config,"qce_visor",rgb);
   trap_SetConfigstring(CS_PLAYERS+clientNum,config);
  }
 
@@ -1195,17 +1198,19 @@ void ClientSpawn(gentity_t *ent) {
 	// health will count down towards max_health
 	client->ps.stats[STAT_QCE_COMBAT] = g_qceCombat.integer == 1;
 	client->ps.stats[STAT_QCE_SHIELD] = client->ps.stats[STAT_QCE_COMBAT] ? QCE_SHIELD_MAX : 0;
-	client->qceShieldNextTick = level.time + QCE_SHIELD_DELAY;
+	client->qceShieldNextTick = level.time + (int)(QCE_SHIELD_DELAY*GV(GV_RECHARGE_DELAY));
  client->qceShieldRemainder=0;
 	if (client->ps.stats[STAT_QCE_COMBAT]) {
 		int ammo = BG_QceWeaponDef(WP_MACHINEGUN)->ammo_initial;
   client->ps.stats[STAT_MAX_HEALTH]=BG_QcePlayerDef()->health*client->pers.maxHealth/100;
   if(client->ps.stats[STAT_MAX_HEALTH]<1)client->ps.stats[STAT_MAX_HEALTH]=1;
-		client->ps.stats[STAT_WEAPONS] = 1 << WP_GAUNTLET;
+		client->ps.stats[STAT_WEAPONS] = 0;
+  client->ps.ammo[WP_GAUNTLET]=0;
 		BG_QceAddWeapon(&client->ps, WP_MACHINEGUN, ammo);
 		client->ps.stats[STAT_QCE_GRENADES] = 0;
 		BG_QceSetGrenadeCount(&client->ps,0,BG_QceGrenadeDef(0)->spawn_count);
 		BG_QceSetGrenadeCount(&client->ps,1,BG_QceGrenadeDef(1)->spawn_count);
+  G_QceVariantSpawn(&client->ps);
 	}
 	ent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH] +
 		(client->ps.stats[STAT_QCE_COMBAT] ? 0 : 25);
@@ -1234,14 +1239,14 @@ void ClientSpawn(gentity_t *ent) {
 		if (ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
 			G_KillBox(ent);
 			// force the base weapon up
-			client->ps.weapon = WP_MACHINEGUN;
+			if(!client->ps.stats[STAT_QCE_COMBAT])client->ps.weapon = WP_MACHINEGUN;
 			client->ps.weaponstate = WEAPON_READY;
 			// fire the targets of the spawn point
 			G_UseTargets(spawnPoint, ent);
 			// select the highest weapon number available, after any spawn given items have fired
-			client->ps.weapon = 1;
+			if(!client->ps.stats[STAT_QCE_COMBAT])client->ps.weapon = 1;
 
-			for (i = WP_NUM_WEAPONS - 1 ; i > 0 ; i--) {
+			for (i = WP_NUM_WEAPONS - 1 ; !client->ps.stats[STAT_QCE_COMBAT] && i > 0 ; i--) {
 				if (client->ps.stats[STAT_WEAPONS] & (1 << i)) {
 					client->ps.weapon = i;
 					break;

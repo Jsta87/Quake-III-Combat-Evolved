@@ -453,6 +453,9 @@ qboolean	ConsoleCommand( void ) {
 
 	trap_Argv( 0, cmd, sizeof( cmd ) );
 
+	if(G_QceVariantCommand(cmd))return qtrue;
+ if(!Q_stricmp(cmd,"bot_add")) {Svcmd_QceBotAdd_f();return qtrue;}
+
 	if ( Q_stricmp (cmd, "entitylist") == 0 ) {
 		Svcmd_EntityList_f();
 		return qtrue;

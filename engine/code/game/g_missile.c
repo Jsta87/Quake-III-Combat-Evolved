@@ -721,7 +721,7 @@ gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t dir) {
   VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);SnapVector(bolt->s.pos.trDelta);
   if(def->attachment_ms>0) {
    bolt->qceNeedle=1;bolt->qceOwnerSerial=self->qceEntitySerial;
-   bolt->think=G_QceNeedleThink;bolt->s.weapon=WP_PLASMAGUN;
+   bolt->think=G_QceNeedleThink;bolt->s.weapon=WP_GRENADE_LAUNCHER;
    bolt->nextthink=level.time+60000;
    QceAcquireNeedle(bolt,dir,def->projectile_range);
   }
@@ -1009,7 +1009,7 @@ gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t dir ) {
 gentity_t *fire_qce_overcharge(gentity_t *self,vec3_t start,vec3_t dir) {
  const qce_weapondef_t *def=BG_QceWeaponDef(WP_LIGHTNING);
  gentity_t *bolt=fire_plasma(self,start,dir);
- bolt->qceCharged=1;bolt->qceOwnerSerial=self->qceEntitySerial;bolt->damage=def->charged_damage;
+ bolt->s.generic1=3;bolt->qceCharged=1;bolt->qceOwnerSerial=self->qceEntitySerial;bolt->damage=def->charged_damage;
  bolt->methodOfDeath=MOD_QCE_OVERCHARGE;bolt->splashDamage=0;
  VectorScale(dir,def->charged_speed,bolt->s.pos.trDelta);
  bolt->nextthink=level.time+60000;

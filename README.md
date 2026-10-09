@@ -32,12 +32,14 @@ manifests, runtime directories and build outputs stay ignored by Git.
 ./scripts/run-server.sh +set g_qceMovement 1 +set g_qceCombat 1
 ```
 
-The client starts q3dm1 with both profiles enabled; the server defaults to stock
-profiles unless overridden. `QCE_MAP` selects another installed arena. Launchers
+Both launchers start q3dm1 with Halo combat and movement enabled. `QCE_MAP` selects another installed arena. Launchers
 stage native modules and disable pure checking for development. Use
 `+connect localhost` to join a running local dedicated server.
 
-Networking uses QCE protocol **95**. Rebuild both engines and all modules together;
+The latest [combat pass](docs/COMBAT-PRESENTATION.md) adds Halo projectiles/reticles,
+independent RGB visors, up to eight carried weapons, bot grenades/melee and shield effects.
+
+Networking uses QCE protocol **98**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
 ## Halo assets
@@ -57,15 +59,19 @@ For the complete data/build/conversion walkthrough, see
 | Action | Control |
 | --- | --- |
 | Reload | R |
-| Grenade / select type | G / T |
-| Replace nearby firearm / drop | E / Q |
+| Grenade / select type | Right mouse / G |
+| Replace nearby firearm / drop | E / console `qce_drop` |
 | Melee | F |
-| Cycle weapon zoom | Right mouse button |
+| Zoom in / out | Wheel up / down |
+| Crouch | Ctrl |
 | Local flashlight preview | L |
-| Select carried weapon | Number keys / wheel |
+| Select carried weapon | Number keys / Q |
 
 [Controls](config/qce-controls.cfg) load automatically. `qce_status` reports
 inventory, vitality, heat, charge, error and profile hash.
+
+[Game variants](docs/GAME-VARIANTS.md) documents 28 `gv_` settings,
+`gv_save` / `gv_load`, `bot_add <skill> [count]`, and the current 128-player limits.
 
 ## Gameplay
 
@@ -110,7 +116,7 @@ validation remain work.
 ```sh
 python3 tests/profile.py
 python3 tests/halo-extraction.py
-for suite in movement shields weapons melee headshots grenades swap needles heat network-state spread systems projectiles blasts; do
+for suite in movement shields weapons melee headshots grenades swap needles heat network-state spread systems projectiles blasts grenade-release halo-particles weapon-presentation iqm-tags variants entities; do
   ./scripts/test-${suite}.sh || break
 done
 ```

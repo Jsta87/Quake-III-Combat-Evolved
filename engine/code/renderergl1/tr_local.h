@@ -1614,3 +1614,6 @@ void RB_CalcDiffuseColor_altivec( unsigned char *colors );
 #endif
 
 #endif //TR_LOCAL_H
+
+int R_LerpTagRef(orientation_t *tag,const refEntity_t *entity,const char *name);
+int R_IQMLerpTagRef(orientation_t *tag,iqmData_t *data,int startFrame,int endFrame,float frac,const char *name,const refEntity_t *overlay);

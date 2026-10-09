@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // active (after loading) gameplay
 
 #include "cg_local.h"
+#include "../game/bg_qce_aim.h"
 
 #ifdef MISSIONPACK
 #include "../ui/ui_shared.h"
@@ -1893,6 +1894,49 @@ CROSSHAIR
 CG_DrawCrosshair
 =================
 */
+/* CE aim reticles are authored sprite sequences. No Quake pickup-size pulse. */
+static qboolean CG_DrawHaloCrosshair(void) {
+ playerState_t *ps=&cg.predictedPlayerState;int weapon=ps->weapon,i,best=-1,frame=0;
+ float bestAuto=0,bestMagnet=0,zoom=1;vec4_t color={0.35f,0.65f,1,1};
+ const qce_weapondef_t *def;vec3_t eye,dir;
+ if(!ps->stats[STAT_QCE_COMBAT] || weapon<=WP_NONE || weapon>=WP_NUM_WEAPONS)return qfalse;
+ if(!cg_qceWorld.crosshairCount[weapon])return qfalse;
+ def=BG_QceWeaponDef(weapon);if(ps->qceZoom&3)zoom=(ps->qceZoom&3)==1?def->zoom_min:def->zoom_max;
+ VectorCopy(cg.refdef.vieworg,eye);VectorCopy(cg.refdef.viewaxis[0],dir);
+ {trace_t trace;vec3_t end;VectorMA(eye,def->projectile_range>0?def->projectile_range:8192,dir,end);
+  CG_Trace(&trace,eye,NULL,NULL,end,ps->clientNum,MASK_SHOT);
+  if(trace.entityNum>=0 && trace.entityNum<MAX_CLIENTS && cg_entities[trace.entityNum].currentValid && !(cg_entities[trace.entityNum].currentState.eFlags&EF_DEAD))best=trace.entityNum;
+ }
+ for(i=0;i<MAX_CLIENTS;i++) {
+  centity_t *ent=&cg_entities[i];vec3_t base,target,delta;float distance,dot,a,m,deviation;trace_t trace;
+  if(i==ps->clientNum || !ent->currentValid || ent->currentState.eType!=ET_PLAYER || ent->currentState.eFlags&EF_DEAD || ent->currentState.powerups&(1<<PW_INVIS))continue;
+  VectorCopy(ent->lerpOrigin,base);base[2]+=4;
+  QCE_AimPill(eye,dir,base,28,6.4f,target);VectorSubtract(target,eye,delta);distance=VectorNormalize(delta);
+  dot=DotProduct(dir,delta);if(dot<0)continue;if(dot>1)dot=1;
+  QCE_AimLevels(weapon,zoom,distance,atan2(sqrt(1-dot*dot),dot),&a,&m,&deviation);
+  if(cgs.gametype>=GT_TEAM && cgs.clientinfo[i].team==ps->persistant[PERS_TEAM])continue;
+  if(a<0.999f || a<bestAuto || (a==bestAuto && m<=bestMagnet))continue;
+  CG_Trace(&trace,eye,NULL,NULL,target,ps->clientNum,MASK_SHOT);
+  if(trace.fraction<1 && trace.entityNum!=i)continue;
+  bestAuto=a;bestMagnet=m;best=i;
+ }
+ if(best>=0) {
+  qboolean ally=cgs.gametype>=GT_TEAM && cgs.clientinfo[best].team==ps->persistant[PERS_TEAM];
+  color[0]=ally?0.15f:1;color[1]=ally?1:0.15f;color[2]=0.15f;frame=bestAuto>0?1:0;
+ }
+ trap_R_SetColor(color);
+ for(i=0;i<cg_qceWorld.crosshairCount[weapon];i++) {
+  float x,y,w,h;int flags=cg_qceWorld.crosshairs[weapon][i].flags;
+  if((flags&4) && !(ps->qceZoom&3))continue;
+  if((flags&64) && (ps->qceZoom&3))continue;
+  if(cg_qceWorld.crosshairs[weapon][i].frame!=((flags&1)?0:frame) && cg_qceWorld.crosshairCount[weapon]>1)continue;
+  x=320+cg_qceWorld.crosshairs[weapon][i].x;y=240+cg_qceWorld.crosshairs[weapon][i].y;
+  w=cg_qceWorld.crosshairs[weapon][i].width;h=cg_qceWorld.crosshairs[weapon][i].height;
+  CG_AdjustFrom640(&x,&y,&w,&h);trap_R_DrawStretchPic(x,y,w,h,0,0,1,1,cg_qceWorld.crosshairs[weapon][i].shader);
+ }
+ trap_R_SetColor(NULL);return qtrue;
+}
+
 static void CG_DrawCrosshair(void)
 {
 	float		w, h;
@@ -1912,6 +1956,8 @@ static void CG_DrawCrosshair(void)
 	if ( cg.renderingThirdPerson ) {
 		return;
 	}
+
+	if(CG_DrawHaloCrosshair())return;
 
 	// set color based on health
 	if ( cg_crosshairHealth.integer ) {
@@ -2559,7 +2605,15 @@ static void CG_Draw2D(stereoFrame_t stereoFrame)
 	}
 #endif
 	// if we are taking a levelshot for the menu, don't draw anything
-	if ( cg.levelShot ) {
+	if(cg.snap && cg.snap->ps.stats[STAT_QCE_COMBAT] && !cg.renderingThirdPerson && cg_qceWorld.shieldViewShader) {
+  centity_t *player=&cg_entities[cg.snap->ps.clientNum];
+  if(player->qceShieldTime>cg.time) {
+   vec4_t shieldColor={1,0.7f,0.15f,0};
+   shieldColor[3]=(player->qceShieldTime-cg.time)/(player->qceShieldBreak?600.0f:250.0f)*0.15f;
+   trap_R_SetColor(shieldColor);CG_DrawPic(0,0,640,480,cg_qceWorld.shieldViewShader);trap_R_SetColor(NULL);
+  }
+ }
+ if ( cg.levelShot ) {
 		return;
 	}
 

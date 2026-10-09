@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
 
-#define	GAME_VERSION		BASEGAME "-1"
+#define	GAME_VERSION		BASEGAME "-qce98"
 
 #define	DEFAULT_GRAVITY		800
 #define	GIB_HEALTH			-40
@@ -468,7 +468,8 @@ typedef enum {
 	EV_QCE_GRENADE,
 	EV_QCE_MELEE,
 	EV_QCE_HEADSHOT,
- EV_QCE_MELEE_STRIKE
+ EV_QCE_MELEE_STRIKE,
+ EV_QCE_SHIELD_HIT, EV_QCE_SHIELD_BREAK
 
 } entity_event_t;
 
@@ -828,6 +829,9 @@ int BG_QceGrenadeCount(const playerState_t *ps, int type);
 void BG_QceSetGrenadeCount(playerState_t *ps, int type, int count);
 void BG_QceToggleGrenade(playerState_t *ps);
 /* QCE prototype: two firearm slots; ammo[] includes loaded and reserve rounds. */
+int BG_QceHeldWeapon(const playerState_t *ps,int slot);
+void BG_QceSetMagazine(playerState_t *ps,int slot,int value);
+int BG_QceHeldLimit(const playerState_t *ps);
 int BG_QceSlot(const playerState_t *ps, int weapon);
 int BG_QceCapacity(int weapon);
 qboolean BG_QceCanCarry(const playerState_t *ps, int weapon);
