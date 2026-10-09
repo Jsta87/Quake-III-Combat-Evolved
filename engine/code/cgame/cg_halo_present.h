@@ -6,7 +6,7 @@ static int QCE_ViewDuration( const qceViewClip_t *clip ) {
  return clip->fps>0 ? clip->count*1000/clip->fps : 0;
 }
 static int QCE_ViewSelect( qceViewPlayback_t *p, const qceViewInput_t *in, const qceViewClip_t *clips ) {
- int clip=QCE_VIEW_IDLE, start=in->now, restart=0;
+ int clip=QCE_VIEW_IDLE, start=in->now, restart=0,changed=p->weapon!=in->weapon;
  int fire=in->chargedFire && clips[QCE_VIEW_CHARGED_FIRE].count>0 ? QCE_VIEW_CHARGED_FIRE : QCE_VIEW_FIRE;
  if(p->weapon!=in->weapon || in->now<p->time) {
   memset(p,0,sizeof(*p));p->weapon=in->weapon;p->state=-1;p->clip=-1;p->soundClip=-1;p->ejectSequence=-1;
@@ -33,6 +33,9 @@ static int QCE_ViewSelect( qceViewPlayback_t *p, const qceViewInput_t *in, const
  else if(in->charge>0) {
   start=in->now-in->charge;
   clip= in->charge<in->chargeMs && clips[QCE_VIEW_CHARGE_ENTER].count>0 ? QCE_VIEW_CHARGE_ENTER : QCE_VIEW_CHARGE;
+ }
+ else if(in->state==WEAPON_READY && (changed || (p->state==WEAPON_READY && p->clip==QCE_VIEW_READY && in->now-p->start<QCE_ViewDuration(&clips[QCE_VIEW_READY])))) {
+  clip=QCE_VIEW_READY;start=changed?in->now:p->start;
  }
  else if(p->recoveryStart>0 && in->now-p->recoveryStart<QCE_ViewDuration(&clips[QCE_VIEW_RECOVER])) {clip=QCE_VIEW_RECOVER;start=p->recoveryStart;}
  if(clips[clip].count<=0 && clip==QCE_VIEW_RELOAD_EMPTY)clip=QCE_VIEW_RELOAD_FULL;

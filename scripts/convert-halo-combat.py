@@ -99,6 +99,38 @@ def export(p,cache,assets,report,write):
             pixels.extend((255,255,255,round(max(0,1-d)**2*255)))
     write('textures/qce/combat/volume.tga',p.a.tga(32,32,pixels),{'procedural':'untextured Halo light-volume radial kernel'})
     effects.append('qce/halo/plasma-volume\n{\n cull none\n { map textures/qce/combat/volume.tga\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen entity\n alphaGen entity }\n}\n')
+    # Xbox muzzle/smoke bitmaps replace Quake flash geometry and colored rail beams.
+    muzzle_sources={2:('flash\\bitmaps\\flash h ar fp',6),3:('flash\\bitmaps\\flash h generic muzzle',10),4:('energy\\bitmaps\\flash c generic muzzle',5),5:('flash\\bitmaps\\flash h generic muzzle',14),6:('energy\\bitmaps\\flash c generic muzzle',5),7:('flash\\bitmaps\\flash h generic muzzle',8),8:('energy\\bitmaps\\flash c generic muzzle',5),9:('flash\\bitmaps\\flash h pistol',7)}
+    muzzle_rows=[]
+    for weapon,(suffix,radius) in muzzle_sources.items():
+        tag=next(t for t in cache.index if t['class']=='bitm' and t['path']=='effects\\particles\\'+suffix)
+        source=f'textures/qce/halo/{p.a.safe_name(tag["path"])}'
+        if not (assets.output/(source+'/000.tga')).exists():assets.texture(tag)
+        sequences=assets.reflexive('Bitmap','bitmap group sequence',tag['offset'],'BitmapGroupSequence')
+        sprites=assets.reflexive('BitmapGroupSequence','sprites',sequences[0],'BitmapGroupSprite') if sequences else []
+        colors=[0,0,0];weight=0
+        for frame,sprite in enumerate(sprites[:16] or [None]):
+            bi=struct.unpack_from('<h',cache.data,sprite)[0] if sprite is not None else 0
+            w,h,pixels=p.read_tga(assets.output/(source+f'/{bi:03}.tga'))
+            if sprite is not None:
+                l,rr,t,b=struct.unpack_from('<4f',cache.data,sprite+8);x0,x1,y0,y1=round(l*w),round(rr*w),round(t*h),round(b*h)
+                if not 0<=x0<x1<=w or not 0<=y0<y1<=h:raise p.a.halo.CacheError('Invalid muzzle sprite bounds')
+                pixels=b''.join(pixels[(y*w+x0)*4:(y*w+x1)*4] for y in range(y0,y1));w,h=x1-x0,y1-y0
+            for i in range(0,len(pixels),4):
+                a=pixels[i+3];weight+=a
+                for c in range(3):colors[c]+=pixels[i+c]*a
+            output=f'textures/qce/combat/muzzle-{weapon}-{frame}.tga';write(output,p.a.tga(w,h,pixels),{'source':tag,'sprite':frame})
+            effects.append(f'qce/halo/muzzle-{weapon}-{frame}\n{{\n cull none\n {{ map {output}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen vertex\n alphaGen vertex }}\n}}\n')
+        peak=max(colors) or 1;rgb=[x/peak for x in colors] if weight else [1,1,1]
+        muzzle_rows.append([weapon,min(16,len(sprites)) or 1,radius,*rgb])
+    write('models/qce/halo/world/muzzle.cfg',('\n'.join(' '.join(map(str,row)) for row in muzzle_rows)+'\n').encode(),{'source':'Xbox muzzle bitmap sprites','approximation':'sprite radius and 67-ms presentation envelope are calibrated, not full particle simulation'})
+    tag=next(t for t in cache.index if t['class']=='bitm' and t['path']=='weapons\\sniper rifle\\bitmaps\\sniper contrail')
+    source=f'textures/qce/halo/{p.a.safe_name(tag["path"])}/000.tga'
+    if not (assets.output/source).exists():assets.texture(tag)
+    w,h,pixels=p.read_tga(assets.output/source);pixels=bytearray(pixels)
+    for i in range(0,len(pixels),4):pixels[i:i+3]=bytes([max(pixels[i:i+3])])*3
+    write('textures/qce/combat/sniper-smoke.tga',p.a.tga(w,h,pixels),{'source':tag,'neutral_smoke':True})
+    effects.append('qce/halo/sniper-smoke\n{\n cull none\n { map textures/qce/combat/sniper-smoke.tga\n blendFunc blend\n rgbGen vertex\n alphaGen vertex }\n}\n')
     paths={'shield-shell':'characters\\cyborg\\bitmaps\\cyborg','shield-break':'effects\\particles\\energy\\bitmaps\\shield jackal depletion','shield-hit':'effects\\particles\\flash\\bitmaps\\flash h shield impact'}
     for alias,path in paths.items():
         tag=next(t for t in cache.index if t['path']==path and t['class']=='bitm')
@@ -114,6 +146,10 @@ def export(p,cache,assets,report,write):
             pixels=b''.join(pixels[(y*w+x0)*4:(y*w+x1)*4] for y in range(y0,y1));w,h=x1-x0,y1-y0
         output=f'textures/qce/combat/{alias}.tga';write(output,p.a.tga(w,h,pixels),{'source':tag})
         extra=' tcMod scroll 0.3 0.2\n' if alias=='shield-shell' else ''
+        if alias=='shield-shell':
+            pixels=bytearray(pixels)
+            for i in range(0,len(pixels),4):pixels[i:i+4]=bytes([max(90,max(pixels[i:i+3]))])*3+bytes([255])
+            write(output,p.a.tga(w,h,pixels),{'source':tag,'opaque_shield_noise':True})
         effects.append(f'qce/halo/{alias}\n{{\n cull none\n {{ map {output}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen entity\n alphaGen entity\n{extra} }}\n}}\n')
     for alias,path in {'shield-hit':'sound\\sfx\\ui\\shield_hit','shield-break':'sound\\sfx\\ui\\shield_depleted','plasma-flyby':'sound\\sfx\\impulse\\impacts\\plasrif_projectile','needle-flyby':'sound\\sfx\\impulse\\impacts\\needler_projectile','plasma-impact':'sound\\sfx\\weapons\\plasma rifle\\plasmahit','needle-impact':'sound\\sfx\\weapons\\needler\\expl'}.items():
         tag=next(t for t in cache.index if t['class']=='snd!' and t['path']==path)

@@ -227,6 +227,15 @@ void CG_RailTrail (clientInfo_t *ci, vec3_t start, vec3_t end) {
 #define ROTATION 1
 #define SPACING  5
  
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
+  le=CG_AllocLocalEntity();re=&le->refEntity;
+  le->leType=LE_FADE_RGB;le->startTime=cg.time;le->endTime=cg.time+1500;le->lifeRate=1.0f/1500;
+  re->reType=RT_RAIL_CORE;re->customShader=cg_qceWorld.sniperSmokeShader;
+  VectorCopy(start,re->origin);VectorCopy(end,re->oldorigin);
+  le->color[0]=le->color[1]=le->color[2]=0.7f;le->color[3]=0.65f;
+  re->shaderRGBA[0]=re->shaderRGBA[1]=re->shaderRGBA[2]=180;re->shaderRGBA[3]=166;
+  return;
+ }
 	start[2] -= 4;
  
 	le = CG_AllocLocalEntity();
@@ -1293,6 +1302,24 @@ The main player will have this called for BOTH cases, so effects like light and
 sound should only be done on the world model case.
 =============
 */
+static void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,int renderfx) {
+ refEntity_t flash;int frame,count=cg_qceWorld.muzzleCounts[weapon],elapsed=cg.time-cent->muzzleFlashTime;
+ if(!count || elapsed<0 || elapsed>=67)return;
+ frame=elapsed*count/67;if(frame>=count)frame=count-1;
+ memset(&flash,0,sizeof(flash));flash.reType=RT_SPRITE;flash.customShader=cg_qceWorld.muzzleShaders[weapon][frame];
+ flash.radius=cg_qceWorld.muzzleRadius[weapon];flash.rotation=(cent->qceFireSequence*73)%360;
+ flash.renderfx=renderfx;VectorCopy(origin,flash.origin);memset(flash.shaderRGBA,255,4);
+ trap_R_AddRefEntityToScene(&flash);
+ trap_R_AddLightToScene(origin,100,cg_qceWorld.muzzleColors[weapon][0],cg_qceWorld.muzzleColors[weapon][1],cg_qceWorld.muzzleColors[weapon][2]);
+}
+
+void CG_HaloWorldMuzzle(refEntity_t *gun,centity_t *cent) {
+ vec3_t origin;int weapon=cent->currentState.weapon;
+ if(weapon<=WP_GAUNTLET || weapon>=WP_NUM_WEAPONS || cent->muzzleFlashTime<=0)return;
+ VectorMA(gun->origin,12,gun->axis[0],origin);
+ CG_HaloMuzzle(cent,weapon,origin,gun->renderfx);
+}
+
 void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent, int team ) {
 	refEntity_t	gun;
 	refEntity_t	barrel;
@@ -1400,7 +1427,7 @@ void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent
 		// continuous flash
 	} else {
 		// impulse flash
-		if ( cg.time - cent->muzzleFlashTime > MUZZLE_FLASH_TIME ) {
+		if ( cg.time - cent->muzzleFlashTime > (cg.predictedPlayerState.stats[STAT_QCE_COMBAT]?67:MUZZLE_FLASH_TIME) ) {
 			return;
 		}
 	}
@@ -1410,6 +1437,10 @@ void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent
 	flash.shadowPlane = parent->shadowPlane;
 	flash.renderfx = parent->renderfx;
 
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT]) {
+  CG_PositionEntityOnTag(&flash,&gun,weapon->weaponModel,"tag_flash");
+  CG_HaloMuzzle(cent,weaponNum,flash.origin,flash.renderfx);return;
+ }
 	flash.hModel = weapon->flashModel;
 	if (!flash.hModel) {
 		return;
@@ -1485,12 +1516,8 @@ static void CG_HaloBrass( orientation_t *port, int weapon ) {
 static void CG_HaloEffects( refEntity_t *gun, weaponInfo_t *weapon, centity_t *cent ) {
  orientation_t marker;
  qceViewPlayback_t *view=&cg.haloView;
- if(cent->qceFireWeapon==cg.predictedPlayerState.weapon && cent->muzzleFlashTime>0 && cg.time-cent->muzzleFlashTime<MUZZLE_FLASH_TIME && CG_HaloAttachment(gun,"tag_flash",&marker)) {
-  refEntity_t flash;
-  memset(&flash,0,sizeof(flash));flash.hModel=weapon->flashModel;
-  VectorCopy(marker.origin,flash.origin);AxisCopy(marker.axis,flash.axis);flash.renderfx=gun->renderfx;
-  if(flash.hModel)trap_R_AddRefEntityToScene(&flash);
-  trap_R_AddLightToScene(marker.origin,200,weapon->flashDlightColor[0],weapon->flashDlightColor[1],weapon->flashDlightColor[2]);
+ if(cent->qceFireWeapon==cg.predictedPlayerState.weapon && cent->muzzleFlashTime>0 && cg.time-cent->muzzleFlashTime<67 && CG_HaloAttachment(gun,"tag_flash",&marker)) {
+  CG_HaloMuzzle(cent,cg.predictedPlayerState.weapon,marker.origin,gun->renderfx);
  }
  /* The fire sequence identifies a shot even when several render frames share its time. */
  if(view->ejectSequence!=cent->qceFireSequence) {
@@ -1553,7 +1580,7 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  if(clip==QCE_VIEW_CHARGE_ENTER)phaseMs=def->charge_ms;
  if(clip==QCE_VIEW_RELOAD_FULL || clip==QCE_VIEW_RELOAD_EMPTY)phaseMs=clip==QCE_VIEW_RELOAD_EMPTY?def->reload_empty_ms:def->reload_ms;
  if(previous!=clip && cg_debugAnim.integer)CG_Printf("QCE view weapon=%d clip=%d first=%d count=%d fps=%d\n",ps->weapon,clip,anim->first,anim->count,anim->fps);
- if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs) && clip!=QCE_VIEW_CHARGED_FIRE && (clip!=QCE_VIEW_FIRE || weapon->haloSounds[clip].frame>0)) {
+ if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs) && clip!=QCE_VIEW_CHARGED_FIRE && clip!=QCE_VIEW_MELEE && (clip!=QCE_VIEW_FIRE || weapon->haloSounds[clip].frame>0)) {
   qceViewSound_t *event=&weapon->haloSounds[clip];
   trap_S_StartSound(NULL,ps->clientNum,CHAN_WEAPON,event->sounds[rand()%event->count]);
   if(cg_debugAnim.integer)CG_Printf("QCE animation sound weapon=%d clip=%d source_frame=%d\n",ps->weapon,clip,event->frame);
@@ -1826,6 +1853,7 @@ void CG_NextWeapon_f( void ) {
 	if ( i == MAX_WEAPONS ) {
 		cg.weaponSelect = original;
 	}
+ if(cg.weaponSelect!=original)cg.weaponManualSelectTime=cg.time;
 }
 
 /*
@@ -1862,6 +1890,7 @@ void CG_PrevWeapon_f( void ) {
 	if ( i == MAX_WEAPONS ) {
 		cg.weaponSelect = original;
 	}
+ if(cg.weaponSelect!=original)cg.weaponManualSelectTime=cg.time;
 }
 
 /*
@@ -1891,6 +1920,7 @@ void CG_Weapon_f( void ) {
 		return;		// don't have the weapon
 	}
 
+	if(cg.weaponSelect!=num)cg.weaponManualSelectTime=cg.time;
 	cg.weaponSelect = num;
 }
 
@@ -2019,6 +2049,11 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 	vec3_t			sprOrg;
 	vec3_t			sprVel;
 
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && weapon==WP_GAUNTLET) {
+  CG_RegisterWeapon(WP_GAUNTLET);
+  trap_S_StartSound(origin,ENTITYNUM_WORLD,CHAN_AUTO,cg_weapons[WP_GAUNTLET].flashSound[0]);
+  return;
+ }
  if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && (weapon==WP_PLASMAGUN || weapon==WP_LIGHTNING || weapon==WP_GRENADE_LAUNCHER || weapon==WP_ROCKET_LAUNCHER)) {
   if(weapon==WP_ROCKET_LAUNCHER)CG_HaloGrenadeExplosion(1,origin);
   else {
@@ -2175,7 +2210,7 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, im
 		break;
 	}
 
-	if ( sfx ) {
+	if ( sfx && soundType!=IMPACTSOUND_SILENT ) {
 		trap_S_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx );
 	}
 
@@ -2498,7 +2533,7 @@ CG_Bullet
 Renders bullet effects.
 ======================
 */
-void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum ) {
+void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum, qboolean silent ) {
 	trace_t trace;
 	int sourceContentType, destContentType;
 	vec3_t		start;
@@ -2536,7 +2571,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 	if ( flesh ) {
 		CG_Bleed( end, fleshEntityNum );
 	} else {
-		CG_MissileHitWall( WP_MACHINEGUN, 0, end, normal, IMPACTSOUND_DEFAULT );
+		CG_MissileHitWall( WP_MACHINEGUN, 0, end, normal, silent?IMPACTSOUND_SILENT:IMPACTSOUND_DEFAULT );
 	}
 
 }
@@ -2555,6 +2590,21 @@ void CG_RegisterHaloWorld(void) {
  cg_qceWorld.needleImpact=trap_S_RegisterSound("sound/qce/halo/combat/needle-impact.wav",qfalse);
  cg_qceWorld.plasmaFlyby=trap_S_RegisterSound("sound/qce/halo/combat/plasma-flyby.wav",qfalse);
  cg_qceWorld.needleFlyby=trap_S_RegisterSound("sound/qce/halo/combat/needle-flyby.wav",qfalse);
+ {char config[4096],*cursor;fileHandle_t handle;int length,weapon,count,j;
+  length=trap_FS_FOpenFile("models/qce/halo/world/muzzle.cfg",&handle,FS_READ);
+  if(length>0 && length<sizeof(config)) {
+   trap_FS_Read(config,length,handle);config[length]=0;cursor=config;
+   while(*cursor) {
+    weapon=atoi(COM_Parse(&cursor));count=atoi(COM_Parse(&cursor));
+    if(weapon<=WP_GAUNTLET || weapon>=WP_NUM_WEAPONS || count<1 || count>16)break;
+    cg_qceWorld.muzzleCounts[weapon]=count;cg_qceWorld.muzzleRadius[weapon]=atof(COM_Parse(&cursor));
+    for(j=0;j<3;j++)cg_qceWorld.muzzleColors[weapon][j]=atof(COM_Parse(&cursor));
+    for(j=0;j<count;j++){Com_sprintf(path,sizeof(path),"qce/halo/muzzle-%d-%d",weapon,j);cg_qceWorld.muzzleShaders[weapon][j]=trap_R_RegisterShader(path);}
+   }
+  }
+  if(handle)trap_FS_FCloseFile(handle);
+ }
+ cg_qceWorld.sniperSmokeShader=trap_R_RegisterShader("qce/halo/sniper-smoke");
  cg_qceWorld.shieldViewShader=trap_R_RegisterShader("qce/halo/shield-view");
  cg_qceWorld.shieldShader=trap_R_RegisterShader("qce/halo/shield-shell");
  cg_qceWorld.shieldBreakShader=trap_R_RegisterShader("qce/halo/shield-break");
@@ -2596,6 +2646,8 @@ void CG_RegisterHaloWorld(void) {
  }
  if(file)trap_FS_FCloseFile(file);
  if(trap_FS_FOpenFile("models/qce/halo/player/head.md3",NULL,FS_READ)>0)cg_qceWorld.headModel=trap_R_RegisterModel("models/qce/halo/player/head.md3");
+ cg_qceWorld.headBodySkin=trap_R_RegisterSkin("models/qce/halo/player/head-body.skin");
+ cg_qceWorld.headVisorSkin=trap_R_RegisterSkin("models/qce/halo/player/head-visor.skin");
  for(i=0;i<2;i++) {
   Com_sprintf(path,sizeof(path),"models/qce/halo/world/%s-grenade.md3",i?"plasma":"frag");
   if(trap_FS_FOpenFile(path,NULL,FS_READ)>0)cg_qceWorld.grenadeModels[i]=trap_R_RegisterModel(path);

@@ -747,6 +747,8 @@ extern	vmCvar_t	g_gravity;
 extern	vmCvar_t	g_speed;
 extern vmCvar_t g_qceMovement;
 extern vmCvar_t g_qceCombat;
+/* Require substantial excess damage before fragmenting Halo players/corpses. */
+#define QCE_GIB_THRESHOLD (g_qceCombat.integer ? -200 : GIB_HEALTH)
 extern vmCvar_t g_qceMeleeLunge;
 extern vmCvar_t g_qceMovementScale;
 extern	vmCvar_t	g_knockback;

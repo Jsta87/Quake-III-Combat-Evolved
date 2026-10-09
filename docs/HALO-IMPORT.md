@@ -103,7 +103,7 @@ radius, interpolate to minimum damage over the outer band and stop at the
 outer cutoff. Quake hull center substitutes for Halo's animated bounding
 sphere. Arena wall occlusion and direct-hit exclusion are retained. Needle
 supercombine keeps the earlier fixed group blast model pending further parity
-work. Quake self-damage and knockback rules are not yet fully replaced.
+work. Halo blasts deal full self-damage; knockback still uses Quake rules.
 
 All 33 weapon projectile material responses are extracted. Arena world surfaces
 map to stone (2), `SURF_METALSTEPS` to thick metal (7), players to cyborg armor
@@ -140,8 +140,8 @@ Magnum shield-break/exact-depletion and sniper exception rules are preserved.
 Both hand grenades launch at the biped's 10-WU/s (800 units/s), in the aim
 direction, from the camera plus the imported .05-WU upward origin offset.
 The old upward velocity bias is removed. Stone/metal bounce coefficients use
-extracted material normal/tangential friction. Frag's 500-ms timer starts on
-first bounce. Plasma bounces on arena surfaces, sticks to players or settles
+extracted material normal/tangential friction. Frag's tagged timer is 500 ms. The development preset adds 200 ms and arms only
+on floor/slope contact (upward normal > 0.3); vertical walls and ceilings do not arm it. Plasma bounces on arena surfaces, sticks to players or settles
 on the floor, then starts its 2,000-ms timer. Moving/rotating attachments remain
 serial/spawn-safe. Grenade release keyframes, two-of-each spawn adaptation and
 the ten-second unarmed safety expiry still need retail validation.

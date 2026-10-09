@@ -265,7 +265,7 @@ CG_Draw3DModel
 
 ================
 */
-static void CG_Draw3DModelColored( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles, const byte *color ) {
+static void CG_Draw3DModelColored( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles, const byte *color, qhandle_t visorSkin, const byte *visorColor ) {
 	refdef_t		refdef;
 	refEntity_t		ent;
 
@@ -301,11 +301,12 @@ static void CG_Draw3DModelColored( float x, float y, float w, float h, qhandle_t
 
 	trap_R_ClearScene();
 	trap_R_AddRefEntityToScene( &ent );
+ if(visorSkin && visorColor){ent.customSkin=visorSkin;memcpy(ent.shaderRGBA,visorColor,4);trap_R_AddRefEntityToScene(&ent);}
 	trap_R_RenderScene( &refdef );
 }
 
 void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles ) {
- CG_Draw3DModelColored(x,y,w,h,model,skin,origin,angles,NULL);
+ CG_Draw3DModelColored(x,y,w,h,model,skin,origin,angles,NULL,0,NULL);
 }
 
 /*
@@ -350,7 +351,7 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
   if(ci->team==TEAM_RED){color[0]=220;color[1]=40;color[2]=40;}
   if(ci->team==TEAM_BLUE){color[0]=40;color[1]=90;color[2]=230;}
   color[3]=255;
-  CG_Draw3DModelColored(x,y,w,h,cm,halo?0:ci->headSkin,origin,headAngles,halo?color:NULL);
+  CG_Draw3DModelColored(x,y,w,h,cm,halo?cg_qceWorld.headBodySkin:ci->headSkin,origin,headAngles,halo?color:NULL,halo?cg_qceWorld.headVisorSkin:0,halo?ci->haloVisor:NULL);
 	} else if ( cg_drawIcons.integer ) {
 		CG_DrawPic( x, y, w, h, ci->modelIcon );
 	}
@@ -2609,7 +2610,7 @@ static void CG_Draw2D(stereoFrame_t stereoFrame)
   centity_t *player=&cg_entities[cg.snap->ps.clientNum];
   if(player->qceShieldTime>cg.time) {
    vec4_t shieldColor={1,0.7f,0.15f,0};
-   shieldColor[3]=(player->qceShieldTime-cg.time)/(player->qceShieldBreak?600.0f:250.0f)*0.15f;
+   shieldColor[3]=(player->qceShieldTime-cg.time)/(player->qceShieldBreak?QCE_SHIELD_BREAK_MS:QCE_SHIELD_HIT_MS)*0.15f;
    trap_R_SetColor(shieldColor);CG_DrawPic(0,0,640,480,cg_qceWorld.shieldViewShader);trap_R_SetColor(NULL);
   }
  }

@@ -490,7 +490,7 @@ void CopyToBodyQue( gentity_t *ent ) {
 	body->die = body_die;
 
 	// don't take more damage if already gibbed
-	if ( ent->health <= GIB_HEALTH ) {
+	if ( ent->health <= QCE_GIB_THRESHOLD ) {
 		body->takedamage = qfalse;
 	} else {
 		body->takedamage = qtrue;

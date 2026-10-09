@@ -10,6 +10,7 @@ void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod
  vec3_t dir;
  gentity_t *bolt=G_Spawn();
  bolt->classname="qce_bullet";bolt->s.eType=ET_MISSILE;
+ bolt->s.time2=owner->client->ps.commandTime;
  bolt->r.svFlags=SVF_NOCLIENT;bolt->s.weapon=weapon;
  bolt->r.ownerNum=owner->s.number;bolt->parent=owner;bolt->clipmask=MASK_SHOT;
  bolt->qceBullet=1;bolt->count=quad;bolt->damage=def->damage;bolt->methodOfDeath=mod;

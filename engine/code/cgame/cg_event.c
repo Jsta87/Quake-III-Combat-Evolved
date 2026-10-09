@@ -813,10 +813,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_QCE_SHIELD_HIT:
  case EV_QCE_SHIELD_BREAK:
+  DEBUGNAME("EV_QCE_SHIELD_IMPACT");
   if(es->otherEntityNum>=0 && es->otherEntityNum<MAX_CLIENTS) {
    centity_t *player=&cg_entities[es->otherEntityNum];
    player->qceShieldBreak=event==EV_QCE_SHIELD_BREAK;
-   player->qceShieldTime=cg.time+(player->qceShieldBreak?600:250);
+   player->qceShieldTime=cg.time+(player->qceShieldBreak?QCE_SHIELD_BREAK_MS:QCE_SHIELD_HIT_MS);
    if(es->otherEntityNum==cg.clientNum)trap_S_StartLocalSound(player->qceShieldBreak?cg_qceWorld.shieldBreakSound:cg_qceWorld.shieldHitSound,CHAN_LOCAL_SOUND);
    if(player->qceShieldBreak && cg_qceWorld.shieldBreakShader) {
     vec3_t normal;ByteToDir(es->eventParm,normal);
@@ -837,8 +838,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_QCE_MELEE:
 		DEBUGNAME("EV_QCE_MELEE");
 		cent->qceMeleeTime = cg.time;
-		CG_RegisterWeapon(WP_GAUNTLET);
-		trap_S_StartSound(NULL,es->number,CHAN_WEAPON,cg_weapons[WP_GAUNTLET].flashSound[0]);
+
 		break;
 
 	case EV_QCE_GRENADE:
@@ -1037,6 +1037,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		}
 
 		CG_RailTrail(ci, es->origin2, es->pos.trBase);
+  if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT])break;
 
 		// if the end was on a nomark surface, don't make an explosion
 		if ( es->eventParm != 255 ) {
@@ -1048,12 +1049,19 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_BULLET_HIT_WALL:
 		DEBUGNAME("EV_BULLET_HIT_WALL");
 		ByteToDir( es->eventParm, dir );
-		CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qfalse, ENTITYNUM_WORLD );
+  {static int shots[MAX_CLIENTS][8],times[MAX_CLIENTS][8],next[MAX_CLIENTS];
+   int owner=es->otherEntityNum,i; qboolean silent=qfalse;
+   if(es->weapon==WP_SHOTGUN && owner>=0 && owner<MAX_CLIENTS) {
+    for(i=0;i<8;i++)if(shots[owner][i]==es->time2 && times[owner][i]>0 && cg.time>=times[owner][i] && cg.time-times[owner][i]<2000)silent=qtrue;
+    if(!silent){i=next[owner]++&7;shots[owner][i]=es->time2;times[owner][i]=cg.time;}
+   }
+   CG_Bullet(es->pos.trBase,owner,dir,qfalse,ENTITYNUM_WORLD,silent);
+  }
 		break;
 
 	case EV_BULLET_HIT_FLESH:
 		DEBUGNAME("EV_BULLET_HIT_FLESH");
-		CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qtrue, es->eventParm );
+		CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qtrue, es->eventParm, qfalse );
 		break;
 
 	case EV_SHOTGUN:

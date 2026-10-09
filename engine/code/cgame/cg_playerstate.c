@@ -495,7 +495,7 @@ CG_TransitionPlayerState
 ===============
 */
 void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
- if(ps->stats[STAT_QCE_COMBAT] && ps->weapon!=ops->weapon && ps->stats[STAT_WEAPONS]!=ops->stats[STAT_WEAPONS]) {
+ if(ps->stats[STAT_QCE_COMBAT] && ps->weapon!=ops->weapon && ps->stats[STAT_WEAPONS]!=ops->stats[STAT_WEAPONS] && !(cg.weaponManualSelectTime>ps->commandTime && BG_QceSlot(ps,cg.weaponSelect)>=0)) {
   cg.weaponSelect=ps->weapon;cg.weaponSelectTime=cg.time;
  }
 	// check for changing follow mode

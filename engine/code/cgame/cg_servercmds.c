@@ -997,6 +997,8 @@ static void CG_ServerCommand( void ) {
 	cmd = CG_Argv(0);
  if(!strcmp(cmd,"qce_select")) {
   int weapon=atoi(CG_Argv(1));
+  /* Delayed pickup feedback must not undo a newer intentional selection. */
+  if(trap_Argc()>2 && cg.snap && cg.weaponManualSelectTime>atoi(CG_Argv(2)) && cg.weaponSelect!=weapon && BG_QceSlot(&cg.snap->ps,cg.weaponSelect)>=0)return;
   if(weapon>WP_GAUNTLET && weapon<WP_NUM_WEAPONS) {cg.weaponSelect=weapon;cg.weaponSelectTime=cg.time;}
   return;
  }

@@ -32,7 +32,7 @@ void trap_SendServerCommand(int n,const char *text) {
   for(i=0;i<count;i++)for(j=0;j<14;j++){long value=strtol(next,&next,10);if(j==0)assert(value==scoreSeen+i);}
   assert(!*next);scoreSeen+=count;return;
  }
- assert(n==0 && !strcmp(text,va("qce_select %d",expectedWeapon)));selects++;
+ assert(n==0 && !strcmp(text,va("qce_select %d %d",expectedWeapon,client.ps.commandTime)));selects++;
 }
 
 static void setup(void) {
@@ -64,11 +64,14 @@ int main(void) {
 
  setup();G_QceSwapWeapon(&g_entities[0]);
  assert(drops==1 && pickups==1 && selects==1 && client.ps.weapon==WP_SHOTGUN);
- assert(client.qcePickupLatched);
+ assert(client.qcePickupLatched && (client.ps.stats[STAT_QCE_GRENADES]&QCE_PICKUP_DRAW));
  assert(client.ps.eventSequence==0); /* replacement must not trigger empty-ammo selection */
  assert(drop.count==45 && drop.qceDroppedMagazine==13 && drop.s.time==3000);
  assert(BG_QceSlot(&client.ps,WP_MACHINEGUN)<0 && BG_QceMagazine(&client.ps,WP_SHOTGUN)==10);
  assert(BG_QceSlot(&client.ps,WP_ROCKET_LAUNCHER)>=0 && client.ps.ammo[WP_ROCKET_LAUNCHER]==4);
+ setup();client.pers.cmd.weapon=WP_ROCKET_LAUNCHER;G_QceSwapWeapon(&g_entities[0]);assert(!drops && !pickups);
+ client.ps.weapon=WP_ROCKET_LAUNCHER;client.ps.weaponstate=WEAPON_RAISING;client.ps.weaponTime=700;G_QceSwapWeapon(&g_entities[0]);
+ assert(drops==1 && pickups==1 && BG_QceSlot(&client.ps,WP_MACHINEGUN)>=0 && BG_QceSlot(&client.ps,WP_ROCKET_LAUNCHER)<0);
  setup();wall=1;G_QceSwapWeapon(&g_entities[0]);assert(!drops && !pickups && !client.qcePickupLatched);
  setup();g_entities[MAX_CLIENTS].r.currentOrigin[0]=70;G_QceSwapWeapon(&g_entities[0]);assert(!drops);
  setup();g_entities[MAX_CLIENTS].r.currentOrigin[0]=-40;G_QceSwapWeapon(&g_entities[0]);assert(pickups==1);

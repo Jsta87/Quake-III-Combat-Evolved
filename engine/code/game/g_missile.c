@@ -334,10 +334,13 @@ qboolean G_QceGrenadeImpact(gentity_t *ent,trace_t *trace) {
  if(ent->qceGrenadeType>0 && (!BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky || !other->client)) {
   const qce_grenadedef_t *def=BG_QceGrenadeDef(ent->qceGrenadeType-1);
   G_QceBounceGrenade(ent,trace);
-  if(!ent->qceFuseArmed && (def->timer_start==1 || (def->timer_start==2 && ent->s.pos.trType==TR_STATIONARY))) {
-   ent->qceFuseArmed=1;ent->nextthink=level.time+def->fuse_ms;
+  if(!ent->qceFuseArmed && (trace->plane.normal[2]>0.3f && (def->timer_start==1 || (def->timer_start==2 && ent->s.pos.trType==TR_STATIONARY)))) {
+   ent->qceFuseArmed=1;ent->nextthink=level.time+(ent->qceGrenadeType==1?def->fuse_ms+200:def->fuse_ms);
   }
-  G_AddEvent(ent,EV_GRENADE_BOUNCE,(trace->surfaceFlags&SURF_METALSTEPS)?1:0);return qtrue;
+  {gentity_t *bounce=G_TempEntity(trace->endpos,EV_GRENADE_BOUNCE);
+   bounce->s.generic1=ent->qceGrenadeType;
+   bounce->s.eventParm=(trace->surfaceFlags&SURF_METALSTEPS)?1:0;}
+  return qtrue;
  }
  if(ent->qceGrenadeType>0 && BG_QceGrenadeDef(ent->qceGrenadeType-1)->sticky && !ent->qceStuck) {
   vec3_t offset,angles,forward,right,up;
@@ -410,6 +413,7 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
   } else {
    event=G_TempEntity(trace->endpos,other->client?EV_BULLET_HIT_FLESH:EV_BULLET_HIT_WALL);
    event->s.eventParm=other->client?other->s.number:DirToByte(trace->plane.normal);event->s.otherEntityNum=ent->r.ownerNum;
+   event->s.weapon=ent->qceProjectileWeapon;event->s.time2=ent->s.time2;
   }
   if(G_QceContinueProjectile(ent,trace,other,G_QceMaterialResponse(ent,trace,other))) {
    VectorCopy(trace->endpos,ent->s.origin2);return;

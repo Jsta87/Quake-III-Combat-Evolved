@@ -15,8 +15,7 @@ set qce_visorRGB "30 160 255"
 Both accept three whole RGB components from 0 through 255 and are archived userinfo
 settings. Visor color updates independently of armor and team armor colors. Invalid
 visor input falls back to `255 190 30`. The server always assigns that gold visor
-to bots, even if bot userinfo requests another color. The existing static HUD helmet
-portrait retains its baked gold visor; the animated player model uses the new color.
+to bots, even if bot userinfo requests another color. HUD helmet portraits and animated player models both use the new color.
 
 The exporter builds separate body/visor skins and neutralizes the visor's source
 texture luminance before applying RGB. Both renderer paths use the same skin pass,
@@ -83,7 +82,7 @@ the event is chosen, including exact depletion and lethal hits. Damage to an
 already unshielded player emits no shield effect. Animated players get a short gold
 shield material pass; the local player gets a faint source shield-impact flash and
 imported shield-hit/depletion audio. Breaks also produce a converted depletion
-sprite. The shell's additive shader, 250/600 ms presentation windows, and simplified
+sprite. The shell's additive shader, 600/900 ms presentation windows, and simplified
 break burst require retail calibration; Halo GPU combiners are not reproduced.
 
 ## Bots
@@ -121,3 +120,54 @@ References: [Halo aim assistance](https://github.com/cybersecurity/halo-ce-unive
 [weapon HUD](https://github.com/cybersecurity/halo-ce-universal/blob/main/source/interface/hud_weapon.c),
 and [Invader tag layouts](https://github.com/SnowyMouse/invader/tree/696830ff80af227e84e7237c2ef26eb2301ed110/src/tag/hek/definition).
 Adapted code and conversion routines retain GPL attribution.
+
+## Playtest corrections
+
+Halo switches cut directly to the new weapon's ready animation. A server pickup
+draw ignores stale old-weapon commands until selection is acknowledged (or the draw finishes); no Quake put-away
+phase precedes it. Re-enabling `gv_weaponPickup` clears the replicated inhibition
+flag and held-key latch immediately.
+
+Halo gibbing now requires health at or below -200 (stock Quake remains -40),
+including corpse damage. Shotgun pellets use a circular bounded spread instead
+of the old square; tagged 15 pellets, 8–25 damage, 120–240-unit air attenuation
+and 10-degree cone remain. Other projectile cone sampling is bounded too. The
+random distribution is an approximation, not verified retail RNG parity. A
+shotgun blast plays one wall-impact sound while retaining every pellet mark.
+Melee contact audio is emitted only when the authoritative trace hits something;
+first-person melee sound tracks are suppressed to avoid impact audio on misses.
+
+HUD portraits have separate armor and visor skins, matching world RGB colors.
+Shield noise is exported with opaque alpha so the additive shell stays visible;
+hit/break events are broadcast and still stop once shields are depleted.
+Grenade bounce audio uses independent contact events. Frag arming requires a
+floor/slope normal above 0.3 and the development fuse is 700 ms (500-ms tag plus
+200 ms); plasma retains its tagged settle/stick behavior and 2-second fuse.
+Grenade damage was not increased or reduced: both tags give 120 damage inside
+an 80-unit inner radius, falling toward 80 at the outer cutoff (frag 200 units,
+plasma 160). A fresh 75-shield/75-health player survives one inner-radius frag
+with 30 health at default variant settings. Quake blast occlusion, collision
+bounds and integer rounding still limit parity.
+
+## Second playtest corrections
+
+Halo bullet, plasma and melee damage no longer push players. Explosions retain
+half the previous impulse (including direct rocket hits). This is a development
+tuning choice, not a claim of extracted Halo impulse parity.
+
+Automatic free-slot pickups now send the same authoritative weapon-selection
+feedback as replacements and clear charge/zoom. A newly visible ready weapon
+plays its draw clip even when the raising snapshot was skipped. Replacement
+waits for a valid pending selection, can interrupt an ordinary draw, and drops
+the selected gun instead of the gun being switched away from. Selection feedback
+is emitted once through the actual pickup path and timestamped so delayed feedback
+cannot undo a newer valid manual selection.
+
+Shield hits refresh a stronger 600-ms shell; breaks last 900 ms. Source muzzle
+bitmaps replace Quake flash meshes and light colors in view/world rendering.
+The pistol uses the Xbox pistol flash; AR uses its first-person flash; remaining
+ballistic guns use the source generic muzzle, energy guns its energy counterpart.
+Light RGB derives from the bitmap. Sprite radius/67-ms envelope remain calibrated
+approximations; the complete Halo effect-event particle system is not ported.
+Sniper shots use the extracted neutral sniper contrail with a 1.5-second fade,
+without Quake rail rings, player-colored beam or Quake rail impact explosion.

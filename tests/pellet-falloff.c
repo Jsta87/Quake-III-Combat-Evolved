@@ -6,7 +6,7 @@
 gentity_t g_entities[MAX_GENTITIES];
 static float distance;
 static int calls,amount,projectiles;
-void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {vec3_t d;(void)owner;assert(weapon==WP_SHOTGUN && mod==MOD_SHOTGUN && quad==1);VectorSubtract(end,start,d);assert(fabs(VectorLength(d)-3200)<0.1);projectiles++;}
+void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {vec3_t d;(void)owner;assert(weapon==WP_SHOTGUN && mod==MOD_SHOTGUN && quad==1);VectorSubtract(end,start,d);assert(fabs(VectorLength(d)-3200)<0.1);assert(sqrt(d[1]*d[1]+d[2]*d[2])/d[0]<=BG_QceSpread(WP_SHOTGUN,127)/8192+0.00001f);projectiles++;}
 static gentity_t event;
 gentity_t *G_TempEntity(vec3_t origin,int type) {assert(type==EV_SHOTGUN);memset(&event,0,sizeof(event));VectorCopy(origin,event.s.pos.trBase);return &event;}
 void QDECL Com_Printf(const char *fmt,...) {(void)fmt;}

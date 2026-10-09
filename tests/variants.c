@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 level_locals_t level;
+gentity_t g_entities[MAX_GENTITIES];
 vmCvar_t g_qceCombat,g_friendlyFire,g_fraglimit,g_timelimit,g_gametype;
 static char names[40][64],values[40][64],fileText[8192],path[96],arg[64],command[32];
 static int count,argcValue=2,sets;
@@ -28,7 +29,10 @@ int main(void) {
  memset(&ps,0,sizeof(ps));ps.stats[STAT_QCE_COMBAT]=1;G_QceVariantSpawn(&ps);
  assert(ps.weapon==WP_MACHINEGUN && ps.qceMaxShield==75 && ps.stats[STAT_MAX_HEALTH]==75 && !(ps.stats[STAT_WEAPONS]&(1<<WP_GAUNTLET)));
  memset(&pickup,0,sizeof(pickup));pickup.modelindex=BG_FindItemForWeapon(WP_SHOTGUN)-bg_itemlist;
- assert(BG_CanItemBeGrabbed(GT_FFA,&pickup,&ps));Set("gv_weaponPickup","0");G_QceVariantPlayer(&ps);assert(!BG_CanItemBeGrabbed(GT_FFA,&pickup,&ps));Set("gv_weaponPickup","1");
+ assert(BG_CanItemBeGrabbed(GT_FFA,&pickup,&ps));Set("gv_weaponPickup","0");G_QceVariantPlayer(&ps);assert(!BG_CanItemBeGrabbed(GT_FFA,&pickup,&ps));Set("gv_weaponPickup","1");G_QceVariantPlayer(&ps);assert(!(ps.qceVariantFlags&8));
+ memset(&cl,0,sizeof(cl));level.maxclients=1;g_entities[0].client=&cl;
+ cl.qcePickupLatched=qtrue;Set("gv_weaponPickup","0");assert(cl.ps.qceVariantFlags&8);
+ cl.qcePickupLatched=qtrue;Set("gv_weaponPickup","1");assert(!(cl.ps.qceVariantFlags&8) && !cl.qcePickupLatched);
  Set("gv_primaryWeapon","pistol");Set("gv_secondaryWeapon","assaultrifle");Set("gv_shieldMultiplier","2");Set("gv_healthMultiplier","2");Set("gv_movespeed","0.5");Set("gv_gravity","0");
  G_QceVariantSpawn(&ps);assert(ps.weapon==WP_BFG && BG_QceSlot(&ps,WP_MACHINEGUN)>=0 && ps.qceMaxShield==150 && ps.stats[STAT_MAX_HEALTH]==150);
  assert(ps.qceVariantScale[0]==501 && ps.qceVariantScale[2]==1);

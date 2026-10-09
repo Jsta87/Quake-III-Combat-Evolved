@@ -848,6 +848,8 @@ typedef char qce_stats_must_fit[(STAT_QCE_GRENADES < MAX_STATS) ? 1 : -1];
 #define QCE_MELEE_DAMAGE 50
 #define QCE_MELEE_COOLDOWN 800
 #define QCE_MELEE_HELD 16
+/* Server pickup draw waits for the client to acknowledge its selected weapon. */
+#define QCE_PICKUP_DRAW 1024
 
 #define QCE_PRECISION_BODY_DAMAGE 50
 #define QCE_HEAD_ZONE_FRACTION 0.2f

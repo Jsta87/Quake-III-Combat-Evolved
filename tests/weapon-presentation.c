@@ -59,6 +59,10 @@ int main(void) {
  p.start=8100;assert(QCE_ViewSoundDue(&p,200,&clips[1],&sound,0)); /* repeated shot */
  sound.loop=1;p.start=8200;assert(!QCE_ViewSoundDue(&p,900,&clips[1],&sound,0));
  p.clip=QCE_VIEW_IDLE;sound.count=0;assert(!QCE_ViewSoundDue(&p,900,&clips[0],&sound,0));
+ memset(&p,0,sizeof(p));memset(&in,0,sizeof(in));in.weapon=WP_SHOTGUN;in.state=WEAPON_READY;in.now=9000;
+ assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_READY && p.start==9000);
+ in.now=9016;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_READY && p.start==9000);
+ in.now=10001;assert(QCE_ViewSelect(&p,&in,clips)==QCE_VIEW_IDLE);
  memset(&p,0,sizeof(p));QCE_ViewMovement(&p,1000,1,WEAPON_READY);assert(p.moveWeight==1 && p.moveElapsed==0);
  QCE_ViewMovement(&p,1100,1,WEAPON_RELOADING);assert(p.moveWeight==1 && p.moveElapsed==100);
  QCE_ViewMovement(&p,1150,0,WEAPON_READY);assert(p.moveWeight==0.75f && p.moveElapsed==100);

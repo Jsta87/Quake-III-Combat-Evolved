@@ -106,6 +106,7 @@ typedef enum {
 
 typedef enum {
 	IMPACTSOUND_DEFAULT,
+ IMPACTSOUND_SILENT,
 	IMPACTSOUND_METAL,
 	IMPACTSOUND_FLESH
 } impactSound_t;
@@ -395,6 +396,8 @@ enum { QCE_VIEW_IDLE, QCE_VIEW_FIRE, QCE_VIEW_READY, QCE_VIEW_PUTAWAY,
  QCE_VIEW_OVERHEAT, QCE_VIEW_CHARGE, QCE_VIEW_CHARGED_FIRE, QCE_VIEW_RECOVER,
  QCE_VIEW_RELOAD_ENTER, QCE_VIEW_RELOAD_EXIT, QCE_VIEW_RELOAD_EXIT_EMPTY,
  QCE_VIEW_CHARGE_ENTER, QCE_VIEW_HOT_IDLE, QCE_VIEW_CHARGED_HOT, QCE_VIEW_MOVING, QCE_VIEW_CLIPS };
+#define QCE_SHIELD_HIT_MS 600
+#define QCE_SHIELD_BREAK_MS 900
 typedef struct { int first, count, fps, loop; } qceViewClip_t;
 typedef struct { int frame, count, loop; sfxHandle_t sounds[4]; } qceViewSound_t;
 typedef struct {
@@ -408,12 +411,14 @@ typedef struct {
 } qceViewInput_t;
 typedef struct {
  sfxHandle_t shieldHitSound,shieldBreakSound,plasmaFlyby,needleFlyby,plasmaImpact,needleImpact;
- qhandle_t shieldViewShader;
+ qhandle_t shieldViewShader,sniperSmokeShader;
+ qhandle_t muzzleShaders[WP_NUM_WEAPONS][16];
+ int muzzleCounts[WP_NUM_WEAPONS];float muzzleRadius[WP_NUM_WEAPONS],muzzleColors[WP_NUM_WEAPONS][3];
  qhandle_t bodySkin,visorSkin,shieldShader,shieldBreakShader,projectileModels[2],plasmaShaders[2],plasmaModels[3];
  float plasmaVolumes[3][14];
  struct {qhandle_t shader;float width,height,x,y;int flags,frame;} crosshairs[WP_NUM_WEAPONS][32];
  int crosshairCount[WP_NUM_WEAPONS];
- qhandle_t playerModel,headModel,grenadeModels[2],grenadeShader,plasmaExplosionShader,grenadeSmokeShader;
+ qhandle_t playerModel,headModel,headBodySkin,headVisorSkin,grenadeModels[2],grenadeShader,plasmaExplosionShader,grenadeSmokeShader;
  qhandle_t grenadeParticleShaders[3][64];
  int grenadeParticleCounts[3];
  float grenadeParticleWidths[3][64];
@@ -422,6 +427,7 @@ typedef struct {
 } qceWorldMedia_t;
 extern qceWorldMedia_t cg_qceWorld;
 void CG_RegisterHaloWorld(void);
+void CG_HaloWorldMuzzle(refEntity_t *gun,centity_t *cent);
 void CG_HaloWorldFrames(const qceViewClip_t *clip,int oneshot,int elapsed,int *oldframe,int *frame,float *backlerp);
 void CG_HaloGrenadeExplosion(int type,vec3_t origin);
 qboolean CG_HaloPlayer(centity_t *cent,int renderfx);
@@ -661,6 +667,7 @@ typedef struct {
 	int			itemPickupBlendTime;	// the pulse around the crosshair is timed separately
 
 	int			weaponSelectTime;
+ int weaponManualSelectTime;
 	int			weaponAnimation;
 	int			weaponAnimationTime;
 
@@ -1425,7 +1432,7 @@ void CG_FireWeapon( centity_t *cent );
 void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType );
 void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum );
 void CG_ShotgunFire( entityState_t *es );
-void CG_Bullet( vec3_t origin, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum );
+void CG_Bullet( vec3_t origin, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum, qboolean silent );
 
 void CG_RailTrail( clientInfo_t *ci, vec3_t start, vec3_t end );
 void CG_GrappleTrail( centity_t *ent, const weaponInfo_t *wi );

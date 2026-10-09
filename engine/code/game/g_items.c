@@ -266,7 +266,10 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 		if (!BG_QceAddWeapon(&other->client->ps, ent->item->giTag, quantity)) return 0;
   if(previousSlot<0) {
    other->client->ps.weapon=ent->item->giTag;other->client->ps.weaponstate=WEAPON_RAISING;
+   other->client->ps.stats[STAT_QCE_GRENADES]|=QCE_PICKUP_DRAW;
    other->client->ps.weaponTime=BG_QceWeaponDef(ent->item->giTag)->ready_ms;other->client->ps.qceReloadCommit=0;
+   other->client->ps.qceChargeMs=0;other->client->ps.qceZoom&=4;
+   trap_SendServerCommand(other-g_entities,va("qce_select %d %d",ent->item->giTag,other->client->ps.commandTime));
   }
 		if (previousSlot<0 && ent->qceDroppedMagazine && BG_QceSlot(&other->client->ps, ent->item->giTag)>=0) {
 			int slot = BG_QceSlot(&other->client->ps, ent->item->giTag);

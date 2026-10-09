@@ -347,6 +347,10 @@ void ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 	for ( i = 0 ; i < (ent->client->ps.stats[STAT_QCE_COMBAT]?BG_QceWeaponDef(ent->s.weapon)->pellets:DEFAULT_SHOTGUN_COUNT) ; i++ ) {
 		r = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?s_qceSpread:DEFAULT_SHOTGUN_SPREAD) * 16;
 		u = Q_crandom( &seed ) * (ent->client->ps.stats[STAT_QCE_COMBAT]?s_qceSpread:DEFAULT_SHOTGUN_SPREAD) * 16;
+  if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+   float angle=Q_random(&seed)*2*M_PI, radius=sqrt(Q_random(&seed))*s_qceSpread*16;
+   r=cos(angle)*radius;u=sin(angle)*radius;
+  }
 		VectorMA( origin, 8192 * 16, localForward, end);
 		VectorMA (end, r, localRight, end);
 		VectorMA (end, u, localUp, end);
@@ -891,14 +895,16 @@ void FireWeapon( gentity_t *ent,int eventParm ) {
   G_QceAimProjectile(ent,forward);
   s_qceError=(eventParm>>1)&127;s_qceSpread=BG_QceWeaponDef(ent->s.weapon)->scoped_error && s_qceError==127?0:BG_QceSpread(ent->s.weapon,s_qceError);
   if(def->fire_kind==QCE_FIRE_PLASMA || def->fire_kind==QCE_FIRE_RAIL || def->fire_kind==QCE_FIRE_ROCKET) {
-   VectorMA(forward,crandom()*s_qceSpread/8192,right,forward);
-   VectorMA(forward,crandom()*s_qceSpread/8192,up,forward);VectorNormalize(forward);
+   float angle=random()*2*M_PI,radius=sqrt(random())*s_qceSpread/8192;
+   VectorMA(forward,cos(angle)*radius,right,forward);
+   VectorMA(forward,sin(angle)*radius,up,forward);VectorNormalize(forward);
   }
   switch(def->fire_kind) {
   case QCE_FIRE_MELEE: Weapon_Gauntlet(ent);break;
   case QCE_FIRE_BULLET: {
    vec3_t end,dir;
-   VectorMA(forward,crandom()*s_qceSpread/8192,right,dir);VectorMA(dir,crandom()*s_qceSpread/8192,up,dir);VectorNormalize(dir);
+   float angle=random()*2*M_PI,radius=sqrt(random())*s_qceSpread/8192;
+   VectorMA(forward,cos(angle)*radius,right,dir);VectorMA(dir,sin(angle)*radius,up,dir);VectorNormalize(dir);
    VectorMA(muzzle,def->projectile_range,dir,end);
    G_QceFireBullet(ent,muzzle,end,ent->s.weapon,def->headshot_mode==1?MOD_BFG:MOD_MACHINEGUN,s_quadFactor);break;
   }
@@ -1289,7 +1295,9 @@ qboolean G_QceMelee(gentity_t *ent) {
  VectorMA(start,def->melee_reach,dir,end);
  trap_Trace(&tr,start,NULL,NULL,end,ent->s.number,MASK_SHOT);
  if(tr.startsolid || tr.allsolid || tr.surfaceFlags&SURF_NOIMPACT ||
-    tr.entityNum<0 || tr.entityNum>=ENTITYNUM_WORLD) return qfalse;
+    tr.entityNum<0 || tr.entityNum>ENTITYNUM_WORLD) return qfalse;
+ impact=G_TempEntity(tr.endpos,EV_MISSILE_MISS);
+ impact->s.otherEntityNum=tr.entityNum;impact->s.weapon=WP_GAUNTLET;impact->s.eventParm=DirToByte(tr.plane.normal);
  target=&g_entities[tr.entityNum];
  if(target==ent || !target->takedamage || (target->client && target->health<=0)) return qfalse;
  if(target->client) {
@@ -1298,12 +1306,7 @@ qboolean G_QceMelee(gentity_t *ent) {
   if(DotProduct(behind,facing)<-0.5f)flags=DAMAGE_QCE_BACKSMACK;
  }
  G_Damage(target,ent,ent,dir,tr.endpos,def->melee_damage,flags,MOD_GAUNTLET);
- if(target->client) {
-  impact=G_TempEntity(tr.endpos,EV_MISSILE_HIT);
-  impact->s.otherEntityNum=target->s.number;
-  impact->s.eventParm=DirToByte(tr.plane.normal);
-  impact->s.weapon=WP_GAUNTLET;
- }
+
  return qtrue;
 }
 

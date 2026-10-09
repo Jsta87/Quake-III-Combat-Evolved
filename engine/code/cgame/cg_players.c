@@ -2696,9 +2696,9 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   CG_AddRefEntityWithPowerups(&visor,&cent->currentState,ci->team);
  }
  if(cent->qceShieldTime>cg.time && cg_qceWorld.shieldShader) {
-  refEntity_t shell=body;float fade=(cent->qceShieldTime-cg.time)/(cent->qceShieldBreak?600.0f:250.0f);
+  refEntity_t shell=body;float fade=(cent->qceShieldTime-cg.time)/(cent->qceShieldBreak?QCE_SHIELD_BREAK_MS:QCE_SHIELD_HIT_MS);
   shell.customSkin=0;shell.customShader=cg_qceWorld.shieldShader;
-  shell.shaderRGBA[0]=255;shell.shaderRGBA[1]=180;shell.shaderRGBA[2]=50;shell.shaderRGBA[3]=(byte)(fade*180);
+  shell.shaderRGBA[0]=255;shell.shaderRGBA[1]=180;shell.shaderRGBA[2]=50;shell.shaderRGBA[3]=(byte)(fade*245);
   trap_R_AddRefEntityToScene(&shell);
  }
  if(!(cent->currentState.eFlags&EF_DEAD) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
@@ -2708,7 +2708,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
    for(i=0;i<3;i++)VectorMA(gun.origin,hand.origin[i],body.axis[i],gun.origin);
    /* Apply the complete authored grip transform, not just wrist translation. */
    MatrixMultiply(hand.axis,body.axis,gun.axis);VectorCopy(gun.origin,gun.oldorigin);VectorCopy(body.lightingOrigin,gun.lightingOrigin);memcpy(gun.shaderRGBA,body.shaderRGBA,4);
-   CG_AddRefEntityWithPowerups(&gun,&cent->currentState,ci->team);
+   CG_AddRefEntityWithPowerups(&gun,&cent->currentState,ci->team);CG_HaloWorldMuzzle(&gun,cent);
   }
  }
  return qtrue;

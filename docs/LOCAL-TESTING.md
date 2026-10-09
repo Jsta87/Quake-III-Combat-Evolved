@@ -73,6 +73,15 @@ materials, then replaces the same local PK3. Both stages are required for the
 latest presentation. Conversion takes a few minutes. Quit the game before
 regenerating its PK3. There is no need to convert Quake's PK3s.
 
+For an existing converted setup, the latest HUD visor/shield corrections can be
+regenerated without rebaking weapon animations:
+
+```sh
+python3 scripts/animate-halo-weapons.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/bloodgulch \
+  --pk3 assets/baseq3/zzz-qce-halo.pk3 --materials-only
+```
+
 The client starts q3dm1 with Halo movement/combat enabled. Pick up a second weapon
 and use number keys or Q to switch. R reloads, F melees, right mouse throws a
 grenade, G changes grenade type, E replaces a nearby gun, Ctrl crouches, and the

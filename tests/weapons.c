@@ -150,13 +150,18 @@ int main(void) {
  assert(BG_QceMagazine(&ps,WP_SHOTGUN)==1); /* closing must complete before firing */
  for(i=0;i<51;i++)action(&ps,BUTTON_ATTACK,WP_SHOTGUN,16);
  assert(BG_QceMagazine(&ps,WP_SHOTGUN)==0 && ps.ammo[WP_SHOTGUN]==23 && ps.weaponstate==WEAPON_FIRING);
- /* A reload switch cancels insertion and follows normal drop/raise timing. */
+ /* A reload switch cancels insertion and follows immediate Halo draw timing. */
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;
  BG_QceAddWeapon(&ps,WP_MACHINEGUN,120);BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=10;
  action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);assert(ps.weaponstate==WEAPON_RELOADING);
- action(&ps,0,WP_SHOTGUN,16);assert(ps.weaponstate==WEAPON_DROPPING && ps.stats[STAT_QCE_MAG0]==10);
+ action(&ps,0,WP_SHOTGUN,16);assert(ps.weapon==WP_SHOTGUN && ps.weaponstate==WEAPON_RAISING && ps.weaponTime==BG_QceWeaponDef(WP_SHOTGUN)->ready_ms && ps.stats[STAT_QCE_MAG0]==10);
+ ps.stats[STAT_QCE_GRENADES]|=QCE_PICKUP_DRAW;
+ action(&ps,0,WP_MACHINEGUN,16);assert(ps.weapon==WP_SHOTGUN && ps.weaponstate==WEAPON_RAISING); /* Old pickup usercmd must not put the gun away. */
  for(i=0;i<100;i++)action(&ps,0,WP_SHOTGUN,16);
  assert(ps.weapon==WP_SHOTGUN && ps.weaponstate==WEAPON_READY && ps.stats[STAT_QCE_MAG0]==10);
+ ps.weaponstate=WEAPON_FIRING;ps.weaponTime=500;
+ action(&ps,0,WP_MACHINEGUN,16);assert(ps.weapon==WP_MACHINEGUN && ps.weaponstate==WEAPON_RAISING); /* Switching cancels the firing cooldown. */
+ action(&ps,0,WP_SHOTGUN,16);assert(ps.weapon==WP_SHOTGUN && ps.weaponstate==WEAPON_RAISING); /* Ordinary draws can also be interrupted. */
  /* Reloading a nearly full tube closes once and never mints reserve ammunition. */
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;ps.weapon=WP_SHOTGUN;BG_QceAddWeapon(&ps,WP_SHOTGUN,24);ps.stats[STAT_QCE_MAG0]=11;
  predicted=ps;

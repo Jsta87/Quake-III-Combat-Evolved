@@ -1538,6 +1538,12 @@ static void PM_BeginWeaponChange( int weapon ) {
 	}
 
 	PM_AddEvent( EV_CHANGE_WEAPON );
+ if(pm->ps->stats[STAT_QCE_COMBAT]) {
+  pm->ps->weapon=weapon;pm->ps->weaponstate=WEAPON_RAISING;
+  pm->ps->weaponTime=BG_QceWeaponDef(weapon)->ready_ms;
+  pm->ps->qceReloadCommit=0;pm->ps->qceChargeMs=0;pm->ps->qceZoom&=4;
+  PM_StartTorsoAnim(TORSO_RAISE);return;
+ }
 	pm->ps->weaponstate = WEAPON_DROPPING;
 	pm->ps->weaponTime += pm->ps->stats[STAT_QCE_COMBAT]?233:200;
  pm->ps->qceZoom&=4;
@@ -1693,11 +1699,12 @@ static void PM_Weapon( void ) {
     pm->cmd.weapon>WP_NONE && pm->cmd.weapon<WP_NUM_WEAPONS && (pm->ps->stats[STAT_WEAPONS]&(1<<pm->cmd.weapon))) {
   pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;pm->ps->qceReloadCommit=0;
  }
+ if(pm->cmd.weapon==pm->ps->weapon)pm->ps->stats[STAT_QCE_GRENADES]&=~QCE_PICKUP_DRAW;
 	// check for weapon change
 	// can't change if weapon is firing, but can change
 	// again if lowering or raising
-	if ( !PM_QceReloading() && pm->ps->weaponstate != WEAPON_MELEEING && (pm->ps->weaponTime <= 0 || pm->ps->weaponstate != WEAPON_FIRING) ) {
-		if ( pm->ps->weapon != pm->cmd.weapon ) {
+	if ( !PM_QceReloading() && pm->ps->weaponstate != WEAPON_MELEEING && (pm->ps->stats[STAT_QCE_COMBAT] || pm->ps->weaponTime <= 0 || pm->ps->weaponstate != WEAPON_FIRING) ) {
+		if ( pm->ps->weapon != pm->cmd.weapon && !(pm->ps->stats[STAT_QCE_COMBAT] && pm->ps->weaponstate==WEAPON_RAISING && (pm->ps->stats[STAT_QCE_GRENADES]&QCE_PICKUP_DRAW)) ) {
 			PM_BeginWeaponChange( pm->cmd.weapon );
 		}
 	}
@@ -1713,6 +1720,7 @@ static void PM_Weapon( void ) {
 	}
 
 	if ( pm->ps->weaponstate == WEAPON_RAISING ) {
+  pm->ps->stats[STAT_QCE_GRENADES]&=~QCE_PICKUP_DRAW;
 		pm->ps->weaponstate = WEAPON_READY;
 		if ( pm->ps->weapon == WP_GAUNTLET ) {
 			PM_StartTorsoAnim( TORSO_STAND2 );

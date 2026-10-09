@@ -31,7 +31,7 @@ void G_Damage(gentity_t *target,gentity_t *inflictor,gentity_t *attacker,vec3_t 
  assert(dir[0]>0.99f && fabsf(point[0]-targetDistance)<0.01f);
 }
 gentity_t *G_TempEntity(vec3_t origin,int event) {
- (void)origin;assert(event==EV_MISSILE_HIT);impactCalls++;memset(&impact,0,sizeof(impact));return &impact;
+ (void)origin;assert(event==EV_MISSILE_MISS);impactCalls++;memset(&impact,0,sizeof(impact));return &impact;
 }
 int main(void) {
  gentity_t *attacker=&g_entities[0],*target=&g_entities[1];
@@ -42,8 +42,8 @@ int main(void) {
  target->client=&clients[1];target->health=100;target->takedamage=qtrue;target->s.number=1;
  assert(G_QceMelee(attacker) && damageCalls==1 && impactCalls==1);
  assert(impact.s.weapon==WP_GAUNTLET && impact.s.otherEntityNum==1);
- wallDistance=20;assert(!G_QceMelee(attacker) && damageCalls==1);
- wallDistance=1000;targetDistance=80;assert(!G_QceMelee(attacker) && damageCalls==1);
+ wallDistance=20;assert(!G_QceMelee(attacker) && damageCalls==1 && impactCalls==2);
+ wallDistance=1000;targetDistance=80;assert(!G_QceMelee(attacker) && damageCalls==1 && impactCalls==2);
  targetDistance=QCE_MELEE_REACH;assert(G_QceMelee(attacker) && damageCalls==2);
  targetDistance=40;invalidTrace=1;assert(!G_QceMelee(attacker));
  invalidTrace=2;assert(!G_QceMelee(attacker));invalidTrace=0;

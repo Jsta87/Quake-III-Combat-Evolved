@@ -46,16 +46,25 @@ def export(cache,assets,report):
             continue
         # A source-mesh helmet portrait replaces the old Quake face in HUD/scoreboards.
         head_nodes={i for i,b in enumerate(meta['bones']) if b['name']=='bip01 head'}
-        head_surfaces=[]
+        head_surfaces=[];head_body=[];head_visor=[]
         for part in meta['parts']:
             def head_vertex(v):return sum(weight for node,weight in zip(v['nodes'],(v['node0_weight'],1-v['node0_weight'])) if node in head_nodes)>0.5
             triangles=[t for t in part['triangles'] if all(head_vertex(part['vertices'][i]) for i in t)]
-            if triangles:head_surfaces.extend(p.a.split_surface(part['vertices'],triangles,f'qce/halo/{meta["id"]:08x}/{part["geometry"]}_{part["part"]}'))
+            if triangles:
+                name=f'qce/halo/{meta["id"]:08x}/{part["geometry"]}_{part["part"]}'
+                pieces=p.a.split_surface(part['vertices'],triangles,name)
+                isvisor=part['shader'].endswith('\\visor')
+                for piece in pieces:
+                    n=len(head_surfaces);head_surfaces.append(piece)
+                    head_body.append(f'part{n},{"qce/halo/invisible" if isvisor else name}')
+                    head_visor.append(f'part{n},{name+"-rgb" if isvisor else "qce/halo/invisible"}')
         if not head_surfaces:raise p.a.halo.CacheError('No Spartan helmet geometry')
         center=[(min(v['position'][i] for surf in head_surfaces for v in surf['vertices'])+max(v['position'][i] for surf in head_surfaces for v in surf['vertices']))*0.5 for i in range(3)]
         for surf in head_surfaces:
             surf['vertices']=[{**v,'position':[v['position'][i]-center[i] for i in range(3)]} for v in surf['vertices']]
         write('models/qce/halo/player/head.md3',p.a.md3(head_surfaces),{'source':dep,'role':'helmet portrait'})
+        write('models/qce/halo/player/head-body.skin',('\n'.join(head_body)+'\n').encode(),{'role':'portrait armor'})
+        write('models/qce/halo/player/head-visor.skin',('\n'.join(head_visor)+'\n').encode(),{'role':'portrait visor RGB'})
         graph=cache.tag(dep['path'],'antr');values=graph['values']
         nc,np=struct.unpack_from('<II',cache.data,graph['offset']+104);no=cache.pointer(np,nc*64)
         bones=[]

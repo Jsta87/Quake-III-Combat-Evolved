@@ -15,6 +15,18 @@ int main(void) {
  vec3_t point,entry={84,200,330},dir={1,0,0},origin={0,0,0};
  blast(39);assert(g_entities[1].health==900);blast(100);assert(g_entities[1].health==940);
  blast(159);assert(g_entities[1].health==979);blast(160);assert(g_entities[1].health==1000);
+ /* Imported frag damage must not kill a fresh 75-shield/75-health Spartan. */
+ reset(75,75);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],120,80,120,80,200,NULL,MOD_QCE_FRAG);
+ assert(clients[1].ps.stats[STAT_QCE_SHIELD]==0 && g_entities[1].health==30);
+ reset(75,75);VectorSet(g_entities[1].r.currentOrigin,140,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],120,80,120,80,200,NULL,MOD_QCE_FRAG);
+ assert(clients[1].ps.stats[STAT_QCE_SHIELD]==0 && g_entities[1].health==50);
+ g_knockback.value=1000;reset(75,75);shoot((vec3_t){100,200,300},MOD_MACHINEGUN,10,0);assert(clients[1].ps.velocity[0]==0);
+ reset(75,75);shoot((vec3_t){100,200,300},MOD_GAUNTLET,10,0);assert(clients[1].ps.velocity[0]==0);
+ reset(75,75);shoot((vec3_t){100,200,300},MOD_ROCKET,10,0);assert(fabs(clients[1].ps.velocity[0]-25)<0.01);
+ reset(75,75);shoot((vec3_t){100,200,300},MOD_QCE_FRAG,10,DAMAGE_RADIUS);assert(fabs(clients[1].ps.velocity[0]-25)<0.01);
+ g_knockback.value=0;
  blocked=1;blast(30);assert(g_entities[1].health==1000);blocked=0;
  reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
  G_QceRadiusDamage(origin,&g_entities[0],100,20,100,40,160,&g_entities[1],MOD_ROCKET_SPLASH);assert(g_entities[1].health==1000);

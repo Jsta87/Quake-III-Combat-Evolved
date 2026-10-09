@@ -280,11 +280,11 @@ body_die
 ==================
 */
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath ) {
-	if ( self->health > GIB_HEALTH ) {
+	if ( self->health > QCE_GIB_THRESHOLD ) {
 		return;
 	}
 	if ( !g_blood.integer ) {
-		self->health = GIB_HEALTH+1;
+		self->health = QCE_GIB_THRESHOLD+1;
 		return;
 	}
 
@@ -628,7 +628,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	// never gib in a nodrop
 	contents = trap_PointContents( self->r.currentOrigin, -1 );
 
-	if ( (self->health <= GIB_HEALTH && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
+	if ( (self->health <= QCE_GIB_THRESHOLD && !(contents & CONTENTS_NODROP) && g_blood.integer) || meansOfDeath == MOD_SUICIDE) {
 		// gib death
 		GibEntity( self, killer );
 	} else {
@@ -650,8 +650,8 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 		// for the no-blood option, we need to prevent the health
 		// from going to gib level
-		if ( self->health <= GIB_HEALTH ) {
-			self->health = GIB_HEALTH+1;
+		if ( self->health <= QCE_GIB_THRESHOLD ) {
+			self->health = QCE_GIB_THRESHOLD+1;
 		}
 
 		self->client->ps.legsAnim = 
@@ -919,6 +919,12 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		knockback = 0;
 	}
 
+ if(targ->client && targ->client->ps.stats[STAT_QCE_COMBAT]) {
+  /* Only explosive damage pushes Halo players; halve the old blast impulse. */
+  qboolean explosive=(dflags&DAMAGE_RADIUS) || mod==MOD_ROCKET || mod==MOD_ROCKET_SPLASH ||
+   mod==MOD_QCE_FRAG || mod==MOD_QCE_PLASMA_GRENADE;
+  knockback=explosive?knockback/2:0;
+ }
 	// figure momentum add, even if the damage won't be taken
 	if ( knockback && targ->client ) {
 		vec3_t	kvel;
@@ -1078,6 +1084,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
  if(client && qceOldShield>client->ps.stats[STAT_QCE_SHIELD]) {
   gentity_t *effect=G_TempEntity(point?point:targ->r.currentOrigin,client->ps.stats[STAT_QCE_SHIELD]>0?EV_QCE_SHIELD_HIT:EV_QCE_SHIELD_BREAK);
   effect->s.otherEntityNum=targ->s.number;effect->s.eventParm=dir?DirToByte(dir):0;
+  effect->r.svFlags|=SVF_BROADCAST;
  }
 
 	if ( g_debugDamage.integer ) {

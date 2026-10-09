@@ -55,6 +55,7 @@ void G_QceVariantRegister(void) {
 }
 void G_QceVariantUpdate(void) {
  int i,type;
+ float previousPickup=GV(GV_PICKUP);
  for(i=0;i<GV_COUNT;i++) {
   trap_Cvar_Update(&variants[i].cvar);
   if(!Valid(i,variants[i].cvar.string)) {
@@ -68,6 +69,12 @@ void G_QceVariantUpdate(void) {
   if(!Valid(GV_COUNT+i,stringCvars[i].string)) {trap_Cvar_Set(stringNames[i],stringDefaults[i]);trap_Cvar_Update(&stringCvars[i]);}
  }
  if(!g_qceCombat.integer)return;
+ if(previousPickup!=GV(GV_PICKUP))for(i=0;i<level.maxclients;i++) {
+  if(!g_entities[i].client)continue;
+  if(GV(GV_PICKUP))g_entities[i].client->ps.qceVariantFlags&=~8;
+  else g_entities[i].client->ps.qceVariantFlags|=8;
+  g_entities[i].client->qcePickupLatched=qfalse;
+ }
  if(g_friendlyFire.integer!=(int)GV(GV_FRIENDLY_FIRE))trap_Cvar_Set("g_friendlyFire",va("%d",(int)GV(GV_FRIENDLY_FIRE)));
  if(g_fraglimit.integer!=(int)GV(GV_SCORE_LIMIT))trap_Cvar_Set("fraglimit",va("%d",(int)GV(GV_SCORE_LIMIT)));
  if(g_timelimit.value!=GV(GV_TIME_LIMIT))trap_Cvar_Set("timelimit",va("%g",GV(GV_TIME_LIMIT)));

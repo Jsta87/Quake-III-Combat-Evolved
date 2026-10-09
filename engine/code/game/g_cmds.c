@@ -1752,9 +1752,11 @@ void G_QceSwapWeapon(gentity_t *ent) {
  float nearest=65.0f,distance;
  vec3_t delta,start;
  trace_t trace;
- int i,weapon;
+ int i,weapon,selectedByTouch,requested=ent->client->pers.cmd.weapon;
+ /* Never drop the old gun while a valid selected gun is still pending. */
+ if(requested>WP_GAUNTLET && requested<WP_NUM_WEAPONS && requested!=ps->weapon && BG_QceSlot(ps,requested)>=0)return;
  if(!GV(GV_PICKUP) || !ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
-    ent->client->noclip || (ps->weaponTime>0 && ps->weaponstate!=WEAPON_RELOADING && ps->weaponstate!=WEAPON_RELOAD_ENTER && ps->weaponstate!=WEAPON_RELOAD_EXIT && ps->weaponstate!=WEAPON_RELOAD_EXIT_EMPTY) || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
+    ent->client->noclip || (ps->weaponTime>0 && ps->weaponstate!=WEAPON_RELOADING && ps->weaponstate!=WEAPON_RELOAD_ENTER && ps->weaponstate!=WEAPON_RELOAD_EXIT && ps->weaponstate!=WEAPON_RELOAD_EXIT_EMPTY && ps->weaponstate!=WEAPON_RAISING) || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
  VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
   item=&g_entities[i];
@@ -1777,7 +1779,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
   best=item;nearest=distance;
  }
  if(!best)return;
- if(ps->weaponstate==WEAPON_RELOADING || ps->weaponstate==WEAPON_RELOAD_ENTER || ps->weaponstate==WEAPON_RELOAD_EXIT || ps->weaponstate==WEAPON_RELOAD_EXIT_EMPTY){ps->weaponTime=0;ps->weaponstate=WEAPON_READY;ps->qceReloadCommit=0;}
+ if(ps->weaponstate==WEAPON_RAISING || ps->weaponstate==WEAPON_RELOADING || ps->weaponstate==WEAPON_RELOAD_ENTER || ps->weaponstate==WEAPON_RELOAD_EXIT || ps->weaponstate==WEAPON_RELOAD_EXIT_EMPTY){ps->weaponTime=0;ps->weaponstate=WEAPON_READY;ps->qceReloadCommit=0;}
  weapon=best->item->giTag;
  if((weapon==ps->weapon && BG_QceWeaponDef(weapon)->reload_rounds==0) || !BG_QceCanCarry(ps,weapon)) {
   int oldWeapon=ps->weapon;
@@ -1785,10 +1787,12 @@ void G_QceSwapWeapon(gentity_t *ent) {
   if(BG_QceSlot(ps,oldWeapon)>=0)return;
  }
  Touch_Item(best,ent,NULL);
+ selectedByTouch=ps->weapon==weapon && ps->weaponstate==WEAPON_RAISING && (ps->stats[STAT_QCE_GRENADES]&QCE_PICKUP_DRAW);
  if(BG_QceSlot(ps,weapon)>=0) {
   ent->client->qcePickupLatched=qtrue;
+  ps->stats[STAT_QCE_GRENADES]|=QCE_PICKUP_DRAW;
   ps->weapon=weapon;ps->weaponstate=WEAPON_RAISING;ps->weaponTime=BG_QceWeaponDef(weapon)->ready_ms;ps->qceZoom&=4;
-  trap_SendServerCommand(ent-g_entities,va("qce_select %d",weapon));
+  if(!selectedByTouch)trap_SendServerCommand(ent-g_entities,va("qce_select %d %d",weapon,ps->commandTime));
  }
 }
 
