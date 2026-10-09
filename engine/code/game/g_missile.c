@@ -414,6 +414,7 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
    event=G_TempEntity(trace->endpos,other->client?EV_BULLET_HIT_FLESH:EV_BULLET_HIT_WALL);
    event->s.eventParm=other->client?other->s.number:DirToByte(trace->plane.normal);event->s.otherEntityNum=ent->r.ownerNum;
    event->s.weapon=ent->qceProjectileWeapon;event->s.time2=ent->s.time2;
+   if(ent->qceProjectileWeapon==QCE_HOG_TURRET_WEAPON){VectorCopy(ent->s.origin2,event->s.origin2);event->s.generic1=ent->s.generic1;}
   }
   if(G_QceContinueProjectile(ent,trace,other,G_QceMaterialResponse(ent,trace,other))) {
    VectorCopy(trace->endpos,ent->s.origin2);return;

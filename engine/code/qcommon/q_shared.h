@@ -1151,7 +1151,7 @@ typedef struct playerState_s {
  int qceZoom, qceCrouch, qceOverheatTime[8];
  int qceReloadCommit, qceReloadEmpty;
  int qceExtraSlots[6], qceExtraMags[6], qceMaxHeldWeapons;
- int qceVehicle,qceVehicleSeat; /* Entity zero means on foot. */
+ int qceVehicle,qceVehicleSeat,qceVehicleTime; /* Entity zero means on foot. */
  int qceVariantScale[3], qceVariantFlags, qceMaxShield;
 	int			gravity;
 	int			speed;

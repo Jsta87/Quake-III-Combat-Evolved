@@ -2681,12 +2681,36 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  if(ci->team==TEAM_RED) {body.shaderRGBA[0]=220;body.shaderRGBA[1]=40;body.shaderRGBA[2]=40;}
  if(ci->team==TEAM_BLUE){body.shaderRGBA[0]=40;body.shaderRGBA[1]=90;body.shaderRGBA[2]=230;}
  body.shaderRGBA[3]=255;
+ if(cent->currentState.otherEntityNum2>0 && !(cent->currentState.eFlags&EF_DEAD)) {
+  int vehicle=cent->currentState.otherEntityNum2,seat=cent->currentState.otherEntityNum%3,exiting=cent->currentState.otherEntityNum>=3;centity_t *car;
+  if(vehicle<MAX_GENTITIES && seat>=0 && seat<3 && cg_qceWorld.playerClips[49+seat].count>0) {
+   if(cent->qceVehicleLast!=vehicle || cent->qceVehicleSeatLast!=seat){cent->qceVehicleEnterTime=cent->currentState.time;cent->qceVehicleLast=vehicle;cent->qceVehicleSeatLast=seat;
+    if(!exiting && cg.time-cent->qceVehicleEnterTime<200){sfxHandle_t sound=trap_S_RegisterSound(va("sound/qce/halo/warthog/seat-%d-enter.wav",seat),qfalse);trap_S_StartSound(NULL,cent->currentState.number,CHAN_BODY,sound);}
+   }
+   car=&cg_entities[vehicle];AnglesToAxis(car->lerpAngles,body.axis);VectorCopy(cent->lerpOrigin,body.origin);VectorCopy(body.origin,body.oldorigin);
+   pose=49+seat;if(seat==1 && i && cg_qceWorld.playerClips[i==22?62:61].count>0)pose=i==22?62:61;kind=0;cent->qcePlayerStart=cent->qceVehicleEnterTime;
+   if(cg.time-cent->qceVehicleEnterTime<cg_qceWorld.playerClips[52+seat].count*1000/30){pose=52+seat;kind=7;}
+   if(exiting){if(!cent->qceVehicleExitTime && cg.time-cent->currentState.time<200){sfxHandle_t sound=trap_S_RegisterSound(va("sound/qce/halo/warthog/seat-%d-exit.wav",seat),qfalse);trap_S_StartSound(NULL,cent->currentState.number,CHAN_BODY,sound);}cent->qceVehicleExitTime=cent->currentState.time;pose=55+seat;kind=7;cent->qcePlayerStart=cent->qceVehicleExitTime;}
+   else cent->qceVehicleExitTime=0;
+  }
+ } else {cent->qceVehicleLast=0;cent->qceVehicleExitTime=0;}
  clip=&cg_qceWorld.playerClips[pose];
  CG_HaloWorldFrames(clip,kind>=7,cg.time-cent->qcePlayerStart,&body.oldframe,&body.frame,&body.backlerp);
+ if(cent->currentState.otherEntityNum2>0 && ((pose>=49 && pose<=51) || pose==61 || pose==62)) {
+  centity_t *car=&cg_entities[cent->currentState.otherEntityNum2];qceViewClip_t *aim=&cg_qceWorld.playerClips[pose==61?63:pose==62?64:58+pose-49];
+  float relativePitch=AngleSubtract(cent->lerpAngles[PITCH],car->lerpAngles[PITCH]);
+  float yaw=Com_Clamp(0,2,1+AngleSubtract(cent->lerpAngles[YAW],car->lerpAngles[YAW])/90);
+  float down=pose==49?45:22,up=pose==49?45:pose==62?45:30;
+  float pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?down:up));int columns=3,x,y,xx;
+  if(pose==51){columns=5;yaw=Com_Clamp(0,4,2+car->currentState.origin2[0]/90);relativePitch=car->currentState.origin2[1];pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?20:35));}
+  x=(int)yaw;y=(int)(pitch+.5f);xx=x<columns-1?x+1:x;
+  if(aim->count==(columns==5?16:9)){body.oldframe=aim->first+y*columns+x;body.frame=aim->first+y*columns+xx;body.backlerp=1-(yaw-x);
+   /* Aim keys are absolute baked poses; the renderer overlay channel is additive. */}
+ }
  cent->qcePlayerRenderedFrame=body.backlerp>0.5f?body.oldframe:body.frame;
  /* Halo uses six 30-Hz ticks for normal state changes. The outgoing pose is
     captured here because this renderer exposes two frames, not four. */
- if(cent->qcePlayerPoseValid && kind!=10 && cg.time-cent->qcePlayerStart<cent->qcePlayerBlendMs) {
+ if(!cent->currentState.otherEntityNum2 && cent->qcePlayerPoseValid && kind!=10 && cg.time-cent->qcePlayerStart<cent->qcePlayerBlendMs) {
   body.oldframe=cent->qcePlayerPreviousFrame;
   body.backlerp=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
  }
@@ -2703,7 +2727,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   shell.shaderRGBA[0]=255;shell.shaderRGBA[1]=180;shell.shaderRGBA[2]=50;shell.shaderRGBA[3]=(byte)(fade*245);
   trap_R_AddRefEntityToScene(&shell);
  }
- if(!(cent->currentState.eFlags&EF_DEAD) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
+ if(!(cent->currentState.eFlags&EF_DEAD) && (!cent->currentState.otherEntityNum2 || cent->currentState.otherEntityNum==1) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
   CG_RegisterWeapon(cent->currentState.weapon);memset(&gun,0,sizeof(gun));gun.hModel=cg_weapons[cent->currentState.weapon].weaponModel;gun.renderfx=body.renderfx;
   if(trap_R_LerpTag(&hand,body.hModel,body.oldframe,body.frame,1-body.backlerp,"tag_hand")) {
    VectorCopy(body.origin,gun.origin);

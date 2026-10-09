@@ -2640,13 +2640,13 @@ void CG_RegisterHaloWorld(void) {
  length=trap_FS_FOpenFile("models/qce/halo/player/spartan.cfg",&file,FS_READ);
  if(length>0 && length<(int)sizeof(buffer)) {
   trap_FS_Read(buffer,length,file);buffer[length]=0;text=buffer;
-  for(i=0;i<49;i++) {
+  for(i=0;i<65;i++) {
    int values[4];
    for(j=0;j<4;j++){token=COM_Parse(&text);values[j]=atoi(token);}
    if(values[0]<0 || values[1]<1 || values[0]+values[1]>4096 || values[2]<1 || values[2]>100)break;
    cg_qceWorld.playerClips[i].first=values[0];cg_qceWorld.playerClips[i].count=values[1];cg_qceWorld.playerClips[i].fps=values[2];cg_qceWorld.playerClips[i].loop=0;
   }
-  if(i==49)cg_qceWorld.playerModel=trap_R_RegisterModel("models/qce/halo/player/spartan.iqm");
+  if(i>=49)cg_qceWorld.playerModel=trap_R_RegisterModel("models/qce/halo/player/spartan.iqm");
  }
  if(file)trap_FS_FCloseFile(file);
  if(trap_FS_FOpenFile("models/qce/halo/player/head.md3",NULL,FS_READ)>0)cg_qceWorld.headModel=trap_R_RegisterModel("models/qce/halo/player/head.md3");

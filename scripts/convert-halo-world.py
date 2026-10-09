@@ -20,6 +20,22 @@ PLAYER_CLIPS=RIFLE_CLIPS+tuple(x.replace('rifle','pistol').replace('pistol ar me
 PLAYER_CLIPS+=('stand rifle ar melee','stand rifle sg melee','stand missile rl melee','stand rifle sr melee','stand rifle pr melee','stand pistol pp melee','stand pistol hp melee','stand pistol ne melee',
  'stand rifle ar reload-1','stand rifle sg reload-1','stand missile rl reload-1','stand rifle sr reload-1','stand rifle idle','stand pistol idle','stand pistol hp reload-1','stand pistol ne reload-1')
 
+PLAYER_CLIPS+=('W-driver unarmed idle','W-passenger rifle idle','W-gunner fixed idle',
+ 'W-driver enter','W-passenger enter','W-gunner enter','W-driver exit','W-passenger exit','W-gunner exit',
+ 'W-driver unarmed aim-still','W-passenger rifle aim-still','W-gunner fixed aim-still',
+ 'W-passenger pistol idle','W-passenger missile idle','W-passenger pistol aim-still','W-passenger missile aim-still')
+
+def bake_seat_aim(decoded,base,bones,head_only=False):
+    if len(decoded) not in (9,16) or len(base)!=len(bones) or any(len(f)!=len(base) for f in decoded):raise p.a.halo.CacheError('Invalid seat aim grid')
+    reference=decoded[7 if len(decoded)==16 else 4];baked=[]
+    for frame in decoded:
+        local=[]
+        for bi,((r,t),(rr,rt),(br,bt)) in enumerate(zip(frame,reference,base)):
+            if head_only and 'head' not in bones[bi]['name'] and 'neck' not in bones[bi]['name']:local.append((br,bt));continue
+            local.append((p.mul(br,p.mul(p.transpose(rr),r)),tuple(bt[i]+t[i]-rt[i] for i in range(3))))
+        baked.append(local)
+    return baked
+
 def export(cache,assets,report):
     def write(path,data,meta):
         assets.files.pop(path,None);assets.write(path,data,meta)
@@ -81,8 +97,16 @@ def export(cache,assets,report):
         local_frames=[];clips=[];poses=p.PoseFrames(surfaces)
         for name in PLAYER_CLIPS:
             ai,anim=next((i,a) for i,a in enumerate(values['animations']) if a['name']==name)
-            if anim['type'] not in (0,2) or anim['flags']&1:raise p.a.halo.CacheError('Unsupported Spartan track')
+            if (anim['type'] not in (0,2) and not (name.startswith('W-') and anim['type']==1)) or anim['flags']&1:raise p.a.halo.CacheError('Unsupported Spartan track')
             raw=ao+ai*180;decoded=p.decode_tracks(anim,p.data_blob(cache,raw+140),p.data_blob(cache,raw+160))
+            if anim['type']==1:
+                # Aim tracks are overlays. Bake relative to their center key on
+                # the seat idle, rather than displaying the overlay as a pose.
+                idle_name=name.replace('aim-still','idle')
+                ii,idle=next((i,a) for i,a in enumerate(values['animations']) if a['name']==idle_name)
+                iraw=ao+ii*180;base=p.decode_tracks(idle,p.data_blob(cache,iraw+140),p.data_blob(cache,iraw+160))[0]
+                # Gunner is a 5x3 grid with a duplicate final key.
+                decoded=bake_seat_aim(decoded,base,bones,name.startswith('W-driver'))
             clips.append({'name':name,'first':len(local_frames),'count':len(decoded),'fps':30,'loop_frame':0})
             for local in decoded:
                 scaled=[(r,tuple(x*meta['scale'] for x in t)) for r,t in local]

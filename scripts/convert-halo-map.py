@@ -197,12 +197,14 @@ def convert(path,output,pk3):
    bit=cache.tags.get(w.u(assets.field('ShaderModel','base map',shader['offset'])+12))
    if bit:texture(bit)
  models=assets.weapon_models({'vehicle':{'models':[model]}})
- old='scripts/qce-halo.shader';shadertext.append((output/old).read_text());assets.files.pop(old,None)
+ old='scripts/qce-halo.shader';assets.files.pop(old,None)
  assets.write(MODEL,(output/models[0]['output']).read_bytes(),{'alias_of':models[0]['output']})
+ vehicle_assets=load('vehicle_assets','convert-halo-vehicle.py');vehicle_assets.export(cache,assets,model)
+ shadertext.append((output/old).read_text());assets.files.pop(old,None)
  entities=w.entities();assets.write('maps/qce_bloodgulch.bsp',bsp.finish(entities),{'role':'terrain prototype'})
  assets.write('scripts/qce-bloodgulch.shader','\n'.join(shadertext).encode(),{'role':'world and vehicle materials'})
  assets.write('scripts/qce-bloodgulch.arena',b'{ map qce_bloodgulch longname "Blood Gulch" type "ffa team" }\n',{'role':'map menu'})
- report={'source':cache.header,'scale':SCALE,'render_surfaces':bsp.surfaces,'collision_brushes':bsp.brushes,'planes':len(bsp.l[2])//16,'entities':entities,'vehicle_model':MODEL,'limitations':['One visibility cluster; no optimized PVS or bot AAS','Render triangles approximate collision; scenery and retail lightmaps not converted','Static Warthog bind pose; runtime wheeled physics is a prototype','Procedural blue sky and vertex lighting replace retail atmosphere/lightmaps']}
+ report={'source':cache.header,'scale':SCALE,'render_surfaces':bsp.surfaces,'collision_brushes':bsp.brushes,'planes':len(bsp.l[2])//16,'entities':entities,'vehicle_model':MODEL,'limitations':['One visibility cluster; no optimized PVS or bot AAS','Render triangles approximate collision; scenery and retail lightmaps not converted','Split Warthog parts with procedural wheels/steering; runtime wheeled physics is a prototype','Procedural blue sky and vertex lighting replace retail atmosphere/lightmaps']}
  output.mkdir(parents=True,exist_ok=True);(output/'map-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
  if pk3:assets.package(pk3)
  print(json.dumps({k:report[k] for k in ('render_surfaces','collision_brushes','planes','vehicle_model')}))

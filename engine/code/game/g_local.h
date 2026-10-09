@@ -93,6 +93,8 @@ struct gentity_s {
  vec3_t qceAttachOffset;
  int qceVehicle,qceRiders[3],qceVehicleTime,qceVehicleRespawn;
  float qceVehicleSpeed;vec3_t qceVehicleVelocity;
+ float qceTurretSpin,qceTurretError,qceVehicleRPM,qceTurretNextShot;vec3_t qceTurretAngles;
+ int qceTurretLastShot,qceTurretShots;
 	char		*classname;			// set in QuakeEd
 	int			spawnflags;			// set in QuakeEd
 
@@ -290,6 +292,7 @@ struct gclient_s {
 	// shotgun blasts give a single big kick
 	int qceShieldNextTick;
  qboolean qcePickupLatched;
+ int qceVehicleExitTime,qceVehicleEnterTime;
  int qceGrenadeReleaseTime,qceGrenadeReleaseType;
  int qceShieldRemainder;
 	int			damage_armor;		// damage absorbed by armor
@@ -533,7 +536,7 @@ void TossClientCubes( gentity_t *self );
 void G_RunMissile( gentity_t *ent );
 
 void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon);
-void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad);
+gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad);
 qboolean G_QceRadiusDamage(vec3_t origin,gentity_t *attacker,float damage,float minimum,float maximum,float inner,float outer,gentity_t *ignore,int mod);
 gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t aimdir);
 gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t aimdir);

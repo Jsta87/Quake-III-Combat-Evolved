@@ -2183,6 +2183,7 @@ void PmoveSingle (pmove_t *pmove) {
 	}
 
 	if (pm->ps->pm_type == PM_FREEZE) {
+  if(pm->ps->qceVehicle && pm->ps->qceVehicleSeat==1 && pm->cmd.serverTime-pm->ps->qceVehicleTime>=934){PM_DropTimers();pm->ps->pm_type=PM_NORMAL;pm->cmd.buttons&=~BUTTON_QCE_MELEE;PM_Weapon();pm->ps->pm_type=PM_FREEZE;}
 		return;		// no movement at all
 	}
 

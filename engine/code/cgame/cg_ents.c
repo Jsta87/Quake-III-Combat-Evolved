@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_ents.c -- present snapshot entities, happens every single frame
 
 #include "cg_local.h"
+#include "../game/bg_qce_vehicle.h"
 
 
 /*
@@ -160,6 +161,75 @@ static void CG_EntityEffects( centity_t *cent ) {
 CG_General
 ==================
 */
+static void CG_General(centity_t *cent);
+static void CG_Warthog(centity_t *cent) {
+ static qhandle_t models[13],dust,rock;static qboolean initialized;static sfxHandle_t engine,start,stop,suspension,fire,rpm[17];
+ static const char *names[13]={"body","left-back","left-front","right-back","right-front","wheel","turret-base","turret-gun","turret-barrels","suspension-left-back","suspension-left-front","suspension-right-back","suspension-right-front"};
+ static const vec3_t wheels[4]={{-50.4f,30.4f,15.2f},{53.6f,30.4f,15.2f},{-50.4f,-30.4f,15.2f},{53.6f,-30.4f,15.2f}};
+ static const vec3_t hinges[4]={{-31.441f,8.846f,18.409f},{34.260f,8.846f,18.015f},{-31.441f,-8.678f,18.409f},{34.260f,-8.678f,18.015f}};
+ refEntity_t ent;vec3_t axis[3],local[3],angles,origin,offset,wheelPos[4],gun,muzzle,gunAxis[3],turn[3];int i,j,on=cent->currentState.clientNum&1;
+ float dt=Com_Clamp(0,.1f,(cg.time-cent->qceWheelTime)*.001f),speed=cent->currentState.angles2[1],steer=cent->currentState.angles2[0];
+ if(cent->currentState.eFlags&EF_NODRAW){cent->qceEngineOn=0;return;}
+ if(!initialized) {
+  char path[MAX_QPATH];for(i=0;i<13;i++){Com_sprintf(path,sizeof(path),"models/qce/halo/warthog/%s.md3",names[i]);models[i]=trap_R_RegisterModel(path);}
+  initialized=qtrue;engine=trap_S_RegisterSound("sound/qce/halo/warthog/engine.wav",qfalse);start=trap_S_RegisterSound("sound/qce/halo/warthog/engine-start.wav",qfalse);stop=trap_S_RegisterSound("sound/qce/halo/warthog/engine-stop.wav",qfalse);suspension=trap_S_RegisterSound("sound/qce/halo/warthog/suspension.wav",qfalse);fire=trap_S_RegisterSound("sound/qce/halo/warthog/turret-fire.wav",qfalse);
+  for(i=0;i<17;i++){Com_sprintf(path,sizeof(path),"sound/qce/halo/warthog/engine-rpm-%02d.wav",i);rpm[i]=trap_S_RegisterSound(path,qfalse);}
+  dust=trap_R_RegisterShader("qce/warthog/dust");rock=trap_R_RegisterShader("qce/warthog/rock");
+ }
+ if(!models[0]){CG_General(cent);return;}
+ if(on && !cent->qceEngineOn)trap_S_StartSound(NULL,cent->currentState.number,CHAN_AUTO,start);
+ if(!on && cent->qceEngineOn)trap_S_StartSound(NULL,cent->currentState.number,CHAN_AUTO,stop);
+ cent->qceEngineOn=on;cent->qceRPM+=(cent->currentState.frame/255.0f-cent->qceRPM)*QCE_HogFilter(dt,6);
+ i=(int)Com_Clamp(0,16,cent->qceRPM*16+.5f);if(on)trap_S_AddLoopingSound(cent->currentState.number,cent->lerpOrigin,vec3_origin,rpm[i]?rpm[i]:engine);
+ cent->qceWheelRoll=AngleNormalize360(cent->qceWheelRoll+speed*dt*360/80);
+ cent->qceTurretRoll=AngleNormalize360(cent->qceTurretRoll+cent->currentState.origin2[2]*2700*dt);
+ cent->qceTurretYaw+=AngleSubtract(cent->currentState.origin2[0],cent->qceTurretYaw)*QCE_HogFilter(dt,20);
+ cent->qceTurretPitch+=(cent->currentState.origin2[1]-cent->qceTurretPitch)*QCE_HogFilter(dt,20);cent->qceWheelTime=cg.time;
+ AnglesToAxis(cent->lerpAngles,axis);
+ QCE_HogTurretTransform(cent->lerpOrigin,cent->lerpAngles,cent->qceTurretYaw,cent->qceTurretPitch,gun,muzzle,gunAxis);
+ VectorSet(angles,0,cent->qceTurretYaw,0);AnglesToAxis(angles,local);MatrixMultiply(local,axis,turn);
+ if(cent->currentState.time2>cent->qceTurretShotTime){cent->qceTurretShotTime=cent->currentState.time2;if(cg.time-cent->currentState.time2<200)trap_S_StartSound(muzzle,cent->currentState.number,CHAN_WEAPON,fire);}
+ for(i=0;i<4;i++) {
+  trace_t tr;vec3_t begin,end,delta;float target,depth;
+  VectorCopy(cent->lerpOrigin,begin);for(j=0;j<3;j++)VectorMA(begin,wheels[i][j],axis[j],begin);
+  VectorMA(begin,30,axis[2],begin);VectorMA(begin,-75,axis[2],end);CG_Trace(&tr,begin,NULL,NULL,end,cent->currentState.number,MASK_SOLID);
+  depth=30-tr.fraction*75+80/(2*M_PI);
+  target=QCE_HogSuspensionAngle(i&1,depth+wheels[i][2]-hinges[i][2]);
+  if(tr.fraction==1 || tr.startsolid)target=i&1?30:-30;
+  cent->qceSuspension[i]+=(target-cent->qceSuspension[i])*QCE_HogFilter(dt,12);
+  VectorSet(angles,cent->qceSuspension[i],0,0);AnglesToAxis(angles,local);VectorSubtract(wheels[i],hinges[i],delta);
+  VectorCopy(hinges[i],wheelPos[i]);for(j=0;j<3;j++)VectorMA(wheelPos[i],delta[j],local[j],wheelPos[i]);
+ }
+ for(i=0;i<13;i++) {
+  memset(&ent,0,sizeof(ent));ent.hModel=models[i];if(!ent.hModel)continue;AxisCopy(axis,ent.axis);VectorClear(offset);
+  if(i>0 && i<5){VectorCopy(wheelPos[i-1],offset);VectorSet(angles,cent->qceWheelRoll+cent->qceSuspension[i-1],(i==2 || i==4)?steer:0,0);AnglesToAxis(angles,local);MatrixMultiply(local,axis,ent.axis);}
+  if(i==5){vec3_t axle={.984808f,0,.173648f};vec3_t identity[3]={{1,0,0},{0,1,0},{0,0,1}};VectorSet(offset,11.78f,13.56f,43.27f);for(j=0;j<3;j++)RotatePointAroundVector(local[j],axle,identity[j],steer*3);MatrixMultiply(local,axis,ent.axis);}
+  if(i==6){VectorSet(offset,-40,0,35.091f);AxisCopy(turn,ent.axis);}
+  if(i>=9){VectorCopy(hinges[i-9],offset);VectorSet(angles,cent->qceSuspension[i-9],0,0);AnglesToAxis(angles,local);MatrixMultiply(local,axis,ent.axis);}
+  VectorCopy(cent->lerpOrigin,ent.origin);for(j=0;j<3;j++)VectorMA(ent.origin,offset[j],axis[j],ent.origin);
+  if(i==7){VectorCopy(gun,ent.origin);AxisCopy(gunAxis,ent.axis);}
+  if(i==8){VectorCopy(gun,ent.origin);VectorMA(ent.origin,6.334f,gunAxis[0],ent.origin);VectorMA(ent.origin,7.688f,gunAxis[2],ent.origin);VectorSet(angles,0,0,cent->qceTurretRoll);AnglesToAxis(angles,local);MatrixMultiply(local,gunAxis,ent.axis);}
+  VectorCopy(ent.origin,ent.oldorigin);trap_R_AddRefEntityToScene(&ent);
+  if(i>0 && i<5 && fabs(speed)>60 && cg.time-cent->qceTireTime>70) {
+   trace_t tr;vec3_t end,velocity;VectorCopy(ent.origin,end);end[2]-=35;CG_Trace(&tr,ent.origin,NULL,NULL,end,cent->currentState.number,MASK_SOLID);
+   if(tr.fraction<1 && tr.plane.normal[2]>.3f && !(tr.surfaceFlags&SURF_METALSTEPS)) {
+    localEntity_t *le;VectorCopy(tr.endpos,origin);origin[2]+=2;VectorScale(axis[0],-speed*.08f,velocity);velocity[2]=18;
+    CG_SmokePuff(origin,velocity,7,.55f,.45f,.30f,.30f,500,cg.time,0,0,dust);
+    velocity[2]=50+random()*40;le=CG_SmokePuff(origin,velocity,1.3f,.7f,.6f,.45f,.8f,450,cg.time,0,0,rock);le->pos.trType=TR_GRAVITY;
+   }
+  }
+ }
+ if(cent->qceTurretShotTime>0 && cg.time-cent->qceTurretShotTime>=0 && cg.time-cent->qceTurretShotTime<65){
+  int count=cg_qceWorld.muzzleCounts[WP_MACHINEGUN];trap_R_AddLightToScene(muzzle,90,1,.75f,.35f);
+  if(count){int frame=(cg.time-cent->qceTurretShotTime)*count/65;memset(&ent,0,sizeof(ent));ent.reType=RT_SPRITE;ent.customShader=cg_qceWorld.muzzleShaders[WP_MACHINEGUN][frame];ent.radius=cg_qceWorld.muzzleRadius[WP_MACHINEGUN];VectorCopy(muzzle,ent.origin);memset(ent.shaderRGBA,255,4);trap_R_AddRefEntityToScene(&ent);}
+ }
+ if(cg.time-cent->qceTireTime>70)cent->qceTireTime=cg.time;
+ if(cg.time-cent->qceHogImpactTime>800 && ((cent->currentState.angles2[2] && !cent->qceHogContacts) || fabs(AngleSubtract(cent->lerpAngles[PITCH],cent->qceHogPitch))>8)) {
+  if(fabs(speed)>30){trap_S_StartSound(NULL,cent->currentState.number,CHAN_AUTO,suspension);cent->qceHogImpactTime=cg.time;}
+ }
+ cent->qceHogContacts=(int)cent->currentState.angles2[2];cent->qceHogPitch=cent->lerpAngles[PITCH];
+}
+
 static void CG_General( centity_t *cent ) {
 	refEntity_t			ent;
 	entityState_t		*s1;
@@ -1060,7 +1130,7 @@ static void CG_AddCEntity( centity_t *cent ) {
 	case ET_TELEPORT_TRIGGER:
 		break;
 	case ET_GENERAL:
-		CG_General( cent );
+  if(cent->currentState.generic1==QCE_HOG_MARKER)CG_Warthog(cent);else CG_General( cent );
 		break;
 	case ET_PLAYER:
 		CG_Player( cent );

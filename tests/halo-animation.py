@@ -10,7 +10,22 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('anim',ROOT/'scripts/animate-halo-weapons.py');a=importlib.util.module_from_spec(s);s.loader.exec_module(a)
 
+s=importlib.util.spec_from_file_location('world',ROOT/'scripts/convert-halo-world.py');world=importlib.util.module_from_spec(s);s.loader.exec_module(world)
+
 class AnimationTests(unittest.TestCase):
+ def test_seat_aim_center_and_wheel_grip(self):
+  rot=a.qmatrix((0,0,math.sqrt(.5),math.sqrt(.5)));bones=[{'name':'bip01 head'},{'name':'bip01 r hand'}]
+  base=[(a.IDENTITY,(1,2,3)),(a.IDENTITY,(4,5,6))];frame=[(rot,(0,0,0)),(rot,(0,0,0))];decoded=[frame for _ in range(9)]
+  result=world.bake_seat_aim(decoded,base,bones,True)
+  self.assertEqual(result[4][1],base[1]);self.assertEqual(result[4][0][1],base[0][1])
+  for row,r in zip(result[4][0][0],a.IDENTITY):
+   for x,y in zip(row,r):self.assertAlmostEqual(x,y)
+  with self.assertRaises(world.p.a.halo.CacheError):world.bake_seat_aim(decoded[:3],base,bones)
+ def test_gunner_aim_grid_center(self):
+  base=[(a.IDENTITY,(1,2,3))];bones=[{'name':'bip01 pelvis'}];frames=[[(a.IDENTITY,(0,0,i/10))] for i in range(16)]
+  result=world.bake_seat_aim(frames,base,bones)
+  self.assertEqual(result[7],base)
+  self.assertAlmostEqual(result[0][0][1][2],2.3)
  def test_quaternion_hierarchy_and_cycles(self):
   r=a.qmatrix((0,0,math.sqrt(.5),math.sqrt(.5)))
   v=a.rotate(r,(1,0,0));self.assertAlmostEqual(v[0],0);self.assertAlmostEqual(v[1],-1)

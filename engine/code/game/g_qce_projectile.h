@@ -5,7 +5,7 @@ void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon) {
  bolt->s.pos.trTime=level.time;bolt->s.pos.trType=TR_LINEAR;
 }
 
-void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {
+gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {
  const qce_weapondef_t *def=BG_QceWeaponDef(weapon);
  vec3_t dir;
  gentity_t *bolt=G_Spawn();
@@ -17,7 +17,7 @@ void G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod
  G_QceInitProjectile(bolt,owner,weapon);
  VectorCopy(start,bolt->r.currentOrigin);VectorCopy(start,bolt->s.pos.trBase);VectorCopy(start,bolt->s.origin2);
  VectorSubtract(end,start,dir);VectorNormalize(dir);VectorScale(dir,def->projectile_speed,bolt->s.pos.trDelta);
- bolt->think=G_FreeEntity;bolt->nextthink=level.time+60000;
+ bolt->think=G_FreeEntity;bolt->nextthink=level.time+60000;return bolt;
 }
 
 /* Eight-millisecond substeps bound curved sweeps; range is distance, not a

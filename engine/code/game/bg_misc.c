@@ -1539,6 +1539,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+ s->otherEntityNum2=ps->qceVehicle;s->otherEntityNum=ps->qceVehicleSeat;s->time=ps->qceVehicleTime;
  if(ps->stats[STAT_QCE_COMBAT])s->frame=ps->weaponstate;
 }
 
@@ -1620,17 +1621,37 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+ s->otherEntityNum2=ps->qceVehicle;s->otherEntityNum=ps->qceVehicleSeat;s->time=ps->qceVehicleTime;
  if(ps->stats[STAT_QCE_COMBAT])s->frame=ps->weaponstate;
 }
 
 #include "bg_qce_profile.generated.h"
 const qce_materialdef_t *BG_QceMaterialDef(int weapon,int material) {
+ if(weapon==QCE_HOG_TURRET_WEAPON) {
+  static const qce_materialdef_t stop={0},pass={3,0,0,0,0,0,0,0,.7f,0,0,0,0},clear={3,0,0,0,0,0,0,0,0,0,0,0,0},reflect={2,0,0,0,0,0,0,0,0,0,0,0,0};
+  if(material==16)return &reflect; /* jackal shield */
+  if(material==9 || material==19 || material==20 || material==28 || material==29)return &clear;
+  if(material==4 || material==5 || material==6 || material==11 || (material>=13 && material<=15) || material==17 || material==21 || material==23 || material==24)return &pass;
+  return &stop;
+ }
  if(weapon<0 || weapon>=WP_NUM_WEAPONS)weapon=0;if(material<0 || material>=33)material=2;
  return &qce_materialdefs[weapon][material];
 }
 const qce_movementdef_t *BG_QceMovementDef(void) {return &qce_movementdef;}
 const qce_playerdef_t *BG_QcePlayerDef(void) {return &qce_playerdef;}
 const qce_weapondef_t *BG_QceWeaponDef(int weapon) {
+ if(weapon==QCE_HOG_TURRET_WEAPON) {
+  static qce_weapondef_t turret;static qboolean initialized;
+  if(!initialized) {
+   memset(&turret,0,sizeof(turret));turret.damage=16;turret.damage_minimum=16;turret.damage_maximum=24;
+   turret.shield_multiplier=turret.health_multiplier=1;turret.fire_kind=QCE_FIRE_BULLET;
+   turret.projectile_speed=9.766667f*30*80;turret.projectile_final_speed=.33333334f*30*80;
+   turret.projectile_gravity=1;turret.water_gravity=.4f;turret.falloff_end=100*80;turret.water_falloff_end=10*80;
+   turret.rate_min=8;turret.rate_max=15;turret.rate_grow=1000;turret.rate_recover=4000;
+   initialized=qtrue;
+  }
+  return &turret;
+ }
  if(weapon<0 || weapon>=WP_NUM_WEAPONS)weapon=WP_NONE;
  return &qce_weapondefs[weapon];
 }

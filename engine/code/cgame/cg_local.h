@@ -171,7 +171,10 @@ typedef struct centity_s {
 	int				muzzleFlashTime;	// move to playerEntity?
 	int qcePlayerClip,qcePlayerStart,qcePlayerPreviousFrame,qcePlayerRenderedFrame,qcePlayerBlendMs;
  qboolean qcePlayerPoseValid;
-	int qceShieldTime, qceShieldBreak;
+	float qceWheelRoll,qceHogPitch;int qceHogContacts,qceHogImpactTime;int qceWheelTime,qceTireTime,qceEngineOn;
+ int qceVehicleLast,qceVehicleSeatLast,qceVehicleEnterTime,qceVehicleExitTime;
+ float qceSuspension[4],qceTurretRoll,qceTurretYaw,qceTurretPitch,qceRPM;int qceTurretShotTime;
+ int qceShieldTime, qceShieldBreak;
  int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
 	int				previousEvent;
 	int				teleportFlag;
@@ -423,7 +426,7 @@ typedef struct {
  qhandle_t grenadeParticleShaders[3][64];
  int grenadeParticleCounts[3];
  float grenadeParticleWidths[3][64];
- qceViewClip_t playerClips[49];
+ qceViewClip_t playerClips[65];
  sfxHandle_t grenadeLoop,grenadeThrow,grenadeExplode[2],grenadeBounce[2];
 } qceWorldMedia_t;
 extern qceWorldMedia_t cg_qceWorld;
@@ -1433,6 +1436,7 @@ void CG_FireWeapon( centity_t *cent );
 void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, impactSound_t soundType );
 void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum );
 void CG_ShotgunFire( entityState_t *es );
+void CG_Tracer(vec3_t source,vec3_t dest);
 void CG_Bullet( vec3_t origin, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum, qboolean silent );
 
 void CG_RailTrail( clientInfo_t *ci, vec3_t start, vec3_t end );

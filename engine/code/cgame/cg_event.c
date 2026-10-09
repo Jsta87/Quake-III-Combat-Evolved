@@ -1055,13 +1055,15 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
     for(i=0;i<8;i++)if(shots[owner][i]==es->time2 && times[owner][i]>0 && cg.time>=times[owner][i] && cg.time-times[owner][i]<2000)silent=qtrue;
     if(!silent){i=next[owner]++&7;shots[owner][i]=es->time2;times[owner][i]=cg.time;}
    }
+   if(es->weapon==QCE_HOG_TURRET_WEAPON){if(es->generic1)CG_Tracer(es->origin2,es->pos.trBase);owner=-1;}
    CG_Bullet(es->pos.trBase,owner,dir,qfalse,ENTITYNUM_WORLD,silent);
   }
 		break;
 
 	case EV_BULLET_HIT_FLESH:
 		DEBUGNAME("EV_BULLET_HIT_FLESH");
-		CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qtrue, es->eventParm, qfalse );
+		if(es->weapon==QCE_HOG_TURRET_WEAPON && es->generic1)CG_Tracer(es->origin2,es->pos.trBase);
+  CG_Bullet(es->pos.trBase,es->weapon==QCE_HOG_TURRET_WEAPON?-1:es->otherEntityNum,dir,qtrue,es->eventParm,qfalse);
 		break;
 
 	case EV_SHOTGUN:

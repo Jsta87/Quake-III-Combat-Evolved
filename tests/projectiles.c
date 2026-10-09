@@ -44,6 +44,10 @@ int main(void) {
  run(e,16);assert(!damage_calls && e->r.currentOrigin[0]>414 && e->r.currentOrigin[0]<415);
  run(e,8);assert(damage_calls==1 && amount==10); /* Damage occurs after flight, not on trigger press. */
  setup(WP_MACHINEGUN);G_QceFireBullet(&g_entities[0],start,end,WP_MACHINEGUN,MOD_MACHINEGUN,1);e=&g_entities[2];run(e,200);assert(!e->inuse && !damage_calls);
+ setup(WP_MACHINEGUN);wall=500;collisionEntity=1;G_QceFireBullet(&g_entities[0],start,end,QCE_HOG_TURRET_WEAPON,MOD_MACHINEGUN,1);e=&g_entities[2];
+ assert(e->s.pos.trDelta[0]>23439 && e->s.pos.trDelta[0]<23441);run(e,16);assert(!damage_calls);run(e,8);assert(damage_calls==1 && amount>=16 && amount<=24);
+ assert(e->target_ent==&g_entities[1]); /* source flesh passthrough; no instant head kill */
+ setup(WP_MACHINEGUN);G_QceFireBullet(&g_entities[0],start,end,QCE_HOG_TURRET_WEAPON,MOD_MACHINEGUN,1);e=&g_entities[2];run(e,2000);assert(!e->inuse && !damage_calls);
  setup(WP_LIGHTNING);e=fire_plasma(&g_entities[0],start,dir);copy=*e;run(e,80);
  assert(fabs(e->r.currentOrigin[2]-(1000-0.5*256.692913*0.1*0.08*0.08))<0.001);
  level.time=level.previousTime=0;g_entities[3]=copy;for(i=0;i<10;i++)run(&g_entities[3],8);

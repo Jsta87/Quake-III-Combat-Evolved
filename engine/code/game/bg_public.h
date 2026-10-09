@@ -820,6 +820,7 @@ void BG_QceCoolWeapons(playerState_t *ps,int elapsed);
 qboolean BG_QceOverheated(const playerState_t *ps,int weapon);
 void BG_QceHeatShot(playerState_t *ps);
 void BG_QceRayEnd(const vec3_t start, vec3_t end, int weapon);
+#define QCE_HOG_TURRET_WEAPON 32 /* Projectile profile only; never an inventory weapon. */
 const qce_weapondef_t *BG_QceWeaponDef(int weapon);
 const qce_grenadedef_t *BG_QceGrenadeDef(int type);
 const char *BG_QceProfileHash(void);
