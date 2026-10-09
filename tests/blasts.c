@@ -39,5 +39,17 @@ int main(void) {
  GV(GV_GRENADE_DAMAGE)=2;reset(0,1000);VectorSet(g_entities[1].r.currentOrigin,0,0,-4);
  G_QceRadiusDamage(origin,&g_entities[0],100,20,100,40,160,NULL,MOD_QCE_FRAG);assert(g_entities[1].health==800);GV(GV_GRENADE_DAMAGE)=1;
  GV(GV_HEALTH)=0;reset(0,1000);shoot((vec3_t){100,200,300},MOD_MACHINEGUN,100,0);assert(g_entities[1].health==1000);GV(GV_HEALTH)=1;
+ /* Real combat path must transfer blast impulse to non-client vehicles. */
+ reset(0,1000);g_entities[1].client=NULL;g_entities[1].qceVehicle=1;
+ VectorSet(g_entities[1].r.currentOrigin,40,0,-4);
+ G_QceRadiusDamage(origin,&g_entities[0],120,80,120,80,200,NULL,MOD_QCE_FRAG);
+ assert(g_entities[1].qceVehicleVelocity[0]>80 && g_entities[1].qceVehicleVelocity[2]>30);
+ assert(g_entities[1].qceVehicleAngularVelocity[1]>3);
+ VectorClear(g_entities[1].qceVehicleVelocity);VectorClear(g_entities[1].qceVehicleAngularVelocity);
+ G_Damage(&g_entities[1],NULL,&g_entities[0],dir,origin,120,0,MOD_MACHINEGUN);
+ assert(VectorLength(g_entities[1].qceVehicleVelocity)==0 && VectorLength(g_entities[1].qceVehicleAngularVelocity)==0);
+ G_Damage(&g_entities[1],NULL,&g_entities[0],dir,origin,120,DAMAGE_RADIUS|DAMAGE_NO_KNOCKBACK,MOD_QCE_FRAG);
+ assert(VectorLength(g_entities[1].qceVehicleVelocity)==0);
+ blocked=1;G_QceRadiusDamage(origin,&g_entities[0],120,80,120,80,200,NULL,MOD_QCE_FRAG);assert(VectorLength(g_entities[1].qceVehicleVelocity)==0);blocked=0;
  puts("PASS: actual radial damage inner/full strength, minimum-damage falloff, outer cutoff, wall occlusion, direct-hit exclusion, precision ray/head intersection and damage dezoom");return 0;
 }

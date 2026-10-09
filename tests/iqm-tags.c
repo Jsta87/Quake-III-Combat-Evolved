@@ -33,5 +33,15 @@ int main(void) {
  overlay.qceOverlayFrame=999;assert(R_IQMLerpTagRef(&tag,&data,0,1,0.25f,"tag_flash",&overlay));assert(fabs(tag.origin[1])<0.0001);
  overlay.qceOverlayFrame=overlay.qceOverlayOldFrame=2;overlay.qceOverlayWeight=1;poses[4].rotate[2]=poses[4].rotate[3]=sqrtf(0.5f);
  assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_flash",&overlay));assert(fabs(tag.origin[0])<0.0001 && fabs(tag.origin[1]-6)<0.0001);
+ memset(&overlay,0,sizeof(overlay));overlay.qceAimGrid=1;
+ for(i=0;i<4;i++)overlay.qceAimFrames[i]=i;
+ for(i=0;i<8;i++){poses[i].rotate[0]=poses[i].rotate[1]=poses[i].rotate[2]=0;poses[i].rotate[3]=1;VectorClear(poses[i].translate);}
+ poses[2].translate[0]=10;poses[4].translate[1]=20;poses[6].translate[0]=10;poses[6].translate[1]=20;
+ for(i=0;i<4;i++)poses[i*2+1].translate[0]=4;
+ overlay.qceAimYaw=.25f;overlay.qceAimPitch=.5f;
+ assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_flash",&overlay));assert(fabs(tag.origin[0]-6.5f)<.0001 && fabs(tag.origin[1]-10)<.0001);
+ overlay.qceAimPitch=.501f;assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_flash",&overlay));assert(fabs(tag.origin[1]-10.02f)<.0001);
+ overlay.qceAimPitch=1;overlay.qceAimYaw=1;assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_flash",&overlay));assert(fabs(tag.origin[0]-14)<.0001 && fabs(tag.origin[1]-20)<.0001);
+ overlay.qceAimFrames[3]=999;assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_flash",&overlay));assert(fabs(tag.origin[0]-4)<.0001 && fabs(tag.origin[1])<.0001);
  puts("PASS: renderer IQM attachment endpoints, interpolation direction, child bind transforms and missing tags");return 0;
 }

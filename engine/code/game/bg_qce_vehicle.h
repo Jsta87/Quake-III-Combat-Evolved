@@ -3,13 +3,16 @@
 #define BG_QCE_VEHICLE_H
 /* Xbox Blood Gulch vehi vehicles\\warthog\\warthog, build 2276.
  * Retail per-tick speed/acceleration converted at 30 Hz and 80 Quake units/WU.
- * Hull, steering/suspension and health below are prototype tuning, not retail physics. */
+ * Mass points/inertia/friction come from the phys tag; BSP contact queries,
+ * visual suspension and health remain engine adaptations. */
 #define QCE_HOG_FORWARD (0.255f*30*80)
 #define QCE_HOG_REVERSE (0.1f*30*80)
 #define QCE_HOG_ACCEL (0.00275f*30*30*80)
 #define QCE_HOG_BRAKE (0.011f*30*30*80)
 #define QCE_HOG_MODEL "models/qce/halo/warthog.md3"
 #define QCE_HOG_MARKER 0x5143
+typedef struct {vec3_t position;float weight,radius,parallel,perpendicular;int powered,friction,node;} qce_hogpoint_t;
+#include "bg_qce_vehicle_profile.generated.h"
 /* source driver/passenger/gunner exit tracks: 26/30/24 frames at 30 Hz */
 static int QCE_HogExitMS(int seat) {return seat==0?867:seat==1?1000:800;}
 /* QVM has no exp syscall. Reciprocal Taylor approximates 1-exp(-rate*dt). */
@@ -25,6 +28,13 @@ static float QCE_HogSuspensionAngle(int front,float wheelHeight) {
  for(i=0;i<16;i++){mid=(lo+hi)*.5f;z=-dx*sin(DEG2RAD(mid))+dz*cos(DEG2RAD(mid));if((z<wheelHeight)==(front==0))lo=mid;else hi=mid;}
  return (lo+hi)*.5f;
 }
+/* Same world-to-hull aim conversion for authoritative fire and local rendering. */
+static void QCE_HogTurretAim(const vec3_t hullAngles,const vec3_t viewAngles,vec3_t aim) {
+ vec3_t axis[3],forward,local;int i;
+ AnglesToAxis(hullAngles,axis);AngleVectors(viewAngles,forward,NULL,NULL);
+ for(i=0;i<3;i++)local[i]=DotProduct(forward,axis[i]);vectoangles(local,aim);
+ aim[YAW]=AngleNormalize180(aim[YAW]);aim[PITCH]=Com_Clamp(-35,15,AngleNormalize180(aim[PITCH]));aim[ROLL]=0;
+}
 static void QCE_HogTurretTransform(const vec3_t origin,const vec3_t hullAngles,float yaw,float pitch,vec3_t gunOrigin,vec3_t muzzle,vec3_t gunAxis[3]) {
  vec3_t hull[3],turn[3],local[3],base,angles;int i;
  AnglesToAxis(hullAngles,hull);VectorCopy(origin,base);VectorMA(base,-40,hull[0],base);VectorMA(base,35.091f,hull[2],base);
@@ -37,13 +47,7 @@ static float QCE_HogSteer(float vehicleYaw,float mouseYaw) {
  return Com_Clamp(-1,1,AngleSubtract(mouseYaw,vehicleYaw)/30.0f);
 }
 static float QCE_HogThrottle(int forward,int side,int up) {
- return side<0 || up>0?0:forward/127.0f;
-}
-static void QCE_HogContactPlane(const float h[4],vec3_t axis[3],vec3_t normal,float *height) {
- float riseF=((h[1]+h[3])-(h[0]+h[2]))*.5f/104.0f;
- float riseL=((h[2]+h[3])-(h[0]+h[1]))*.5f/60.8f;
- VectorSet(normal,0,0,1);VectorMA(normal,-riseF,axis[0],normal);VectorMA(normal,-riseL,axis[1],normal);
- *height=(h[0]+h[1]+h[2]+h[3])*.25f-riseF*1.6f;
+ return up>0?0:forward/127.0f;
 }
 static float QCE_HogSpeed(float speed,float throttle,float dt) {
  float target=throttle>=0?throttle*QCE_HOG_FORWARD:throttle*QCE_HOG_REVERSE;
@@ -53,10 +57,5 @@ static float QCE_HogSpeed(float speed,float throttle,float dt) {
  else {speed-=step;if(speed<target)speed=target;}
  return speed;
 }
-static void QCE_HogGroundVelocity(const vec3_t forward,float speed,const vec3_t normal,float heightError,vec3_t velocity) {
- float into;
- VectorScale(forward,speed,velocity);into=DotProduct(velocity,normal);
- VectorMA(velocity,-into,normal,velocity);
- velocity[2]+=heightError*8;
-}
+
 #endif

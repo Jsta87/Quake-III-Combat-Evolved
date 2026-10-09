@@ -92,7 +92,7 @@ struct gentity_s {
  int qceAttachEntity, qceAttachSerial, qceAttachSpawn;
  vec3_t qceAttachOffset;
  int qceVehicle,qceRiders[3],qceVehicleTime,qceVehicleRespawn;
- float qceVehicleSpeed;vec3_t qceVehicleVelocity;
+ float qceVehicleSpeed,qceVehicleSteer;vec3_t qceVehicleVelocity,qceVehicleAngularVelocity;
  float qceTurretSpin,qceTurretError,qceVehicleRPM,qceTurretNextShot;vec3_t qceTurretAngles;
  int qceTurretLastShot,qceTurretShots;
 	char		*classname;			// set in QuakeEd
@@ -292,6 +292,7 @@ struct gclient_s {
 	// shotgun blasts give a single big kick
 	int qceShieldNextTick;
  qboolean qcePickupLatched;
+ usercmd_t qceVehicleCmd;
  int qceVehicleExitTime,qceVehicleEnterTime;
  int qceGrenadeReleaseTime,qceGrenadeReleaseType;
  int qceShieldRemainder;

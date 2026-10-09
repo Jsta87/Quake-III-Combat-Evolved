@@ -2701,10 +2701,13 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   float relativePitch=AngleSubtract(cent->lerpAngles[PITCH],car->lerpAngles[PITCH]);
   float yaw=Com_Clamp(0,2,1+AngleSubtract(cent->lerpAngles[YAW],car->lerpAngles[YAW])/90);
   float down=pose==49?45:22,up=pose==49?45:pose==62?45:30;
-  float pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?down:up));int columns=3,x,y,xx;
-  if(pose==51){columns=5;yaw=Com_Clamp(0,4,2+car->currentState.origin2[0]/90);relativePitch=car->currentState.origin2[1];pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?20:35));}
-  x=(int)yaw;y=(int)(pitch+.5f);xx=x<columns-1?x+1:x;
+  float pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?down:up));int columns=3,x,y,xx,yy;
+  if(pose==51){vec3_t aim;CG_QceVehicleAim(car,aim);columns=5;yaw=Com_Clamp(0,4,2+aim[YAW]/90);relativePitch=aim[PITCH];pitch=Com_Clamp(0,2,1-relativePitch/(relativePitch>=0?20:35));}
+  x=(int)yaw;y=(int)pitch;xx=x<columns-1?x+1:x;yy=y<2?y+1:y;
   if(aim->count==(columns==5?16:9)){body.oldframe=aim->first+y*columns+x;body.frame=aim->first+y*columns+xx;body.backlerp=1-(yaw-x);
+   body.qceAimGrid=1;body.qceAimYaw=yaw-x;body.qceAimPitch=pitch-y;
+   body.qceAimFrames[0]=aim->first+y*columns+x;body.qceAimFrames[1]=aim->first+y*columns+xx;
+   body.qceAimFrames[2]=aim->first+yy*columns+x;body.qceAimFrames[3]=aim->first+yy*columns+xx;
    /* Aim keys are absolute baked poses; the renderer overlay channel is additive. */}
  }
  cent->qcePlayerRenderedFrame=body.backlerp>0.5f?body.oldframe:body.frame;
@@ -2729,7 +2732,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  }
  if(!(cent->currentState.eFlags&EF_DEAD) && (!cent->currentState.otherEntityNum2 || cent->currentState.otherEntityNum==1) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
   CG_RegisterWeapon(cent->currentState.weapon);memset(&gun,0,sizeof(gun));gun.hModel=cg_weapons[cent->currentState.weapon].weaponModel;gun.renderfx=body.renderfx;
-  if(trap_R_LerpTag(&hand,body.hModel,body.oldframe,body.frame,1-body.backlerp,"tag_hand")) {
+  if(trap_R_LerpTagRef(&hand,&body,"tag_hand")) {
    VectorCopy(body.origin,gun.origin);
    for(i=0;i<3;i++)VectorMA(gun.origin,hand.origin[i],body.axis[i],gun.origin);
    /* Apply the complete authored grip transform, not just wrist translation. */

@@ -19,6 +19,15 @@ cd Quake-III-Combat-Evolved
 mkdir -p assets/baseq3 assets/halo
 ```
 
+For an existing checkout, fetch the published changes before rebuilding:
+
+```sh
+git checkout work
+git pull --ff-only origin work
+```
+
+Building alone uses your existing local source; it does not download updates.
+
 ## Supply game data
 
 Copy your Quake III Arena `pak0.pk3` through `pak8.pk3` into `assets/baseq3/`.
@@ -146,7 +155,7 @@ QCE_MAP=qce_bloodgulch ./scripts/run-client.sh
 ```
 
 Use E from either side or the rear to enter/exit. Mouse yaw steers, W/S provide
-throttle, and A or Space brakes. Reconvert both packages as described in the
+throttle, and Space brakes. Reconvert both packages as described in the
 vehicle guide to refresh seat animations, moving parts and audio. See [vehicle testing and current limits](VEHICLES.md). This first map
 conversion has no bot navigation. The rear turret now aims and fires; hold attack
 after its boarding animation finishes. Seat exits are animated, and protocol 100

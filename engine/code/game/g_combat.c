@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "g_local.h"
 #include "bg_qce_shield.h"
+#include "bg_qce_vehicle_impulse.h"
 
 
 /*
@@ -926,6 +927,15 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
   qboolean explosive=(dflags&DAMAGE_RADIUS) || mod==MOD_ROCKET || mod==MOD_ROCKET_SPLASH ||
    mod==MOD_QCE_FRAG || mod==MOD_QCE_PLASMA_GRENADE;
   knockback=explosive?knockback/2:0;
+ }
+ /* Halo vehicles receive blast momentum even though they have no client ps.
+    Source Xbox acceleration: Warthog .3, frag/plasma 4, rocket 6. Damage
+    falloff scales the impulse; vehicle_accelerate supplies the tipping torque. */
+ if(targ->qceVehicle && dir && knockback && ((dflags&DAMAGE_RADIUS) || mod==MOD_ROCKET || mod==MOD_QCE_FRAG || mod==MOD_QCE_PLASMA_GRENADE)) {
+  float acceleration=(mod==MOD_ROCKET || mod==MOD_ROCKET_SPLASH)?6:4;
+  float fullDamage=(mod==MOD_ROCKET || mod==MOD_ROCKET_SPLASH)?BG_QceWeaponDef(WP_ROCKET_LAUNCHER)->splash_damage:BG_QceGrenadeDef(mod==MOD_QCE_PLASMA_GRENADE?1:0)->splash_damage;
+  if(fullDamage<=0)fullDamage=120;
+  QCE_HogBlastImpulse(dir,acceleration*.3f*80*Com_Clamp(0,1,damage/fullDamage),targ->qceVehicleVelocity,targ->qceVehicleAngularVelocity);
  }
 	// figure momentum add, even if the damage won't be taken
 	if ( knockback && targ->client ) {

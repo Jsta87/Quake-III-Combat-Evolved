@@ -1201,6 +1201,25 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
 	}
 
 
+ /* Seat aim screens blend four absolute poses across yaw AND pitch. */
+ if(overlay && overlay->qceAimGrid) {
+  int valid=1,k;float x=Com_Clamp(0,1,overlay->qceAimYaw),y=Com_Clamp(0,1,overlay->qceAimPitch);
+  const iqmTransform_t *a,*b,*c,*d;
+  for(k=0;k<4;k++)if(overlay->qceAimFrames[k]<0 || overlay->qceAimFrames[k]>=data->num_frames)valid=0;
+  if(valid) {
+   a=&data->poses[overlay->qceAimFrames[0]*data->num_poses];b=&data->poses[overlay->qceAimFrames[1]*data->num_poses];
+   c=&data->poses[overlay->qceAimFrames[2]*data->num_poses];d=&data->poses[overlay->qceAimFrames[3]*data->num_poses];
+   for(i=0;i<data->num_poses;i++) {
+    quat_t lower,upper;relativeJoint=&relativeJoints[i];
+    for(k=0;k<3;k++) {
+     relativeJoint->translate[k]=(a[i].translate[k]*(1-x)+b[i].translate[k]*x)*(1-y)+(c[i].translate[k]*(1-x)+d[i].translate[k]*x)*y;
+     relativeJoint->scale[k]=(a[i].scale[k]*(1-x)+b[i].scale[k]*x)*(1-y)+(c[i].scale[k]*(1-x)+d[i].scale[k]*x)*y;
+    }
+    QuatSlerp(a[i].rotate,b[i].rotate,x,lower);QuatSlerp(c[i].rotate,d[i].rotate,x,upper);QuatSlerp(lower,upper,y,relativeJoint->rotate);
+   }
+  }
+ }
+
  if(overlay && overlay->qceOverlayWeight>0 && overlay->qceOverlayFrame>=0 && overlay->qceOverlayFrame<data->num_frames &&
     overlay->qceOverlayOldFrame>=0 && overlay->qceOverlayOldFrame<data->num_frames && overlay->qceOverlayJoints>0 && overlay->qceOverlayJoints<=data->num_poses) {
   float weight=Com_Clamp(0,1,overlay->qceOverlayWeight),blend=Com_Clamp(0,1,overlay->qceOverlayBacklerp);

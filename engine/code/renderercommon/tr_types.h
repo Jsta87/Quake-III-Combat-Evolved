@@ -107,6 +107,10 @@ typedef struct {
 	int qceOverlayFrame, qceOverlayOldFrame, qceOverlayJoints;
 	float qceOverlayBacklerp, qceOverlayWeight;
 
+	// QCE absolute four-pose aim screen; independent from additive overlays.
+	int qceAimGrid,qceAimFrames[4];
+	float qceAimYaw,qceAimPitch;
+
 	// texturing
 	int			skinNum;			// inline skin index
 	qhandle_t	customSkin;			// NULL for default skin

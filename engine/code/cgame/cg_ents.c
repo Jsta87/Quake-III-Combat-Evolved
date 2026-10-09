@@ -162,16 +162,26 @@ CG_General
 ==================
 */
 static void CG_General(centity_t *cent);
+/* Stateless, shared by turret parts and gunner pose; no entity draw-order lag. */
+void CG_QceVehicleAim(centity_t *car,vec3_t aim) {
+ float f=car->interpolate?Com_Clamp(0,1,cg.frameInterpolation):0;
+ VectorClear(aim);
+ aim[YAW]=car->currentState.origin2[0]+f*AngleSubtract(car->nextState.origin2[0],car->currentState.origin2[0]);
+ aim[PITCH]=car->currentState.origin2[1]+f*(car->nextState.origin2[1]-car->currentState.origin2[1]);
+ if(cg.predictedPlayerState.qceVehicle==car->currentState.number && cg.predictedPlayerState.qceVehicleSeat==2)
+  QCE_HogTurretAim(car->lerpAngles,cg.predictedPlayerState.viewangles,aim);
+}
 static void CG_Warthog(centity_t *cent) {
  static qhandle_t models[13],dust,rock;static qboolean initialized;static sfxHandle_t engine,start,stop,suspension,fire,rpm[17];
  static const char *names[13]={"body","left-back","left-front","right-back","right-front","wheel","turret-base","turret-gun","turret-barrels","suspension-left-back","suspension-left-front","suspension-right-back","suspension-right-front"};
  static const vec3_t wheels[4]={{-50.4f,30.4f,15.2f},{53.6f,30.4f,15.2f},{-50.4f,-30.4f,15.2f},{53.6f,-30.4f,15.2f}};
  static const vec3_t hinges[4]={{-31.441f,8.846f,18.409f},{34.260f,8.846f,18.015f},{-31.441f,-8.678f,18.409f},{34.260f,-8.678f,18.015f}};
- refEntity_t ent;vec3_t axis[3],local[3],angles,origin,offset,wheelPos[4],gun,muzzle,gunAxis[3],turn[3];int i,j,on=cent->currentState.clientNum&1;
+ refEntity_t ent;vec3_t axis[3],local[3],angles,origin,offset,wheelPos[4],gun,muzzle,gunAxis[3],turn[3],aim;int i,j,on=cent->currentState.clientNum&1;
  float dt=Com_Clamp(0,.1f,(cg.time-cent->qceWheelTime)*.001f),speed=cent->currentState.angles2[1],steer=cent->currentState.angles2[0];
  if(cent->currentState.eFlags&EF_NODRAW){cent->qceEngineOn=0;return;}
  if(!initialized) {
   char path[MAX_QPATH];for(i=0;i<13;i++){Com_sprintf(path,sizeof(path),"models/qce/halo/warthog/%s.md3",names[i]);models[i]=trap_R_RegisterModel(path);}
+  if(!models[6] || !models[7] || !models[8])CG_Printf("Warthog turret parts missing: refresh zz-qce-bloodgulch.pk3 with convert-halo-map.py.\n");
   initialized=qtrue;engine=trap_S_RegisterSound("sound/qce/halo/warthog/engine.wav",qfalse);start=trap_S_RegisterSound("sound/qce/halo/warthog/engine-start.wav",qfalse);stop=trap_S_RegisterSound("sound/qce/halo/warthog/engine-stop.wav",qfalse);suspension=trap_S_RegisterSound("sound/qce/halo/warthog/suspension.wav",qfalse);fire=trap_S_RegisterSound("sound/qce/halo/warthog/turret-fire.wav",qfalse);
   for(i=0;i<17;i++){Com_sprintf(path,sizeof(path),"sound/qce/halo/warthog/engine-rpm-%02d.wav",i);rpm[i]=trap_S_RegisterSound(path,qfalse);}
   dust=trap_R_RegisterShader("qce/warthog/dust");rock=trap_R_RegisterShader("qce/warthog/rock");
@@ -183,12 +193,14 @@ static void CG_Warthog(centity_t *cent) {
  i=(int)Com_Clamp(0,16,cent->qceRPM*16+.5f);if(on)trap_S_AddLoopingSound(cent->currentState.number,cent->lerpOrigin,vec3_origin,rpm[i]?rpm[i]:engine);
  cent->qceWheelRoll=AngleNormalize360(cent->qceWheelRoll+speed*dt*360/80);
  cent->qceTurretRoll=AngleNormalize360(cent->qceTurretRoll+cent->currentState.origin2[2]*2700*dt);
- cent->qceTurretYaw+=AngleSubtract(cent->currentState.origin2[0],cent->qceTurretYaw)*QCE_HogFilter(dt,20);
- cent->qceTurretPitch+=(cent->currentState.origin2[1]-cent->qceTurretPitch)*QCE_HogFilter(dt,20);cent->qceWheelTime=cg.time;
+ CG_QceVehicleAim(cent,aim);cent->qceTurretYaw=aim[YAW];cent->qceTurretPitch=aim[PITCH];cent->qceWheelTime=cg.time;
  AnglesToAxis(cent->lerpAngles,axis);
  QCE_HogTurretTransform(cent->lerpOrigin,cent->lerpAngles,cent->qceTurretYaw,cent->qceTurretPitch,gun,muzzle,gunAxis);
  VectorSet(angles,0,cent->qceTurretYaw,0);AnglesToAxis(angles,local);MatrixMultiply(local,axis,turn);
- if(cent->currentState.time2>cent->qceTurretShotTime){cent->qceTurretShotTime=cent->currentState.time2;if(cg.time-cent->currentState.time2<200)trap_S_StartSound(muzzle,cent->currentState.number,CHAN_WEAPON,fire);}
+ if(cent->currentState.time2>cent->qceTurretShotTime){cent->qceTurretShotTime=cent->currentState.time2;if(cg.time-cent->currentState.time2<200){
+  if(cg.predictedPlayerState.qceVehicle==cent->currentState.number && cg.predictedPlayerState.qceVehicleSeat==2)trap_S_StartLocalSound(fire,CHAN_WEAPON);
+  else trap_S_StartSound(muzzle,cent->currentState.number,CHAN_WEAPON,fire);
+ }}
  for(i=0;i<4;i++) {
   trace_t tr;vec3_t begin,end,delta;float target,depth;
   VectorCopy(cent->lerpOrigin,begin);for(j=0;j<3;j++)VectorMA(begin,wheels[i][j],axis[j],begin);
