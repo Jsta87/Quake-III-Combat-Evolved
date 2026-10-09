@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // active (after loading) gameplay
 
 #include "cg_local.h"
+#include "cg_qce_visual.h"
 #include "../game/bg_qce_aim.h"
 
 #ifdef MISSIONPACK
@@ -2610,7 +2611,7 @@ static void CG_Draw2D(stereoFrame_t stereoFrame)
   centity_t *player=&cg_entities[cg.snap->ps.clientNum];
   if(player->qceShieldTime>cg.time) {
    vec4_t shieldColor={1,0.7f,0.15f,0};
-   shieldColor[3]=(player->qceShieldTime-cg.time)/(player->qceShieldBreak?QCE_SHIELD_BREAK_MS:QCE_SHIELD_HIT_MS)*0.15f;
+   shieldColor[3]=QCE_ShieldFade(player->qceShieldTime-cg.time,player->qceShieldBreak)*0.15f;
    trap_R_SetColor(shieldColor);CG_DrawPic(0,0,640,480,cg_qceWorld.shieldViewShader);trap_R_SetColor(NULL);
   }
  }

@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_players.c -- handle the media and animation for player entities
 #include "cg_local.h"
+#include "cg_qce_visual.h"
 #include "../game/bg_qce_presentation.generated.h"
 #define QCE_ParseRGB CG_PlayerParseRGB
 #include "../qcommon/qce_color.h"
@@ -2665,13 +2666,14 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  case WP_RAILGUN:weaponPose=3;break;case WP_PLASMAGUN:weaponPose=4;break;
  case WP_LIGHTNING:weaponPose=5;break;case WP_BFG:weaponPose=6;break;case WP_GRENADE_LAUNCHER:weaponPose=7;break;default:break;
  }
- pose=kind+i;
+ pose=kind==10?10:kind+i;
  if(kind==8)pose=33+weaponPose;
  else if(kind!=10 && kind!=9 && cent->currentState.frame==WEAPON_RELOADING){pose=41+weaponPose;kind=11;}
- if(cent->qcePlayerClip!=pose || cg.time<cent->qcePlayerStart){
+ if(cent->qcePlayerClip!=pose || cg.time<cent->qcePlayerStart ||
+    (kind==10 && cent->currentState.time2>0 && cent->currentState.time2<=cg.time && cent->qcePlayerStart!=cent->currentState.time2)){
   cent->qcePlayerBlendMs=(kind==0 && cent->qcePlayerClip<33 && cent->qcePlayerClip%11==0)?QCE_IDLE_POSE_BLEND_MS:QCE_POSE_BLEND_MS;
   cent->qcePlayerPreviousFrame=cent->qcePlayerRenderedFrame;
-  cent->qcePlayerClip=pose;cent->qcePlayerStart=cg.time;
+  cent->qcePlayerClip=pose;cent->qcePlayerStart=kind==10?QCE_DeathStart(cg.time,cent->currentState.time2):cg.time;
  }
  memset(&body,0,sizeof(body));body.hModel=cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
  VectorCopy(cent->lerpOrigin,body.origin);body.origin[2]-=24;VectorCopy(body.origin,body.oldorigin);VectorCopy(cent->lerpOrigin,body.lightingOrigin);AnglesToAxis(angles,body.axis);
@@ -2696,7 +2698,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   CG_AddRefEntityWithPowerups(&visor,&cent->currentState,ci->team);
  }
  if(cent->qceShieldTime>cg.time && cg_qceWorld.shieldShader) {
-  refEntity_t shell=body;float fade=(cent->qceShieldTime-cg.time)/(cent->qceShieldBreak?QCE_SHIELD_BREAK_MS:QCE_SHIELD_HIT_MS);
+  refEntity_t shell=body;float fade=QCE_ShieldFade(cent->qceShieldTime-cg.time,cent->qceShieldBreak);
   shell.customSkin=0;shell.customShader=cg_qceWorld.shieldShader;
   shell.shaderRGBA[0]=255;shell.shaderRGBA[1]=180;shell.shaderRGBA[2]=50;shell.shaderRGBA[3]=(byte)(fade*245);
   trap_R_AddRefEntityToScene(&shell);

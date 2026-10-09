@@ -4,6 +4,7 @@
 #include "../engine/code/cgame/cg_local.h"
 #include "../engine/code/qcommon/qce_color.h"
 #include "../engine/code/cgame/cg_halo_present.h"
+#include "../engine/code/cgame/cg_qce_visual.h"
 int main(void) {
  qceViewClip_t clips[QCE_VIEW_CLIPS];
  qceViewPlayback_t p;
@@ -69,6 +70,22 @@ int main(void) {
  QCE_ViewMovement(&p,1300,0,WEAPON_READY);assert(p.moveWeight==0);
  QCE_ViewMovement(&p,1400,1,WEAPON_READY);assert(p.moveWeight==1 && p.moveElapsed==0);
  QCE_ViewMovement(&p,1450,0,WEAPON_FIRING);assert(p.moveWeight==0);
- puts("PASS: reload latching/insertion/cancellation, charge/fire/hot/recovery priority, frame interpolation and once-per-instance sound events");
+ {
+  qceViewPlayback_t a={0},b={0};vec3_t aim={0,0,0};int n;
+  assert(QCE_ShieldFade(584,0)>.97f && QCE_ShieldFade(584,0)<1);
+  assert(QCE_ShieldFade(300,0)==.5f && QCE_ShieldFade(450,1)==.5f);
+  assert(QCE_ShieldFade(-1,0)==0 && QCE_ShieldFade(2000,1)==1);
+  assert(QCE_DeathStart(1000,750)==750 && QCE_DeathStart(2000,750)==750);
+  assert(QCE_DeathStart(1000,0)==1000 && QCE_DeathStart(1000,1001)==1000);
+  QCE_ViewSway(&a,1000,aim);QCE_ViewSway(&b,1000,aim);
+  for(n=1;n<=30;n++){aim[YAW]=n;QCE_ViewSway(&a,1000+n*32,aim);}
+  for(n=1;n<=60;n++){aim[YAW]=n*.5f;QCE_ViewSway(&b,1000+n*16,aim);}
+  assert(a.swayOffset[YAW]>0 && fabs(a.swayOffset[YAW]-b.swayOffset[YAW])<.001f);
+  for(n=1;n<=30;n++)QCE_ViewSway(&a,1960+n*32,aim);
+  assert(fabs(a.swayOffset[YAW])<.001f);
+  QCE_ViewSway(&a,4000,aim);assert(a.swayOffset[YAW]==0); /* pause resets */
+  aim[YAW]=179;QCE_ViewSway(&a,5000,aim);aim[YAW]=-179;QCE_ViewSway(&a,5016,aim);assert(a.swayOffset[YAW]>0); /* wrap */
+ }
+ puts("PASS: persistent shield fade, shared corpse death timeline, frame-independent directional sway, reload latching/insertion/cancellation, charge/fire/hot/recovery priority, frame interpolation and once-per-instance sound events");
  return 0;
 }

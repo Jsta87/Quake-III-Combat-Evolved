@@ -7,6 +7,7 @@ include(utils/set_output_dirs)
 
 set(CGAME_SOURCES
     ${SOURCE_DIR}/cgame/cg_main.c
+    ${SOURCE_DIR}/cgame/cg_qce_visual.c
     ${SOURCE_DIR}/game/bg_misc.c
     ${SOURCE_DIR}/game/bg_pmove.c
     ${SOURCE_DIR}/game/bg_slidemove.c
@@ -37,6 +38,7 @@ set(CGAME_QVM_SOURCES ${SOURCE_DIR}/cgame/cg_syscalls.asm)
 set(GAME_SOURCES
     ${SOURCE_DIR}/game/g_main.c
     ${SOURCE_DIR}/game/g_qce_variant.c
+    ${SOURCE_DIR}/game/g_qce_vehicle.c
     ${SOURCE_DIR}/game/ai_chat.c
     ${SOURCE_DIR}/game/ai_cmd.c
     ${SOURCE_DIR}/game/ai_dmnet.c

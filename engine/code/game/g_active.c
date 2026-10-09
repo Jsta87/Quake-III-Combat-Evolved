@@ -346,7 +346,7 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 		Pmove (&pm);
 	 /* Advance reload insertion before replacing a weapon, including commands
        that cross the insertion time while the pickup key is already held. */
- if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched)G_QceSwapWeapon(ent);
+ if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched && !client->ps.qceVehicle)G_QceSwapWeapon(ent);
 	// save results of pmove
 		VectorCopy( client->ps.origin, ent->s.origin );
 
@@ -852,6 +852,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	if(client->ps.stats[STAT_QCE_COMBAT])client->ps.stats[STAT_QCE_COMBAT]=1|(g_qceMeleeLunge.integer?2:0);
 	if(!(ucmd->buttons&BUTTON_QCE_PICKUP))client->qcePickupLatched=qfalse;
+ G_QceVehicleInput(ent,ucmd);
 
 	client->ps.gravity = g_gravity.value;
 
@@ -961,7 +962,7 @@ void ClientThink_real( gentity_t *ent ) {
 
  /* Advance reload insertion before replacing a weapon, including commands
        that cross the insertion time while the pickup key is already held. */
- if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched)G_QceSwapWeapon(ent);
+ if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched && !client->ps.qceVehicle)G_QceSwapWeapon(ent);
 	// save results of pmove
 	if ( ent->client->ps.eventSequence != oldEventSequence ) {
 		ent->eventTime = level.time;
@@ -983,6 +984,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	VectorCopy (pm.mins, ent->r.mins);
 	VectorCopy (pm.maxs, ent->r.maxs);
+ if(client->ps.qceVehicle){VectorSet(ent->r.mins,-12,-12,-24);VectorSet(ent->r.maxs,12,12,32);ent->r.contents=CONTENTS_BODY;}
 
 	ent->waterlevel = pm.waterlevel;
 	ent->watertype = pm.watertype;
@@ -992,7 +994,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// link entity now, after any personal teleporters have been used
 	trap_LinkEntity (ent);
-	if ( !ent->client->noclip ) {
+	if ( !ent->client->noclip && !client->ps.qceVehicle ) {
 		G_TouchTriggers( ent );
 	}
 

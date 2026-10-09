@@ -478,6 +478,8 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	}
 #endif
 	self->client->ps.pm_type = PM_DEAD;
+ G_QceVehicleRelease(self,qtrue);
+ self->s.time2=level.time; /* Preserve the death timeline when copied into a corpse. */
 
 	if ( attacker ) {
 		killer = attacker->s.number;

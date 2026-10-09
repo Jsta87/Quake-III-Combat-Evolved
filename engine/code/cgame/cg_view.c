@@ -684,7 +684,13 @@ static int CG_CalcViewValues( void ) {
 		}
 	}
 
-	if ( cg.renderingThirdPerson ) {
+	if(ps->qceVehicle) {
+  vec3_t forward,target,mins={-6,-6,-6},maxs={6,6,6};trace_t tr;
+  VectorCopy(ps->origin,cg.refdef.vieworg);cg.refdef.vieworg[2]+=76;
+  AngleVectors(ps->viewangles,forward,NULL,NULL);VectorMA(cg.refdef.vieworg,-250,forward,target);
+  CG_Trace(&tr,cg.refdef.vieworg,mins,maxs,target,ps->clientNum,MASK_SOLID);
+  VectorCopy(tr.endpos,cg.refdef.vieworg);
+ } else if ( cg.renderingThirdPerson ) {
 		// back away from character
 		CG_OffsetThirdPersonView();
 	} else {
@@ -812,7 +818,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// decide on third person view
 	cg.renderingThirdPerson = cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR
-							&& (cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
+							&& (cg_thirdPerson.integer || cg.snap->ps.qceVehicle || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();

@@ -1134,6 +1134,8 @@ netField_t	playerStateFields[] =
 { PSF(qceVariantScale[2]), 13 },
 { PSF(qceVariantFlags), 4 },
 { PSF(qceMaxShield), 10 },
+{ PSF(qceVehicle), GENTITYNUM_BITS },
+{ PSF(qceVehicleSeat), 2 },
 { PSF(qceMaxHeldWeapons), 4 },
 { PSF(qceExtraSlots[0]), 4 },
 { PSF(qceExtraSlots[1]), 4 },

@@ -92,7 +92,7 @@ recovery priority, interpolation and once-per-instance sound scheduling.
 IQM meshes include orthogonal tangents required by OpenGL 2. Renderer tests
 exercise actual IQM tag interpolation in OpenGL 1 and 2, including
 endpoints, reverse interpolation and child bind transforms. Gameplay tests cover
-shotgun phases, interruption, conservation, prediction and protocol-98 state.
+shotgun phases, interruption, conservation, prediction and protocol-99 state.
 
 Native/QVM client and dedicated-server builds pass. Local offscreen runs in
 OpenGL 1 and 2 validate source audio loading,

@@ -1755,7 +1755,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  int i,weapon,selectedByTouch,requested=ent->client->pers.cmd.weapon;
  /* Never drop the old gun while a valid selected gun is still pending. */
  if(requested>WP_GAUNTLET && requested<WP_NUM_WEAPONS && requested!=ps->weapon && BG_QceSlot(ps,requested)>=0)return;
- if(!GV(GV_PICKUP) || !ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
+ if(ps->qceVehicle || !GV(GV_PICKUP) || !ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
     ent->client->noclip || (ps->weaponTime>0 && ps->weaponstate!=WEAPON_RELOADING && ps->weaponstate!=WEAPON_RELOAD_ENTER && ps->weaponstate!=WEAPON_RELOAD_EXIT && ps->weaponstate!=WEAPON_RELOAD_EXIT_EMPTY && ps->weaponstate!=WEAPON_RAISING) || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
  VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
@@ -1875,7 +1875,8 @@ void ClientCommand( int clientNum ) {
 		return;
 	}
 
-	if (Q_stricmp(cmd,"qce_status")==0) {
+	if(!Q_stricmp(cmd,"qce_vehicle_spawn") || !Q_stricmp(cmd,"qce_vehicle_enter") || !Q_stricmp(cmd,"qce_vehicle_exit") || !Q_stricmp(cmd,"qce_vehicle_status"))G_QceVehicleCommand(ent,cmd);
+ else if (Q_stricmp(cmd,"qce_status")==0) {
 		playerState_t *ps=&ent->client->ps;
 		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d error=%d,%d rate=%d,%d battery=%d,%d zoom=%d crouch=%d recovery=%d,%d profile=%s\n\"",
 			ps->stats[STAT_QCE_COMBAT],ps->weapon,BG_QceWeaponName(ps->weapon),ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,

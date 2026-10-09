@@ -1080,6 +1080,7 @@ void ClientSpawn(gentity_t *ent) {
 
 	index = ent - g_entities;
 	client = ent->client;
+ G_QceVehicleRelease(ent,qtrue);
 
 	VectorClear(spawn_origin);
 
@@ -1305,6 +1306,8 @@ void ClientDisconnect( int clientNum ) {
 	if (!ent->client || ent->client->pers.connected == CON_DISCONNECTED) {
 		return;
 	}
+
+	G_QceVehicleRelease(ent,qtrue);
 
 	// stop any following clients
 	for ( i = 0 ; i < level.maxclients ; i++ ) {

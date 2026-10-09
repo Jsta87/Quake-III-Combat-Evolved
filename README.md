@@ -39,7 +39,7 @@ stage native modules and disable pure checking for development. Use
 The latest [combat pass](docs/COMBAT-PRESENTATION.md) adds Halo projectiles/reticles,
 independent RGB visors, up to eight carried weapons, bot grenades/melee and shield effects.
 
-Networking uses QCE protocol **98**. Rebuild both engines and all modules together;
+Networking uses QCE protocol **99**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
 ## Halo assets
@@ -134,3 +134,6 @@ and [source provenance/licensing](docs/UPSTREAM.md). Upstream notices and GPL
 license remain under `engine/`.
 
 Recent playtest fixes and console controls: [PLAYTEST-FIXES.md](docs/PLAYTEST-FIXES.md).
+
+A first drivable Warthog and an offline Blood Gulch test-map converter are now
+available. See [vehicle setup and current prototype limits](docs/VEHICLES.md).

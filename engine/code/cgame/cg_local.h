@@ -404,6 +404,7 @@ typedef struct {
  int weapon, state, clip, start, time, magazine, weaponTime, hot, recoveryStart;
  int soundClip, soundStart, soundPlayed, ejectSequence;
  int moving,moveStart,moveElapsed,moveLastTime;float moveWeight;
+ vec3_t swayAngles,swayOffset;int swayTime,swayValid;
 } qceViewPlayback_t;
 typedef struct {
  int weapon, state, now, magazine, weaponTime, hot, charge, chargeMs;

@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
+#include "cg_qce_visual.h"
 #define QCE_DEFINE_PARTICLE_DATA
 #include "../game/bg_qce_presentation.generated.h"
 #include "cg_halo_present.h"
@@ -1598,6 +1599,9 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
   QCE_ViewFrames(moving,QCE_VIEW_MOVING,view->moveElapsed,0,&gun.qceOverlayOldFrame,&gun.qceOverlayFrame,&gun.qceOverlayBacklerp);
  }
  VectorCopy(cg.refdef.vieworg,gun.origin);VectorCopy(gun.origin,gun.lightingOrigin);AxisCopy(cg.refdef.viewaxis,gun.axis);
+ QCE_ViewSway(view,cg.time,cg.refdefViewAngles);
+ VectorMA(gun.origin,view->swayOffset[YAW],gun.axis[1],gun.origin);
+ VectorMA(gun.origin,-view->swayOffset[PITCH],gun.axis[2],gun.origin);
  VectorMA(gun.origin,cg_gun_x.value,gun.axis[0],gun.origin);
  VectorMA(gun.origin,cg_gun_y.value,gun.axis[1],gun.origin);
  VectorMA(gun.origin,cg_gun_z.value,gun.axis[2],gun.origin);

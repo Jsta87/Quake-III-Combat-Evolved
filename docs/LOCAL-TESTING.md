@@ -103,7 +103,7 @@ still outstanding; see [Weapon presentation](WEAPON-PRESENTATION.md).
 ## Updating and multiplayer
 
 After pulling gameplay changes, rebuild client/server modules together. This
-pass uses QCE protocol **98**, including the larger entity pool and replicated variant traits; older
+pass uses QCE protocol **99**, including the larger entity pool and replicated variant traits; older
 project builds and stock Quake/ioquake3 clients are incompatible. The client build
 also produces a dedicated server, or build it separately with
 `./scripts/build.sh server`. Every participating machine needs its own Quake data
@@ -127,9 +127,24 @@ cvars, save/load, Spartan bot batches and the current large-lobby limits.
 
 ## Combat presentation pass
 
-Reconvert the Halo assets and rebuild both engines/modules for protocol **98**.
+Reconvert the Halo assets and rebuild both engines/modules for protocol **99**.
 Try `set qce_visorRGB "30 160 255"` for a blue visor. Bots always use gold.
 `set gv_maxHeldWeapons 0` followed by `map_restart 0` enables all eight Halo guns;
 `give weapons` fills them when cheats are enabled. Restore `2` and restart for
 normal Halo inventory. See [combat presentation](COMBAT-PRESENTATION.md) for
 behavior, conversion commands, validation and remaining retail-parity limits.
+
+## Blood Gulch and Warthog test
+
+After converting the weapon/player assets, also run:
+
+```sh
+python3 scripts/convert-halo-map.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/map \
+  --pk3 assets/baseq3/zz-qce-bloodgulch.pk3
+QCE_MAP=qce_bloodgulch ./scripts/run-client.sh
+```
+
+Use E to enter/exit a nearby Warthog, WASD to drive and the mouse for its chase
+camera. See [vehicle testing and current limits](VEHICLES.md). This first map
+conversion has no bot navigation, and the vehicle turret is not functional yet.
