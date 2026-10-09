@@ -53,7 +53,11 @@ void DeathmatchScoreboardMessage( gentity_t *ent ) {
 	numSorted = level.numConnectedClients;
 	
 	for (i=0 ; i < numSorted ; i++) {
-		int		ping;
+        int ping;
+        if(i && i%4==0) {
+            trap_SendServerCommand(ent-g_entities,va("scores_chunk %d %d %d %d%s",i-4,4,level.teamScores[TEAM_RED],level.teamScores[TEAM_BLUE],string));
+            string[0]=0;stringlength=0;
+        }
 
 		cl = &level.clients[level.sortedClients[i]];
 
@@ -89,9 +93,8 @@ void DeathmatchScoreboardMessage( gentity_t *ent ) {
 		stringlength += j;
 	}
 
-	trap_SendServerCommand( ent-g_entities, va("scores %i %i %i%s", i, 
-		level.teamScores[TEAM_RED], level.teamScores[TEAM_BLUE],
-		string ) );
+    trap_SendServerCommand(ent-g_entities,va("scores_chunk %d %d %d %d%s",i?((i-1)/4)*4:0,i?((i-1)%4)+1:0,level.teamScores[TEAM_RED],level.teamScores[TEAM_BLUE],string));
+
 }
 
 
@@ -1737,7 +1740,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
  trace_t trace;
  int i,weapon;
  if(!ps->stats[STAT_QCE_COMBAT] || ent->health<=0 || ps->pm_type!=PM_NORMAL ||
-    ent->client->noclip || ps->weaponTime>0 || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
+    ent->client->noclip || (ps->weaponTime>0 && ps->weaponstate!=WEAPON_RELOADING && ps->weaponstate!=WEAPON_RELOAD_ENTER && ps->weaponstate!=WEAPON_RELOAD_EXIT && ps->weaponstate!=WEAPON_RELOAD_EXIT_EMPTY) || ps->persistant[PERS_TEAM]==TEAM_SPECTATOR)return;
  VectorCopy(ps->origin,start);start[2]+=ps->viewheight;
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
   item=&g_entities[i];
@@ -1760,6 +1763,7 @@ void G_QceSwapWeapon(gentity_t *ent) {
   best=item;nearest=distance;
  }
  if(!best)return;
+ if(ps->weaponstate==WEAPON_RELOADING || ps->weaponstate==WEAPON_RELOAD_ENTER || ps->weaponstate==WEAPON_RELOAD_EXIT || ps->weaponstate==WEAPON_RELOAD_EXIT_EMPTY){ps->weaponTime=0;ps->weaponstate=WEAPON_READY;ps->qceReloadCommit=0;}
  weapon=best->item->giTag;
  if((weapon==ps->weapon && BG_QceWeaponDef(weapon)->reload_rounds==0) || !BG_QceCanCarry(ps,weapon)) {
   int oldWeapon=ps->weapon;

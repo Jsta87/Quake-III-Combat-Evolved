@@ -91,16 +91,22 @@ class AnimationTests(unittest.TestCase):
   for index in (-1,10,34):self.assertEqual(a.runtime_loop({'loop_frame':index,'count':10}),0)
  def test_sound_event_aliases_source_frames_and_bounds(self):
   with tempfile.TemporaryDirectory() as tmp:
-   data=bytearray(160);struct.pack_into('<II',data,84,1,120);struct.pack_into('<I',data,132,42)
-   tag={'id':42,'path':'sound\\reload','class':'snd!'}
+   data=bytearray(1024);struct.pack_into('<II',data,84,1,120);struct.pack_into('<I',data,132,42)
+   struct.pack_into('<f',data,240,0.5);struct.pack_into('<II',data,352,1,400)
+   struct.pack_into('<f',data,448,1.0);struct.pack_into('<II',data,460,1,500);struct.pack_into('<f',data,536,1.0)
+   tag={'id':42,'path':'sound\\reload','class':'snd!','offset':200}
    cache=SimpleNamespace(data=data,tags={42:tag},pointer=lambda p,n:p)
-   assets=a.a.Assets(cache,Path(tmp));assets.write('sound/raw.wav',b'fixture',{})
+   assets=a.a.Assets(cache,Path(tmp));assets.write('sound/raw.wav',a.a.wav(struct.pack('<3h',1000,-1000,0),1,22050),{})
    clip={'sound_index':0,'sound_frame':6,'count':30}
    clips=[None]*len(a.ACTIONS);clips[4]=clip
    records=[{'id':42,'range':0,'permutation':0,'outputs':['sound/raw.wav']}]
    events=a.animation_sounds(cache,{'offset':0},clips,assets,records,'machinegun')
    self.assertEqual(events[4]['frame'],6);self.assertEqual(events[4]['source'],tag)
-   self.assertEqual((Path(tmp)/events[4]['outputs'][0]).read_bytes(),b'fixture')
+   with a.a.wave.open(str(Path(tmp)/events[4]['outputs'][0]),'rb') as stream:
+    self.assertEqual(struct.unpack('<3h',stream.readframes(3)),(500,-500,0))
+   raw=(Path(tmp)/'sound/raw.wav').read_bytes()
+   first,_=assets.calibrated_sound(records[0]);second,_=assets.calibrated_sound(records[0])
+   self.assertEqual(first,second);self.assertEqual(raw,(Path(tmp)/'sound/raw.wav').read_bytes())
    self.assertTrue((Path(tmp)/'models/qce/halo/view/machinegun.events').read_text().startswith('2 '+str(len(a.ACTIONS))))
    clip['sound_frame']=30
    with self.assertRaises(a.a.halo.CacheError):a.animation_sounds(cache,{'offset':0},clips,assets,records,'machinegun')

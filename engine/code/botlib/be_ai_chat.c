@@ -243,7 +243,9 @@ void InitConsoleMessageHeap(void)
 
 	if (consolemessageheap) FreeMemory(consolemessageheap);
 	//
-	max_messages = (int) LibVarValue("max_messages", "1024");
+	/* Join/map bursts fan out to every bot's console queue. */
+    max_messages=(int)LibVarValue("maxclients", "8");
+    max_messages=(int)LibVarValue("max_messages",va("%d",1024+max_messages*max_messages*4));
 	consolemessageheap = (bot_consolemessage_t *) GetClearedHunkMemory(max_messages *
 												sizeof(bot_consolemessage_t));
 	consolemessageheap[0].prev = NULL;
@@ -3000,8 +3002,8 @@ void BotShutdownChatAI(void)
 {
 	int i;
 
-	//free all remaining chat states
-	for(i = 0; i < MAX_CLIENTS; i++)
+	//free all remaining chat states (handles are 1..MAX_CLIENTS)
+	for(i = 1; i <= MAX_CLIENTS; i++)
 	{
 		if (botchatstates[i])
 		{

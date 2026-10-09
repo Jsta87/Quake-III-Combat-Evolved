@@ -9,8 +9,20 @@ static void action(playerState_t *ps, int buttons, int weapon, int msec) {
 static void advance(playerState_t *ps,int buttons,int frames) {
  int i;for(i=0;i<frames;i++)action(ps,buttons,WP_MACHINEGUN,16);
 }
+static void reload_interrupt_tests(void) {
+ playerState_t ps,predicted;int i;
+ for(i=0;i<2;i++) {
+  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;BG_QceAddWeapon(&ps,WP_MACHINEGUN,120);BG_QceAddWeapon(&ps,WP_SHOTGUN,24);
+  ps.stats[STAT_QCE_MAG0]=10;action(&ps,BUTTON_QCE_RELOAD,WP_MACHINEGUN,16);
+  if(i)while(ps.qceReloadCommit>0)action(&ps,0,WP_MACHINEGUN,16);
+  predicted=ps;action(&ps,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);action(&predicted,BUTTON_QCE_MELEE,WP_MACHINEGUN,16);
+  assert(!memcmp(&ps,&predicted,sizeof(ps)));assert(ps.weaponstate==WEAPON_MELEEING);
+  assert(BG_QceMagazine(&ps,WP_MACHINEGUN)==(i?60:10));assert(ps.ammo[WP_MACHINEGUN]==120);
+ }
+}
 int main(void) {
  playerState_t ps,predicted;entityState_t item;int seq,i;
+ reload_interrupt_tests();
  init(&ps,0);ps.stats[STAT_QCE_COMBAT]=1;
  assert(BG_QceAddWeapon(&ps,WP_MACHINEGUN,120));
  assert(BG_QceAddWeapon(&ps,WP_SHOTGUN,10));

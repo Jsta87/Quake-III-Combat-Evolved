@@ -288,6 +288,7 @@ struct gclient_s {
 	// shotgun blasts give a single big kick
 	int qceShieldNextTick;
  qboolean qcePickupLatched;
+ int qceGrenadeReleaseTime,qceGrenadeReleaseType;
  int qceShieldRemainder;
 	int			damage_armor;		// damage absorbed by armor
 	int			damage_blood;		// damage taken out of health
@@ -543,6 +544,8 @@ qboolean G_QceGrenadeImpact(gentity_t *ent, trace_t *trace);
 qboolean G_QceRunStuckGrenade(gentity_t *ent);
 void G_QceSwapWeapon(gentity_t *ent);
 void G_QceThrowGrenade(gentity_t *ent, int type);
+void G_QceBeginGrenadeThrow(gentity_t *ent,int type);
+void G_QceUpdateGrenadeRelease(gentity_t *ent);
 qboolean G_QceMelee(gentity_t *ent);
 void G_QceResolveHeadPoint(gentity_t *target,const vec3_t entry,const vec3_t velocity,vec3_t point);
 qboolean G_QceHeadshot(gentity_t *target, const vec3_t point, int mod, int flags);

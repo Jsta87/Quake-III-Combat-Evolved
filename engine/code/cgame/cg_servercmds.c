@@ -65,33 +65,31 @@ CG_ParseScores
 =================
 */
 static void CG_ParseScores( void ) {
-	int		i, powerups;
+	int i, powerups, offset, count, arg;
+ offset=atoi(CG_Argv(1));count=atoi(CG_Argv(2));
+ if(offset<0 || offset>MAX_CLIENTS || count<0 || count>4 || offset+count>MAX_CLIENTS || trap_Argc()!=5+count*14)return;
+ if(offset!=0 && offset!=cg.numScores)return;
+ if(offset==0)memset(cg.scores,0,sizeof(cg.scores));
 
-	cg.numScores = atoi( CG_Argv( 1 ) );
-	if ( cg.numScores > MAX_CLIENTS ) {
-		cg.numScores = MAX_CLIENTS;
-	}
-
-	cg.teamScores[0] = atoi( CG_Argv( 2 ) );
-	cg.teamScores[1] = atoi( CG_Argv( 3 ) );
-
-	memset( cg.scores, 0, sizeof( cg.scores ) );
-	for ( i = 0 ; i < cg.numScores ; i++ ) {
+ cg.numScores=offset+count;
+ cg.teamScores[0]=atoi(CG_Argv(3));cg.teamScores[1]=atoi(CG_Argv(4));
+	for ( i = offset ; i < cg.numScores ; i++ ) {
 		//
-		cg.scores[i].client = atoi( CG_Argv( i * 14 + 4 ) );
-		cg.scores[i].score = atoi( CG_Argv( i * 14 + 5 ) );
-		cg.scores[i].ping = atoi( CG_Argv( i * 14 + 6 ) );
-		cg.scores[i].time = atoi( CG_Argv( i * 14 + 7 ) );
-		cg.scores[i].scoreFlags = atoi( CG_Argv( i * 14 + 8 ) );
-		powerups = atoi( CG_Argv( i * 14 + 9 ) );
-		cg.scores[i].accuracy = atoi(CG_Argv(i * 14 + 10));
-		cg.scores[i].impressiveCount = atoi(CG_Argv(i * 14 + 11));
-		cg.scores[i].excellentCount = atoi(CG_Argv(i * 14 + 12));
-		cg.scores[i].guantletCount = atoi(CG_Argv(i * 14 + 13));
-		cg.scores[i].defendCount = atoi(CG_Argv(i * 14 + 14));
-		cg.scores[i].assistCount = atoi(CG_Argv(i * 14 + 15));
-		cg.scores[i].perfect = atoi(CG_Argv(i * 14 + 16));
-		cg.scores[i].captures = atoi(CG_Argv(i * 14 + 17));
+        arg=(i-offset)*14+5;
+		cg.scores[i].client = atoi( CG_Argv( arg + 0 ) );
+		cg.scores[i].score = atoi( CG_Argv( arg + 1 ) );
+		cg.scores[i].ping = atoi( CG_Argv( arg + 2 ) );
+		cg.scores[i].time = atoi( CG_Argv( arg + 3 ) );
+		cg.scores[i].scoreFlags = atoi( CG_Argv( arg + 4 ) );
+		powerups = atoi( CG_Argv( arg + 5 ) );
+		cg.scores[i].accuracy = atoi(CG_Argv(arg + 6));
+		cg.scores[i].impressiveCount = atoi(CG_Argv(arg + 7));
+		cg.scores[i].excellentCount = atoi(CG_Argv(arg + 8));
+		cg.scores[i].guantletCount = atoi(CG_Argv(arg + 9));
+		cg.scores[i].defendCount = atoi(CG_Argv(arg + 10));
+		cg.scores[i].assistCount = atoi(CG_Argv(arg + 11));
+		cg.scores[i].perfect = atoi(CG_Argv(arg + 12));
+		cg.scores[i].captures = atoi(CG_Argv(arg + 13));
 
 		if ( cg.scores[i].client < 0 || cg.scores[i].client >= MAX_CLIENTS ) {
 			cg.scores[i].client = 0;
@@ -1070,7 +1068,7 @@ static void CG_ServerCommand( void ) {
 	}
 #endif
 
-	if ( !strcmp( cmd, "scores" ) ) {
+	if ( !strcmp( cmd, "scores_chunk" ) ) {
 		CG_ParseScores();
 		return;
 	}

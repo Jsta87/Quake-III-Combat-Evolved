@@ -305,6 +305,17 @@ qboolean CG_DrawOldScoreboard( void ) {
 	}
 
 
+ if(cg.numScores>SB_MAXCLIENTS_INTER) {
+  int page=cg_qceScorePage.integer,pages=(cg.numScores+15)/16;
+  if(page<0){page=0;for(i=0;i<cg.numScores;i++)if(cg.scores[i].client==cg.snap->ps.clientNum)page=i/16;}
+  page%=pages;
+  CG_DrawSmallStringColor(112,86,va("SCORE  PING TIME NAME    Page %d/%d",page+1,pages),fadeColor);
+  localClient=qfalse;
+  for(i=page*16;i<cg.numScores && i<(page+1)*16;i++)CG_DrawClientScore(118+(i-page*16)*16,&cg.scores[i],fadeColor,fade,qfalse);
+  CG_DrawSmallStringColor(112,390,"qce_scorepage +/-1: change page; auto: your rank",fadeColor);
+  if(!localClient)for(i=0;i<cg.numScores;i++)if(cg.scores[i].client==cg.snap->ps.clientNum)CG_DrawClientScore(410,&cg.scores[i],fadeColor,fade,qfalse);
+  return qtrue;
+ }
 	// fragged by ... line
 	if ( cg.killerName[0] ) {
 		s = va("Fragged by %s", cg.killerName );

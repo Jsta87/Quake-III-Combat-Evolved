@@ -1538,6 +1538,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+ if(ps->stats[STAT_QCE_COMBAT])s->frame=ps->weaponstate;
 }
 
 /*
@@ -1618,6 +1619,7 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+ if(ps->stats[STAT_QCE_COMBAT])s->frame=ps->weaponstate;
 }
 
 #include "bg_qce_profile.generated.h"

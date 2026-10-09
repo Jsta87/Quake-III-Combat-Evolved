@@ -434,8 +434,11 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 	// clear pak references
 	FS_ClearPakReferences(0);
 
-	// allocate the snapshot entities on the hunk
-	svs.snapshotEntities = Hunk_Alloc( sizeof(entityState_t)*svs.numSnapshotEntities, h_high );
+	/* Large rosters must not exhaust the fixed map hunk. This ring has an
+       explicit lifetime: replace on map load and free on server shutdown. */
+    free(svs.snapshotEntities);
+    svs.snapshotEntities=calloc((size_t)svs.numSnapshotEntities,sizeof(entityState_t));
+    if(!svs.snapshotEntities)Com_Error(ERR_DROP,"Cannot allocate snapshot history for %d clients",sv_maxclients->integer);
 	svs.nextSnapshotEntities = 0;
 
 	// toggle the server bit so clients can detect that a
@@ -769,6 +772,7 @@ void SV_Shutdown( char *finalmsg ) {
 		
 		Z_Free(svs.clients);
 	}
+	free(svs.snapshotEntities);
 	Com_Memset( &svs, 0, sizeof( svs ) );
 
 	Cvar_Set( "sv_running", "0" );

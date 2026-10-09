@@ -783,6 +783,7 @@ typedef struct {
  float spread_max;
  int spread_grow, spread_recover;
  float projectile_final_speed, falloff_start, falloff_end;
+ int reload_commit_ms, reload_empty_commit_ms;
  int reload_enter_ms, reload_exit_ms, reload_exit_empty_ms;
  float damage_minimum, damage_maximum, splash_inner, projectile_gravity, water_gravity, water_falloff_start, water_falloff_end;
  float rate_min, rate_max;

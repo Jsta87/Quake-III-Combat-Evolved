@@ -290,7 +290,7 @@ def animated_iqm(surfaces,bones,bind_world,local_frames,skin_groups,attached,gun
 
 def markers(cache,assets,tag):
     result = []
-    aliases = {'primary trigger':'tag_flash','secondary trigger':'tag_flash2','primary ejection':'tag_eject','secondary ejection':'tag_eject2','flashlight':'tag_light'}
+    aliases = {'primary trigger':'tag_flash','secondary trigger':'tag_flash2','primary ejection':'tag_eject','secondary ejection':'tag_eject2','flashlight':'tag_light','right hand':'tag_hand'}
     for m in assets.reflexive('Model','markers',tag['offset'],'ModelMarker'):
         source = cache.cstring(m,32)
         if source not in aliases:continue
@@ -373,10 +373,16 @@ def materials(cache,assets,models):
                                 if source:maps.append(('map',source))
                     if shader['class']=='sgla':maps.sort(key=lambda item:item[0]!='diffuse map')
                 source = next((t for k,t in maps if (assets.output/f'textures/qce/halo/{a.safe_name(t["path"])}/000.tga').exists()),None)
-                path = f'textures/qce/halo/{a.safe_name(source["path"])}/000.tga' if source else '$whiteimage'
+                path = f'textures/qce/halo/{a.safe_name(source["path"])}/000.tga' if source else 'textures/qce/material/transparent.tga'
+                if not source and path not in assets.files:assets.write(path,a.tga(1,1,bytes(4)),{'purpose':'unsupported transparent layer is invisible'})
                 # First-layer presentation only; do not invent GPU combiner equations.
                 blend = 'blend' if shader['class']=='sgla' else 'add'
-                text.append(f'{name}\n{{\n cull none\n {{ map {path}\n blendFunc {blend}\n rgbGen identity }}\n}}\n')
+                color='identity'
+                if shader['class']=='smet':
+                    fields=a.LAYOUT['structs'][kind]['fields']
+                    rgb=struct.unpack_from('<3f',cache.data,shader['offset']+fields['background color']['offset'])
+                    color='const ( '+' '.join(f'{x:g}' for x in rgb)+' )'
+                text.append(f'{name}\n{{\n cull none\n {{ map {path}\n blendFunc {blend}\n rgbGen {color} }}\n}}\n')
                 records.append({'shader':shader['path'],'class':shader['class'],'source_maps':maps,'runtime_shader':name,'status':'first-layer transparent approximation','approximations':['Halo register combiners/glass equations/meter value/numeric counter animation pending']});continue
             o = shader['offset'];f = a.LAYOUT['structs']['ShaderModel']['fields']
             def value(key):
@@ -416,6 +422,26 @@ def materials(cache,assets,models):
             if spec and brightness>0:
                 stages.append(f' {{ map {spec_path}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen const ( {brightness:g} {brightness:g} {brightness:g} )\n alphaGen lightingSpecular\n }}')
                 approximations.append('Quake specular lobe; view-dependent Halo cubemap reflection deferred')
+            reflection=value('reflection cube map')
+            if reflection and brightness>0 and shader['path'].endswith('\\visor'):
+                cube=f'textures/qce/halo/{a.safe_name(reflection["path"])}'
+                faces=[read_tga(assets.output/(cube+f'/000_face{i}.tga')) for i in range(6)]
+                import math
+                ew,eh=256,128;pixels=bytearray()
+                for y in range(eh):
+                    latitude=math.pi*(y+0.5)/eh
+                    for x in range(ew):
+                        longitude=2*math.pi*(x+0.5)/ew
+                        d=(math.sin(latitude)*math.cos(longitude),math.sin(latitude)*math.sin(longitude),math.cos(latitude))
+                        axis=max(range(3),key=lambda i:abs(d[i]));v=d[axis]
+                        face=axis*2+(v<0)
+                        uv=((-d[2],-d[1]) if axis==0 and v>0 else (d[2],-d[1]) if axis==0 else (d[0],d[2]) if axis==1 and v>0 else (d[0],-d[2]) if axis==1 else (d[0],-d[1]) if v>0 else (-d[0],-d[1]))
+                        w,h,data=faces[face];u=max(0,min(w-1,int((uv[0]/abs(v)+1)*0.5*w)));t=max(0,min(h-1,int((uv[1]/abs(v)+1)*0.5*h)))
+                        pixels.extend(data[(t*w+u)*4:(t*w+u)*4+4])
+                env=f'textures/qce/material/{shader["id"]:08x}_env.tga'
+                if env not in assets.files:assets.write(env,a.tga(ew,eh,pixels),{'source':reflection,'approximation':'2D environment projection of source cubemap'})
+                stages.append(f' {{ map {env}\n tcGen environment\n blendFunc add\n rgbGen const ( {brightness:g} {brightness:g} {brightness:g} )\n }}')
+                approximations.append('2D environment mapping approximates Halo cubemap reflection')
             text.append(name+'\n{\n '+('cull none' if flags&2 else '')+'\n'+'\n'.join(stages)+'\n}\n')
             parameters = {k:value(k) for k in ('shader model flags','detail function','detail mask','detail map scale','detail map v scale','perpendicular brightness','parallel brightness','perpendicular tint color','parallel tint color','animation period','animation color lower bound','animation color upper bound','map u scale','map v scale')}
             records.append({'shader':shader['path'],'id':shader['id'],'parameters':parameters,'channel_order':'Xbox RGBA specular/illumination/color-change/auxiliary','approximations':approximations,'runtime_shader':name})
@@ -469,7 +495,8 @@ def animation_sounds(cache,graph,clips,assets,records,runtime,overrides=None):
             candidates=[r for r in records if r['id']==source['id'] and 'permutation' in r and r['range']==0]
             for i,record in enumerate(candidates[:4]):
                 path=f'sound/qce/halo/events/{runtime}/{action}{i+1}.wav'
-                assets.files.pop(path,None);assets.write(path,(assets.output/record['outputs'][0]).read_bytes(),{'alias_of':record['outputs'][0],'source_event_frame':frame})
+                audio,calibration=assets.calibrated_sound(record)
+                assets.files.pop(path,None);assets.write(path,audio,{'alias_of':record['outputs'][0],'source_event_frame':frame,'calibration':calibration})
                 outputs.append(path)
         events.append({'action':action,'frame':frame,'source':source,'outputs':outputs,'loop':bool(override and override['loop']),'binding':override.get('binding') if override else None})
     path=f'models/qce/halo/view/{runtime}.events'

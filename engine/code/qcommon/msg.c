@@ -1085,6 +1085,8 @@ netField_t	playerStateFields[] =
 { PSF(qceOverheatTime[1]), 20 },
 { PSF(qceZoom), 3 },
 { PSF(qceCrouch), 14 },
+{ PSF(qceReloadCommit), -21 },
+{ PSF(qceReloadEmpty), 1 },
 { PSF(qceError[0]), 14 },
 { PSF(qceError[1]), 14 },
 { PSF(qceErrorRemainder[0]), -16 },

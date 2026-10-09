@@ -354,7 +354,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_GAUNTLET": {
       "name": "gauntlet_placeholder",
@@ -430,7 +432,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_MACHINEGUN": {
       "name": "halo_assault_rifle",
@@ -506,7 +510,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1767,
+      "reload_empty_commit_ms": 1767
     },
     "WP_SHOTGUN": {
       "name": "halo_shotgun",
@@ -582,7 +588,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 500,
       "reload_exit_ms": 800,
-      "reload_exit_empty_ms": 1400
+      "reload_exit_empty_ms": 1400,
+      "reload_commit_ms": 400,
+      "reload_empty_commit_ms": 400
     },
     "WP_GRENADE_LAUNCHER": {
       "name": "halo_needler",
@@ -658,7 +666,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 2300,
+      "reload_empty_commit_ms": 2300
     },
     "WP_ROCKET_LAUNCHER": {
       "name": "halo_rocket_launcher",
@@ -734,7 +744,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 2333,
+      "reload_empty_commit_ms": 2800
     },
     "WP_LIGHTNING": {
       "name": "halo_plasma_pistol",
@@ -810,7 +822,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_RAILGUN": {
       "name": "halo_sniper_rifle",
@@ -886,7 +900,9 @@
       "scoped_error": 1,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1867,
+      "reload_empty_commit_ms": 1833
     },
     "WP_PLASMAGUN": {
       "name": "halo_plasma_rifle",
@@ -962,7 +978,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_BFG": {
       "name": "halo_pistol",
@@ -1038,7 +1056,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1367,
+      "reload_empty_commit_ms": 1300
     },
     "WP_GRAPPLING_HOOK": {
       "name": "grappling_hook_placeholder",
@@ -1114,7 +1134,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_NAILGUN": {
       "name": "nailgun_placeholder",
@@ -1190,7 +1212,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_PROX_LAUNCHER": {
       "name": "prox_launcher_placeholder",
@@ -1266,7 +1290,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     },
     "WP_CHAINGUN": {
       "name": "chaingun_placeholder",
@@ -1342,7 +1368,9 @@
       "scoped_error": 0,
       "reload_enter_ms": 0,
       "reload_exit_ms": 0,
-      "reload_exit_empty_ms": 0
+      "reload_exit_empty_ms": 0,
+      "reload_commit_ms": 1500,
+      "reload_empty_commit_ms": 1500
     }
   },
   "grenades": [

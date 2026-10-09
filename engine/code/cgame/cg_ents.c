@@ -329,10 +329,11 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	// increase the size of the weapons when they are presented as items
-	if ( item->giType == IT_WEAPON && !cg.snap->ps.stats[STAT_QCE_COMBAT] ) {
-		VectorScale( ent.axis[0], 1.5, ent.axis[0] );
-		VectorScale( ent.axis[1], 1.5, ent.axis[1] );
-		VectorScale( ent.axis[2], 1.5, ent.axis[2] );
+	if ( item->giType == IT_WEAPON ) {
+        float scale=cg.snap->ps.stats[STAT_QCE_COMBAT]?Com_Clamp(0.5f,3.0f,cg_qceWorldWeaponScale.value):1.5f;
+		VectorScale( ent.axis[0], scale, ent.axis[0] );
+		VectorScale( ent.axis[1], scale, ent.axis[1] );
+		VectorScale( ent.axis[2], scale, ent.axis[2] );
 		ent.nonNormalizedAxes = qtrue;
 #ifdef MISSIONPACK
 		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.weaponHoverSound );
@@ -430,7 +431,8 @@ static void CG_Missile( centity_t *cent ) {
   ent.hModel=cg_qceWorld.grenadeModels[type];
   if(!ent.hModel)ent.hModel=cg_weapons[WP_GRENADE_LAUNCHER].missileModel;
   VectorCopy(cent->lerpOrigin,ent.origin);VectorCopy(ent.origin,ent.oldorigin);
-  VectorSet(cent->lerpAngles,cg.time*0.3f,cg.time*0.2f,0);AnglesToAxis(cent->lerpAngles,ent.axis);
+  if(s1->pos.trType!=TR_STATIONARY)VectorSet(cent->lerpAngles,(cg.time-s1->pos.trTime)*0.3f,(cg.time-s1->pos.trTime)*0.2f,0);
+  else VectorCopy(s1->angles,cent->lerpAngles);AnglesToAxis(cent->lerpAngles,ent.axis);
   memset(ent.shaderRGBA,255,4);ent.renderfx=RF_NOSHADOW;trap_R_AddRefEntityToScene(&ent);
   if(type) {
    trap_R_AddLightToScene(ent.origin,100,0.1f,0.4f,1);

@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // perform the server side effects of a weapon firing
 
 #include "g_local.h"
+#include "bg_qce_presentation.generated.h"
 
 static	float	s_quadFactor;
 static float s_qceSpread;
@@ -1178,16 +1179,37 @@ void G_StartKamikaze( gentity_t *ent ) {
 }
 #endif
 
-/* Prototype hand grenade: Quake grenade model, fuse, damage and bounce. */
+void G_QceBeginGrenadeThrow(gentity_t *ent,int type) {
+ gclient_t *client=ent->client;
+ if(!client || !client->ps.stats[STAT_QCE_COMBAT] || client->qceGrenadeReleaseTime)return;
+ client->qceGrenadeReleaseType=type==1?1:0;
+ client->qceGrenadeReleaseTime=level.time+QCE_GRENADE_RELEASE_MS;
+}
+void G_QceUpdateGrenadeRelease(gentity_t *ent) {
+ gclient_t *client=ent->client;
+ if(!client || !client->qceGrenadeReleaseTime)return;
+ if(client->sess.sessionTeam==TEAM_SPECTATOR || !client->ps.stats[STAT_QCE_COMBAT]) {
+  client->qceGrenadeReleaseTime=0;return;
+ }
+ if(ent->health>0 && level.time<client->qceGrenadeReleaseTime)return;
+ /* Death releases an in-hand grenade prematurely, rather than deleting it. */
+ G_QceThrowGrenade(ent,client->qceGrenadeReleaseType);
+ client->qceGrenadeReleaseTime=0;
+}
+
+/* Source grenade release: current camera position/aim, then imported projectile physics. */
 void G_QceThrowGrenade(gentity_t *ent, int type) {
  vec3_t dir,side,vertical,start;
  gentity_t *grenade;
  trace_t trace;
  const qce_grenadedef_t *def=BG_QceGrenadeDef(type);
  AngleVectors(ent->client->ps.viewangles,dir,side,vertical);
- CalcMuzzlePoint(ent,dir,side,vertical,start);
  VectorCopy(ent->client->ps.origin,start);start[2]+=ent->client->ps.viewheight;
- VectorMA(start,BG_QceMovementDef()->grenade_up,vertical,start);
+ /* Retail constructs this lateral basis with world-up cross aim. The
+    globals tag has origin [0, .05, 0]; its j component is lateral here. */
+ VectorSet(vertical,0,0,1);CrossProduct(vertical,dir,side);
+ if(VectorNormalize(side)==0)VectorSet(side,0,0,1);
+ VectorMA(start,BG_QceMovementDef()->grenade_up,side,start);
  trap_Trace(&trace,ent->client->ps.origin,NULL,NULL,start,ent->s.number,MASK_SHOT);
  VectorCopy(trace.endpos,start);
  grenade=fire_grenade(ent,start,dir);
@@ -1200,7 +1222,15 @@ void G_QceThrowGrenade(gentity_t *ent, int type) {
  grenade->s.weapon=type==1?WP_PLASMAGUN:WP_GRENADE_LAUNCHER;
  grenade->s.generic1=type+1;
  grenade->s.eFlags=def->sticky?0:EF_BOUNCE_HALF;
- VectorScale(dir,def->throw_speed,grenade->s.pos.trDelta);SnapVector(grenade->s.pos.trDelta);
+ {float speed=def->throw_speed;
+  if(ent->client->qceGrenadeReleaseTime>level.time) {
+   float power=1.0f-(ent->client->qceGrenadeReleaseTime-level.time)/(float)QCE_GRENADE_RELEASE_MS;
+   if(power<0)power=0;
+   /* Retail premature-release fallback is .02-.0466667 units per 30-Hz tick. */
+   speed=speed*power+(48.0f+random()*64.0f)*(1-power);
+  }
+  VectorScale(dir,speed,grenade->s.pos.trDelta);SnapVector(grenade->s.pos.trDelta);
+ }
 }
 
 /* Server-authoritative prototype strike; values are not measured Halo data. */

@@ -1,0 +1,74 @@
+{
+  "source_sha256": "50fe52406f075d975e24100a65b26ff696458023dd3509878953052ab0ef858f",
+  "status": "presentation estimate; retail notification parity pending",
+  "weapons": {
+    "WP_MACHINEGUN": {
+      "first-person reload-full": {
+        "frame": 53,
+        "count": 87,
+        "ms": 1767,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      }
+    },
+    "WP_SHOTGUN": {
+      "first-person reload-empty": {
+        "frame": 11,
+        "count": 12,
+        "ms": 367,
+        "method": "completion fallback (no magazine return track)"
+      }
+    },
+    "WP_GRENADE_LAUNCHER": {
+      "first-person reload-full": {
+        "frame": 69,
+        "count": 70,
+        "ms": 2300,
+        "method": "completion fallback (no magazine return track)"
+      }
+    },
+    "WP_ROCKET_LAUNCHER": {
+      "first-person reload-empty": {
+        "frame": 84,
+        "count": 125,
+        "ms": 2800,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      },
+      "first-person reload-full": {
+        "frame": 70,
+        "count": 111,
+        "ms": 2333,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      }
+    },
+    "WP_LIGHTNING": {},
+    "WP_RAILGUN": {
+      "first-person reload-empty": {
+        "frame": 55,
+        "count": 94,
+        "ms": 1833,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      },
+      "first-person reload-full": {
+        "frame": 56,
+        "count": 83,
+        "ms": 1867,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      }
+    },
+    "WP_PLASMAGUN": {},
+    "WP_BFG": {
+      "first-person reload-empty": {
+        "frame": 39,
+        "count": 67,
+        "ms": 1300,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      },
+      "first-person reload-full": {
+        "frame": 41,
+        "count": 65,
+        "ms": 1367,
+        "method": "magazine returns within 2.5% of maximum excursion from seated final pose"
+      }
+    }
+  }
+}

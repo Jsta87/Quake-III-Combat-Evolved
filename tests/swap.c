@@ -8,6 +8,8 @@ vmCvar_t g_gametype;
 static gclient_t client;
 static gentity_t drop;
 static int drops,pickups,selects,wall,expectedWeapon=WP_SHOTGUN;
+static int scoreTest,scoreSeen;
+static gclient_t scoreClients[MAX_CLIENTS];
 void QDECL Com_Printf(const char *fmt,...) {(void)fmt;}
 void QDECL Com_Error(int n,const char *fmt,...) {(void)n;(void)fmt;abort();}
 void trap_Trace(trace_t *tr,const vec3_t start,const vec3_t mins,const vec3_t maxs,const vec3_t end,int pass,int mask) {
@@ -22,7 +24,17 @@ void Touch_Item(gentity_t *item,gentity_t *other,trace_t *trace) {
  assert(BG_QceAddWeapon(&other->client->ps,item->item->giTag,10));pickups++;
  item->r.contents=0;
 }
-void trap_SendServerCommand(int n,const char *text) {assert(n==0 && !strcmp(text,va("qce_select %d",expectedWeapon)));selects++;}
+void trap_SendServerCommand(int n,const char *text) {
+ if(scoreTest) {
+  int offset,count,red,blue,pos,i,j;char *next;
+  assert(strlen(text)<MAX_STRING_CHARS);assert(sscanf(text,"scores_chunk %d %d %d %d%n",&offset,&count,&red,&blue,&pos)==4);
+  assert(offset==scoreSeen && count>=0 && count<=4);next=(char*)text+pos;
+  for(i=0;i<count;i++)for(j=0;j<14;j++){long value=strtol(next,&next,10);if(j==0)assert(value==scoreSeen+i);}
+  assert(!*next);scoreSeen+=count;return;
+ }
+ assert(n==0 && !strcmp(text,va("qce_select %d",expectedWeapon)));selects++;
+}
+
 static void setup(void) {
  gentity_t *ent=&g_entities[0],*item=&g_entities[MAX_CLIENTS];
  memset(g_entities,0,sizeof(g_entities));memset(&client,0,sizeof(client));memset(&level,0,sizeof(level));
@@ -34,7 +46,22 @@ static void setup(void) {
  item->item=BG_FindItemForWeapon(WP_SHOTGUN);item->s.modelindex=item->item-bg_itemlist;
  VectorSet(item->r.currentOrigin,40,0,0);
 }
+static void score_tests(void) {
+ int cases[]={0,1,4,5,128},i,j;
+ setup();level.clients=scoreClients;scoreTest=1;
+ for(i=0;i<5;i++) {
+  level.numConnectedClients=cases[i];scoreSeen=0;
+  for(j=0;j<cases[i];j++){level.sortedClients[j]=j;scoreClients[j].ps.persistant[PERS_SCORE]=-2147483647;scoreClients[j].pers.connected=CON_CONNECTED;}
+  DeathmatchScoreboardMessage(&g_entities[0]);assert(scoreSeen==cases[i]);
+ }
+ scoreTest=0;
+}
 int main(void) {
+ score_tests();
+ setup();client.ps.weaponstate=WEAPON_RELOADING;client.ps.weaponTime=2000;G_QceSwapWeapon(&g_entities[0]);assert(pickups==1 && drops==1 && drop.qceDroppedMagazine==13);
+ setup();BG_QceReload(&client.ps);client.ps.weaponstate=WEAPON_RELOADING;client.ps.weaponTime=2000;client.ps.qceReloadCommit=-1;G_QceSwapWeapon(&g_entities[0]);assert(drop.qceDroppedMagazine==46 && drop.count==45);
+ setup();client.ps.weaponstate=WEAPON_RELOADING;client.ps.weaponTime=2000;wall=1;G_QceSwapWeapon(&g_entities[0]);assert(!pickups && client.ps.weaponstate==WEAPON_RELOADING);
+
  setup();G_QceSwapWeapon(&g_entities[0]);
  assert(drops==1 && pickups==1 && selects==1 && client.ps.weapon==WP_SHOTGUN);
  assert(client.qcePickupLatched);

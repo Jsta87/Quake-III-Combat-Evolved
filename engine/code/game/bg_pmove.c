@@ -1661,6 +1661,13 @@ static void PM_Weapon( void ) {
 		pm->ps->weaponTime -= pml.msec;
 	}
 
+ if(pm->ps->stats[STAT_QCE_COMBAT] && pm->ps->weaponstate==WEAPON_RELOADING && pm->ps->qceReloadCommit>0) {
+  pm->ps->qceReloadCommit-=pml.msec;
+  if(pm->ps->qceReloadCommit<=0){BG_QceReload(pm->ps);pm->ps->qceReloadCommit=-1;}
+ }
+ if(pm->ps->stats[STAT_QCE_COMBAT] && PM_QceReloading() && (pm->cmd.buttons&BUTTON_QCE_MELEE) && !(pm->ps->stats[STAT_QCE_GRENADES]&QCE_MELEE_HELD)) {
+  pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;pm->ps->qceReloadCommit=0;
+ }
  if(pm->ps->stats[STAT_QCE_COMBAT] && pm->ps->weaponstate==WEAPON_MELEEING &&
     (pm->ps->stats[STAT_QCE_GRENADES]&32) &&
     pm->ps->weaponTime<=BG_QceWeaponDef(pm->ps->weapon)->melee_ms-BG_QceWeaponDef(pm->ps->weapon)->melee_impact_ms) {
@@ -1674,7 +1681,7 @@ static void PM_Weapon( void ) {
  /* A carried-weapon switch cancels reload without granting uninserted ammunition. */
  if(pm->ps->stats[STAT_QCE_COMBAT] && PM_QceReloading() && pm->cmd.weapon!=pm->ps->weapon &&
     pm->cmd.weapon>WP_NONE && pm->cmd.weapon<WP_NUM_WEAPONS && (pm->ps->stats[STAT_WEAPONS]&(1<<pm->cmd.weapon))) {
-  pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;
+  pm->ps->weaponstate=WEAPON_READY;pm->ps->weaponTime=0;pm->ps->qceReloadCommit=0;
  }
 	// check for weapon change
 	// can't change if weapon is firing, but can change
@@ -1714,7 +1721,8 @@ static void PM_Weapon( void ) {
    pm->ps->weaponstate=WEAPON_READY;return;
   }
 		if (pm->ps->weaponstate == WEAPON_RELOADING) {
-			BG_QceReload(pm->ps);
+			if(pm->ps->qceReloadCommit>=0)BG_QceReload(pm->ps);
+   pm->ps->qceReloadCommit=0;
    if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceCanReload(pm->ps)) {
     pm->ps->weaponTime=BG_QceWeaponDef(pm->ps->weapon)->reload_ms;
     return;
@@ -1760,6 +1768,9 @@ static void PM_Weapon( void ) {
 			return;
 		}
 		if (BG_QceCanReload(pm->ps) && ((pm->cmd.buttons & BUTTON_QCE_RELOAD) || ((pm->cmd.buttons & BUTTON_ATTACK) && !BG_QceMagazine(pm->ps,pm->ps->weapon)))) {
+   const qce_weapondef_t *reloadDef=BG_QceWeaponDef(pm->ps->weapon);
+   pm->ps->qceReloadEmpty=BG_QceMagazine(pm->ps,pm->ps->weapon)==0;
+   pm->ps->qceReloadCommit=reloadDef->reload_rounds>1?(pm->ps->qceReloadEmpty?reloadDef->reload_empty_commit_ms:reloadDef->reload_commit_ms):0;
 			pm->ps->weaponstate=WEAPON_RELOADING;
 			pm->ps->weaponTime=BG_QceMagazine(pm->ps,pm->ps->weapon)>0?BG_QceWeaponDef(pm->ps->weapon)->reload_ms:BG_QceWeaponDef(pm->ps->weapon)->reload_empty_ms;
    if(BG_QceWeaponDef(pm->ps->weapon)->reload_rounds==1 && BG_QceWeaponDef(pm->ps->weapon)->reload_enter_ms>0) {

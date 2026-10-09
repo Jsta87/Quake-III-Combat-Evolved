@@ -12,9 +12,13 @@ ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('presentation',ROOT/'scripts/animate-halo-weapons.py')
 p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 # Stable order consumed by CG_HaloPlayer: root displacement comes from Quake movement.
-PLAYER_CLIPS=('stand rifle idle','stand rifle move-front','stand rifle move-back',
+RIFLE_CLIPS=('stand rifle idle','stand rifle move-front','stand rifle move-back',
  'stand rifle move-left','stand rifle move-right','crouch rifle idle','crouch rifle move-front',
  'stand rifle airborne','stand rifle ar melee','stand rifle throw-grenade','s-kill front chest')
+PLAYER_CLIPS=RIFLE_CLIPS+tuple(x.replace('rifle','pistol').replace('pistol ar melee','pistol hp melee') if 'throw-grenade' not in x else x for x in RIFLE_CLIPS)+tuple(x.replace('rifle','missile').replace('missile ar melee','missile rl melee') if 'throw-grenade' not in x else x for x in RIFLE_CLIPS)
+
+PLAYER_CLIPS+=('stand rifle ar melee','stand rifle sg melee','stand missile rl melee','stand rifle sr melee','stand rifle pr melee','stand pistol pp melee','stand pistol hp melee','stand pistol ne melee',
+ 'stand rifle ar reload-1','stand rifle sg reload-1','stand missile rl reload-1','stand rifle sr reload-1','stand rifle idle','stand pistol idle','stand pistol hp reload-1','stand pistol ne reload-1')
 
 def export(cache,assets,report):
     def write(path,data,meta):
@@ -79,7 +83,8 @@ def export(cache,assets,report):
         bind_world=[byname.get(b['name'],fallback[i]) for i,b in enumerate(bones)]
         # Source hand bone supplies a world weapon attachment; pose follows the authored skeleton.
         hand=next((i for i,b in enumerate(meta['bones']) if b['name']=='bip01 r hand'),None)
-        attached=[] if hand is None else [{'name':'tag_hand','node':hand,'rotation':[0,0,0,1],'translation':[0,0,0]}]
+        attached=[m for m in p.markers(cache,assets,cache.tags[dep['id']]) if m['name']=='tag_hand']
+        if not attached:raise p.a.halo.CacheError('Spartan right-hand attachment marker missing')
         write('models/qce/halo/player/spartan.iqm',p.animated_iqm(surfaces,bones,bind_world,local_frames,[(bind,mapping)]*len(surfaces),attached,mapping,meta['scale'],clips,poses),{'source':dep,'clips':PLAYER_CLIPS})
         write('models/qce/halo/player/spartan.cfg',('\n'.join(f'{c["first"]} {c["count"]} 30 0' for c in clips)+'\n').encode(),{'source':dep})
     # All model materials, including world assets, must remain in the same shader file.
@@ -122,13 +127,45 @@ def export(cache,assets,report):
         if not any(t['path']==sourcepath and t['class']=='weap' for t in cache.index):sourcepath=weapon['model']['path']
         sound=cache.tag(sourcepath,'weap')['values']['pickup sound']
         if sound:aliases[f'pickup/{runtime}']=sound['path']
+    for runtime,source in p.a.FIRE.items():aliases[f'fire/{runtime}']=f'sound\\sfx\\weapons\\{source}\\fire'
     aliases['grenade/plasma-loop']='sound\\sfx\\weapons\\plasma grenade\\plasma_projectile'
     for alias,source in aliases.items():
         tag=next(t for t in cache.index if t['path']==source and t['class']=='snd!');records=[r for r in report['assets'] if r.get('id')==tag['id'] and r.get('range')==0]
-        for i,record in enumerate(records[:4]):write(f'sound/qce/halo/{alias}{i+1}.wav',(assets.output/record['outputs'][0]).read_bytes(),{'source':source})
-    # Dedicated additive billboard avoids uninitialized shaderRGBA (black square).
-    write('scripts/qce-halo-effects.shader',b'qce/halo/grenade-explosion\n{\n cull none\n { map gfx/misc/raildisc_mono2.jpg\n blendFunc add\n rgbGen vertex\n alphaGen vertex\n }\n}\n',{'purpose':'temporary additive grenade flash; retail particle system pending'})
-    report['world_presentation']={'models':models,'player_clips':PLAYER_CLIPS,'audio':aliases,'limitations':['Root displacement supplied by game movement','Rifle pose shared by weapon classes; aim overlays pending','Grenade flash approximates retail particle effects']}
+        for i,record in enumerate(records[:4]):
+            audio,calibration=assets.calibrated_sound(record)
+            write(f'sound/qce/halo/{alias}{i+1}.wav',audio,{'source':source,'calibration':calibration})
+    particle_paths={
+      'grenade-explosion':'effects\\particles\\flash\\bitmaps\\fire cloud',
+      'plasma-explosion':'effects\\particles\\energy\\bitmaps\\cloud c fire',
+      'grenade-smoke':'effects\\particles\\air\\bitmaps\\smoke cloud'}
+    effects=[]
+    for effect,source in particle_paths.items():
+        tag=next(t for t in cache.index if t['path']==source and t['class']=='bitm')
+        sequences=assets.reflexive('Bitmap','bitmap group sequence',tag['offset'],'BitmapGroupSequence')
+        sprites=assets.reflexive('BitmapGroupSequence','sprites',sequences[0],'BitmapGroupSprite')
+        if not 1<=len(sprites)<=64:raise p.a.halo.CacheError('Grenade sprite count outside runtime limits')
+        for i,o in enumerate(sprites):
+            bi=struct.unpack_from('<h',cache.data,o)[0]
+            left,right,top,bottom=struct.unpack_from('<4f',cache.data,o+8)
+            sourcepath=f'textures/qce/halo/{p.a.safe_name(source)}/{bi:03}.tga'
+            width,height,pixels=p.read_tga(assets.output/sourcepath)
+            x0,x1,y0,y1=round(left*width),round(right*width),round(top*height),round(bottom*height)
+            if not 0<=x0<x1<=width or not 0<=y0<y1<=height:raise p.a.halo.CacheError('Invalid grenade sprite rectangle')
+            crop=b''.join(pixels[(y*width+x0)*4:(y*width+x1)*4] for y in range(y0,y1))
+            path=f'textures/qce/particles/{effect}/{i:02}.tga'
+            write(path,p.a.tga(x1-x0,y1-y0,crop),{'source':source,'sprite':i,'bounds':[left,right,top,bottom]})
+            blend='blend' if effect=='grenade-smoke' else 'GL_SRC_ALPHA GL_ONE'
+            name=f'qce/halo/{effect}' if i==0 else f'qce/halo/{effect}-{i:02}'
+            effects.append(f'{name}\n{{\n cull none\n {{ map {path}\n blendFunc {blend}\n rgbGen vertex\n alphaGen vertex\n }}\n}}\n')
+    write('scripts/qce-halo-effects.shader','\n'.join(effects).encode(),{'source':particle_paths,'source_sprite_sequences':True})
+    # Refresh old animation aliases from raw PCM as well; never calibrate an alias twice.
+    byoutput={out:r for r in report['assets'] if 'permutation' in r for out in r.get('outputs',[])}
+    for path,meta in list(assets.files.items()):
+        raw=meta.get('alias_of')
+        if raw in byoutput and path.startswith('sound/qce/halo/events/'):
+            audio,calibration=assets.calibrated_sound(byoutput[raw])
+            write(path,audio,{**meta,'calibration':calibration})
+    report['world_presentation']={'models':models,'player_clips':PLAYER_CLIPS,'audio':aliases,'limitations':['Root displacement supplied by game movement','Weapon class poses imported; aim overlays and full four-pose transition blending pending','Particle physics, ancillary sparks/decals and point-physics integration remain approximations']}
     report['files']=assets.files
     print('World weapons, Spartan animations/RGB materials and grenade media exported',flush=True)
 

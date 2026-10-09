@@ -14,7 +14,7 @@ The animation stage now also converts the Spartan body, world weapons,
 frag/plasma grenade models, armor color masks, and additional audio. Existing
 conversions can be refreshed independently with `scripts/convert-halo-world.py`
 using the same arguments. Maps and generated media remain local and ignored.
-Client/server engines and modules must all use QCE protocol **95**.
+Client/server engines and modules must all use QCE protocol **96**.
 
 ## Changes
 
@@ -93,3 +93,6 @@ and charged-shot cooling. A final QVM/OpenGL2 plasma-rifle run verified one heat
 entry sound per episode. All 1,837 package records matched their hashes and ZIP
 CRCs. Audio was decoded/registered/dispatched with a dummy device; desktop
 listening and comparison to an Xbox remain necessary for sound calibration.
+
+See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for protocol 96, 128 slots,
+reload interruption, new material conversion and scoreboard controls.

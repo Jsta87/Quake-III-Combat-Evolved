@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_players.c -- handle the media and animation for player entities
 #include "cg_local.h"
+#include "../game/bg_qce_presentation.generated.h"
 #define QCE_ParseRGB CG_PlayerParseRGB
 #include "../qcommon/qce_color.h"
 
@@ -2609,6 +2610,8 @@ A player just came into view or teleported, so reset all animation info
 ===============
 */
 void CG_ResetPlayerEntity( centity_t *cent ) {
+ cent->qcePlayerPoseValid=qfalse;cent->qcePlayerClip=-1;
+ cent->qceMeleeTime=cent->qceGrenadeTime=0;
 	cent->errorTime = -99999;		// guarantee no error decay added
 	cent->extrapolated = qfalse;	
 
@@ -2643,7 +2646,7 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  refEntity_t body,gun;clientInfo_t *ci;vec3_t angles,velocity,forward,right;orientation_t hand;
  qceViewClip_t *clip;int kind=0,legs=cent->currentState.legsAnim&~ANIM_TOGGLEBIT,i;
- float f,s;
+ float f,s;int pose,weaponPose=0;
  if(!cg.snap->ps.stats[STAT_QCE_COMBAT] || !cg_qceWorld.playerModel)return qfalse;
  ci=&cgs.clientinfo[cent->currentState.clientNum];
  VectorSet(angles,0,cent->lerpAngles[YAW],0);AngleVectors(angles,forward,right,NULL);
@@ -2654,23 +2657,45 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  else if(cent->currentState.groundEntityNum==ENTITYNUM_NONE)kind=7;
  else if(legs==LEGS_WALKCR || legs==LEGS_IDLECR)kind=VectorLength(velocity)>10?6:5;
  else if(VectorLength(velocity)>10)kind=fabs(s)>fabs(f)?(s>0?4:3):(f<0?2:1);
- if(cent->qcePlayerClip!=kind || cg.time<cent->qcePlayerStart){cent->qcePlayerClip=kind;cent->qcePlayerStart=cg.time;}
+ i=cent->currentState.weapon==WP_ROCKET_LAUNCHER?22:
+   (cent->currentState.weapon==WP_BFG || cent->currentState.weapon==WP_LIGHTNING || cent->currentState.weapon==WP_GRENADE_LAUNCHER)?11:0;
+  switch(cent->currentState.weapon) {
+ case WP_SHOTGUN:weaponPose=1;break;case WP_ROCKET_LAUNCHER:weaponPose=2;break;
+ case WP_RAILGUN:weaponPose=3;break;case WP_PLASMAGUN:weaponPose=4;break;
+ case WP_LIGHTNING:weaponPose=5;break;case WP_BFG:weaponPose=6;break;case WP_GRENADE_LAUNCHER:weaponPose=7;break;default:break;
+ }
+ pose=kind+i;
+ if(kind==8)pose=33+weaponPose;
+ else if(kind!=10 && kind!=9 && cent->currentState.frame==WEAPON_RELOADING){pose=41+weaponPose;kind=11;}
+ if(cent->qcePlayerClip!=pose || cg.time<cent->qcePlayerStart){
+  cent->qcePlayerBlendMs=(kind==0 && cent->qcePlayerClip<33 && cent->qcePlayerClip%11==0)?QCE_IDLE_POSE_BLEND_MS:QCE_POSE_BLEND_MS;
+  cent->qcePlayerPreviousFrame=cent->qcePlayerRenderedFrame;
+  cent->qcePlayerClip=pose;cent->qcePlayerStart=cg.time;
+ }
  memset(&body,0,sizeof(body));body.hModel=cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
  VectorCopy(cent->lerpOrigin,body.origin);body.origin[2]-=24;VectorCopy(body.origin,body.oldorigin);VectorCopy(cent->lerpOrigin,body.lightingOrigin);AnglesToAxis(angles,body.axis);
  memcpy(body.shaderRGBA,ci->haloColor,4);
  if(ci->team==TEAM_RED) {body.shaderRGBA[0]=220;body.shaderRGBA[1]=40;body.shaderRGBA[2]=40;}
  if(ci->team==TEAM_BLUE){body.shaderRGBA[0]=40;body.shaderRGBA[1]=90;body.shaderRGBA[2]=230;}
  body.shaderRGBA[3]=255;
- clip=&cg_qceWorld.playerClips[kind];
+ clip=&cg_qceWorld.playerClips[pose];
  CG_HaloWorldFrames(clip,kind>=7,cg.time-cent->qcePlayerStart,&body.oldframe,&body.frame,&body.backlerp);
+ cent->qcePlayerRenderedFrame=body.backlerp>0.5f?body.oldframe:body.frame;
+ /* Halo uses six 30-Hz ticks for normal state changes. The outgoing pose is
+    captured here because this renderer exposes two frames, not four. */
+ if(cent->qcePlayerPoseValid && kind!=10 && cg.time-cent->qcePlayerStart<cent->qcePlayerBlendMs) {
+  body.oldframe=cent->qcePlayerPreviousFrame;
+  body.backlerp=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
+ }
+ cent->qcePlayerPoseValid=qtrue;
  CG_PlayerSprites(cent);CG_PlayerSplash(cent);CG_AddRefEntityWithPowerups(&body,&cent->currentState,ci->team);
  if(!(cent->currentState.eFlags&EF_DEAD) && cent->currentState.weapon>WP_GAUNTLET && cent->currentState.weapon<WP_NUM_WEAPONS) {
   CG_RegisterWeapon(cent->currentState.weapon);memset(&gun,0,sizeof(gun));gun.hModel=cg_weapons[cent->currentState.weapon].weaponModel;gun.renderfx=body.renderfx;
   if(trap_R_LerpTag(&hand,body.hModel,body.oldframe,body.frame,1-body.backlerp,"tag_hand")) {
    VectorCopy(body.origin,gun.origin);
    for(i=0;i<3;i++)VectorMA(gun.origin,hand.origin[i],body.axis[i],gun.origin);
-   /* World models share Halo's forward axis; initial grip placement follows the hand. */
-   AxisCopy(body.axis,gun.axis);VectorCopy(gun.origin,gun.oldorigin);VectorCopy(body.lightingOrigin,gun.lightingOrigin);memcpy(gun.shaderRGBA,body.shaderRGBA,4);
+   /* Apply the complete authored grip transform, not just wrist translation. */
+   MatrixMultiply(hand.axis,body.axis,gun.axis);VectorCopy(gun.origin,gun.oldorigin);VectorCopy(body.lightingOrigin,gun.lightingOrigin);memcpy(gun.shaderRGBA,body.shaderRGBA,4);
    trap_R_AddRefEntityToScene(&gun);
   }
  }

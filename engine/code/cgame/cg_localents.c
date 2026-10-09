@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // processed entities, like smoke puffs, gibs, shells, etc.
 
 #include "cg_local.h"
+#include "cg_halo_particle.h"
 
 #define	MAX_LOCAL_ENTITIES	512
 localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
@@ -499,6 +500,45 @@ static void CG_AddExplosion( localEntity_t *ex ) {
 CG_AddSpriteExplosion
 ================
 */
+static void CG_AddQceGrenadeParticle(localEntity_t *le) {
+ int elapsed=cg.time-le->startTime,phase=0,state,j;float f=0,rotation=0,typeBlend=0;
+ refEntity_t re=le->refEntity;
+ if(elapsed<0)return;
+ while(phase<4 && elapsed>=le->qceParticlePhaseMs[phase]) {
+  int st=phase/2;float seconds=le->qceParticlePhaseMs[phase]*0.001f;
+  rotation+=seconds*((phase&1)?(le->qceParticleRotation[st]+le->qceParticleRotation[st+1])*0.5f:le->qceParticleRotation[st]);
+  elapsed-=le->qceParticlePhaseMs[phase++];
+ }
+ if(phase>=4)return;
+ state=phase/2;
+ if(phase&1)f=elapsed/(float)le->qceParticlePhaseMs[phase];
+ rotation+=elapsed*0.001f*(le->qceParticleRotation[state]+0.5f*f*(le->qceParticleRotation[state+1]-le->qceParticleRotation[state]));
+ re.rotation+=rotation;
+ /* Keep point physics on the retail 30-Hz clock, independent of render rate. */
+ while(le->qceParticleTick<(cg.time-le->startTime)*30/1000) {
+  int st;float blend,physics[4];
+  if(!QCE_ParticlePhase(le->qceParticlePhaseMs,le->qceParticleTick*1000/30,&st,&blend))break;
+  for(j=0;j<4;j++)physics[j]=le->qceParticlePhysics[st][j]*(1-blend)+le->qceParticlePhysics[st+1][j]*blend;
+  QCE_ParticleAirStep(le->pos.trBase,le->pos.trDelta,physics,1.0f/30);
+  le->qceParticleTick++;
+ }
+ VectorMA(le->pos.trBase,((cg.time-le->startTime)*0.001f-le->qceParticleTick/30.0f),le->pos.trDelta,re.origin);
+ if(cg.time>le->qceParticleEmitterStart+le->qceParticleEmitterBirth)
+  typeBlend=(cg.time-le->qceParticleEmitterStart-le->qceParticleEmitterBirth)/(float)le->qceParticleEmitterTransition;
+ if(typeBlend>1)typeBlend=1;
+ re.radius=le->qceParticleScale[state]*(1-f)+le->qceParticleScale[state+1]*f;
+ for(j=0;j<3;j++)re.shaderRGBA[j]=(byte)(255*(le->qceParticleColor[state][j+1]*(1-f)+le->qceParticleColor[state+1][j+1]*f));
+ re.shaderRGBA[3]=(byte)(255*(le->qceParticleColor[state][0]*(1-f)+le->qceParticleColor[state+1][0]*f));
+ for(j=0;j<3;j++)re.shaderRGBA[j]=(byte)(re.shaderRGBA[j]*(le->qceParticleTypeColor[0][j+1]*(1-typeBlend)+le->qceParticleTypeColor[1][j+1]*typeBlend));
+ re.shaderRGBA[3]=(byte)(re.shaderRGBA[3]*(le->qceParticleTypeColor[0][0]*(1-typeBlend)+le->qceParticleTypeColor[1][0]*typeBlend));
+ re.customShader=le->qceParticleShader[state];
+ if(f>0 && re.customShader!=le->qceParticleShader[state+1]) {
+  int alpha=re.shaderRGBA[3];re.shaderRGBA[3]=(byte)(alpha*(1-f));trap_R_AddRefEntityToScene(&re);
+  re.customShader=le->qceParticleShader[state+1];re.shaderRGBA[3]=(byte)(alpha*f);
+ }
+ trap_R_AddRefEntityToScene(&re);
+}
+
 static void CG_AddSpriteExplosion( localEntity_t *le ) {
 	refEntity_t	re;
 	float c;
@@ -510,9 +550,9 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 		c = 1.0;	// can happen during connection problems
 	}
 
-	re.shaderRGBA[0] = 0xff;
-	re.shaderRGBA[1] = 0xff;
-	re.shaderRGBA[2] = 0xff;
+	re.shaderRGBA[0] = (byte)(le->color[0]*255);
+	re.shaderRGBA[1] = (byte)(le->color[1]*255);
+	re.shaderRGBA[2] = (byte)(le->color[2]*255);
 	re.shaderRGBA[3] = 0xff * c * 0.33;
 
 	re.reType = RT_SPRITE;
@@ -827,6 +867,10 @@ void CG_AddLocalEntities( void ) {
 
 		case LE_MARK:
 			break;
+
+		case LE_QCE_GRENADE_PARTICLE:
+   CG_AddQceGrenadeParticle(le);
+   break;
 
 		case LE_SPRITE_EXPLOSION:
 			CG_AddSpriteExplosion( le );

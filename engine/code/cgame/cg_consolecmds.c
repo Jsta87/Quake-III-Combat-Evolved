@@ -471,7 +471,29 @@ typedef struct {
 	void	(*function)(void);
 } consoleCommand_t;
 
-static consoleCommand_t	commands[] = {
+static void CG_QceScorePage_f(void) {
+ int page=cg_qceScorePage.integer,pages=(cg.numScores+15)/16,i;
+ if(!Q_stricmp(CG_Argv(1),"auto")){trap_Cvar_Set("cg_qceScorePage","-1");return;}
+ if(pages<1)pages=1;
+ if(page<0){page=0;for(i=0;i<cg.numScores;i++)if(cg.scores[i].client==cg.predictedPlayerState.clientNum)page=i/16;}
+ page=(page+atoi(CG_Argv(1)))%pages;if(page<0)page+=pages;
+ trap_Cvar_Set("cg_qceScorePage",va("%d",page));
+}
+/* Reproducible presentation check without projectile travel obscuring the effect. */
+static void CG_QceEffectTest_f(void) {
+ char cheats[16];vec3_t origin;int type;
+ trap_Cvar_VariableStringBuffer("sv_cheats",cheats,sizeof(cheats));
+ if(!atoi(cheats) || !cg.snap){CG_Printf("qce_effecttest requires an active cheats-enabled map.\n");return;}
+ if(!Q_stricmp(CG_Argv(1),"frag"))type=1;
+ else if(!Q_stricmp(CG_Argv(1),"plasma"))type=2;
+ else {CG_Printf("Usage: qce_effecttest frag|plasma\n");return;}
+ VectorMA(cg.refdef.vieworg,120,cg.refdef.viewaxis[0],origin);
+ CG_HaloGrenadeExplosion(type,origin);
+}
+
+static consoleCommand_t commands[] = {
+ {"qce_scorepage",CG_QceScorePage_f},
+ {"qce_effecttest",CG_QceEffectTest_f},
  {"qce_color",CG_QceColor_f},
  {"qce_color_hex",CG_QceColorHex_f},
 	{ "testgun", CG_TestGun_f },

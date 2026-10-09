@@ -7,7 +7,7 @@ spec=importlib.util.spec_from_file_location('profile_generator',root/'scripts/ge
 generator=importlib.util.module_from_spec(spec);spec.loader.exec_module(generator)
 profile=json.loads((root/'data/gameplay-profile.json').read_text())
 generator.validate(profile)
-for field,value in [('magazine',10001),('reload_ms',0),('damage',float('nan')),('damage',1000001),('fire_kind','unknown'),('headshot_mode',3),('shield_multiplier',0),('melee_impact_ms',2000),('pellets',65),('tracking_radians',7),('combine_count',65),('attachment_ms',750),('ready_ms',0),('reload_empty_ms',0),('charged_battery_cost',1000001),('zoom_levels',3),('damage_maximum',0)]:
+for field,value in [('magazine',10001),('reload_ms',0),('reload_commit_ms',99999),('damage',float('nan')),('damage',1000001),('fire_kind','unknown'),('headshot_mode',3),('shield_multiplier',0),('melee_impact_ms',2000),('pellets',65),('tracking_radians',7),('combine_count',65),('attachment_ms',750),('ready_ms',0),('reload_empty_ms',0),('charged_battery_cost',1000001),('zoom_levels',3),('damage_maximum',0)]:
  bad=copy.deepcopy(profile);bad['weapons']['WP_MACHINEGUN'][field]=value
  try:generator.validate(bad)
  except ValueError:pass

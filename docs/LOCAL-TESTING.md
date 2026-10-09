@@ -92,7 +92,7 @@ still outstanding; see [Weapon presentation](WEAPON-PRESENTATION.md).
 ## Updating and multiplayer
 
 After pulling gameplay changes, rebuild client/server modules together. This
-pass uses QCE protocol **95**, including explicit shotgun reload states; older
+pass uses QCE protocol **96**, including explicit shotgun reload states; older
 project builds and stock Quake/ioquake3 clients are incompatible. The client build
 also produces a dedicated server, or build it separately with
 `./scripts/build.sh server`. Every participating machine needs its own Quake data
@@ -107,3 +107,6 @@ keeping the project's Halo gameplay enabled.
 
 See [playtest fixes and controls](PLAYTEST-FIXES.md) for Spartan colors, optional
 lunge, movement/view scale tuning and development cheats.
+
+See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for protocol 96, 128 slots,
+reload interruption, new material conversion and scoreboard controls.

@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
+#define QCE_DEFINE_PARTICLE_DATA
+#include "../game/bg_qce_presentation.generated.h"
 #include "cg_halo_present.h"
 
 /*
@@ -1509,7 +1511,7 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  refEntity_t gun;
  if(!weapon->haloViewModel || !ps->stats[STAT_QCE_COMBAT])return qfalse;
  memset(&input,0,sizeof(input));input.weapon=ps->weapon;input.state=ps->weaponstate;input.now=cg.time;
- input.magazine=BG_QceMagazine(ps,ps->weapon);input.weaponTime=ps->weaponTime;
+ input.magazine=ps->weaponstate==WEAPON_RELOADING?(ps->qceReloadEmpty?0:1):BG_QceMagazine(ps,ps->weapon);input.weaponTime=ps->weaponTime;
  input.hot=BG_QceOverheated(ps,ps->weapon);input.charge=ps->qceChargeMs;input.chargeMs=def->charge_ms;
  input.fireTime=cent->qceFireWeapon==ps->weapon?cent->muzzleFlashTime:0;input.chargedFire=cent->qceChargedFire;
  input.grenadeTime=cent->qceGrenadeTime;input.meleeTime=cent->qceMeleeTime;input.reloadRounds=def->reload_rounds;
@@ -1528,7 +1530,7 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  /* Cut embedded reload audio when a switch cancels the corresponding action. */
  if(weapon->haloStopSound && (
     ((previous==QCE_VIEW_RELOAD_FULL || previous==QCE_VIEW_RELOAD_EMPTY || previous==QCE_VIEW_RELOAD_ENTER || previous==QCE_VIEW_CHARGE_ENTER || previous==QCE_VIEW_CHARGE) &&
-     (view->weapon!=ps->weapon || ps->weaponstate==WEAPON_DROPPING)) ||
+     (view->weapon!=ps->weapon || ps->weaponstate==WEAPON_DROPPING || ps->weaponstate==WEAPON_MELEEING || ps->weaponstate==WEAPON_RAISING)) ||
     ((previous==QCE_VIEW_CHARGE_ENTER || previous==QCE_VIEW_CHARGE) && input.charge<=0 && input.fireTime<=view->time)))
   trap_S_StartSound(NULL,ps->clientNum,CHAN_WEAPON,weapon->haloStopSound);
  clip=QCE_ViewSelect(view,&input,weapon->haloClips);
@@ -1537,7 +1539,7 @@ static qboolean CG_AddHaloViewWeapon( playerState_t *ps, weaponInfo_t *weapon ) 
  if(clip==QCE_VIEW_CHARGE_ENTER)phaseMs=def->charge_ms;
  if(clip==QCE_VIEW_RELOAD_FULL || clip==QCE_VIEW_RELOAD_EMPTY)phaseMs=clip==QCE_VIEW_RELOAD_EMPTY?def->reload_empty_ms:def->reload_ms;
  if(previous!=clip && cg_debugAnim.integer)CG_Printf("QCE view weapon=%d clip=%d first=%d count=%d fps=%d\n",ps->weapon,clip,anim->first,anim->count,anim->fps);
- if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs)) {
+ if(QCE_ViewSoundDue(view,elapsed,anim,&weapon->haloSounds[clip],phaseMs) && clip!=QCE_VIEW_FIRE && clip!=QCE_VIEW_CHARGED_FIRE) {
   qceViewSound_t *event=&weapon->haloSounds[clip];
   trap_S_StartSound(NULL,ps->clientNum,CHAN_WEAPON,event->sounds[rand()%event->count]);
   if(cg_debugAnim.integer)CG_Printf("QCE animation sound weapon=%d clip=%d source_frame=%d\n",ps->weapon,clip,event->frame);
@@ -1944,28 +1946,14 @@ void CG_FireWeapon( centity_t *cent ) {
 		trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound );
 	}
 
-	// The final shot remains audible when heat replaces its view clip immediately.
- if(ent->number==cg.predictedPlayerState.clientNum && BG_QceOverheated(&cg.predictedPlayerState,ent->weapon)) {
+ /* Shot audio is dispatched exactly once at the predicted/remote fire event.
+    CHAN_AUTO survives reload/ready sound cancellation on CHAN_WEAPON. */
+ if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && weap->haloSounds[cent->qceChargedFire?QCE_VIEW_CHARGED_FIRE:QCE_VIEW_FIRE].count>0) {
   qceViewSound_t *shot=&weap->haloSounds[cent->qceChargedFire?QCE_VIEW_CHARGED_FIRE:QCE_VIEW_FIRE];
-  if(shot->count>0)trap_S_StartSound(NULL,ent->number,CHAN_AUTO,shot->sounds[rand()%shot->count]);
- }
-	// play a sound
- if(!(ent->number==cg.predictedPlayerState.clientNum && cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && weap->haloViewModel &&
-      weap->haloSounds[cent->qceChargedFire?QCE_VIEW_CHARGED_FIRE:QCE_VIEW_FIRE].count>0)) {
-	for ( c = 0 ; c < 4 ; c++ ) {
-		if ( !weap->flashSound[c] ) {
-			break;
-		}
-	}
-	if ( c > 0 ) {
-		c = rand() % c;
-		if ( weap->flashSound[c] )
-		{
-			trap_S_StartSound( NULL, ent->number,
-    (ent->number==cg.predictedPlayerState.clientNum && BG_QceOverheated(&cg.predictedPlayerState,ent->weapon))?CHAN_AUTO:CHAN_WEAPON, weap->flashSound[c] );
-		}
-	}
-
+  trap_S_StartSound(NULL,ent->number,CHAN_AUTO,shot->sounds[rand()%shot->count]);
+ } else {
+  for(c=0;c<4 && weap->flashSound[c];c++);
+  if(c>0)trap_S_StartSound(NULL,ent->number,CHAN_AUTO,weap->flashSound[rand()%c]);
  }
 	// Local Halo brass uses the current skeleton's ejection marker when drawn.
 	if ( weap->ejectBrassFunc && cg_brassTime.integer > 0 &&
@@ -2509,18 +2497,18 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 /* Optional local media: absence keeps a source-only checkout playable. */
 qceWorldMedia_t cg_qceWorld;
 void CG_RegisterHaloWorld(void) {
- fileHandle_t file;int length,i,j;char buffer[1024],*text,*token,path[MAX_QPATH];
+ fileHandle_t file;int length,i,j;char buffer[4096],*text,*token,path[MAX_QPATH];
  memset(&cg_qceWorld,0,sizeof(cg_qceWorld));
  length=trap_FS_FOpenFile("models/qce/halo/player/spartan.cfg",&file,FS_READ);
  if(length>0 && length<(int)sizeof(buffer)) {
   trap_FS_Read(buffer,length,file);buffer[length]=0;text=buffer;
-  for(i=0;i<11;i++) {
+  for(i=0;i<49;i++) {
    int values[4];
    for(j=0;j<4;j++){token=COM_Parse(&text);values[j]=atoi(token);}
-   if(values[0]<0 || values[1]<1 || values[0]+values[1]>1024 || values[2]<1 || values[2]>100)break;
+   if(values[0]<0 || values[1]<1 || values[0]+values[1]>4096 || values[2]<1 || values[2]>100)break;
    cg_qceWorld.playerClips[i].first=values[0];cg_qceWorld.playerClips[i].count=values[1];cg_qceWorld.playerClips[i].fps=values[2];cg_qceWorld.playerClips[i].loop=0;
   }
-  if(i==11)cg_qceWorld.playerModel=trap_R_RegisterModel("models/qce/halo/player/spartan.iqm");
+  if(i==49)cg_qceWorld.playerModel=trap_R_RegisterModel("models/qce/halo/player/spartan.iqm");
  }
  if(file)trap_FS_FCloseFile(file);
  if(trap_FS_FOpenFile("models/qce/halo/player/head.md3",NULL,FS_READ)>0)cg_qceWorld.headModel=trap_R_RegisterModel("models/qce/halo/player/head.md3");
@@ -2534,7 +2522,23 @@ void CG_RegisterHaloWorld(void) {
  }
  if(trap_FS_FOpenFile("sound/qce/halo/grenade/throw1.wav",NULL,FS_READ)>0)cg_qceWorld.grenadeThrow=trap_S_RegisterSound("sound/qce/halo/grenade/throw1.wav",qfalse);
  if(trap_FS_FOpenFile("sound/qce/halo/grenade/plasma-loop1.wav",NULL,FS_READ)>0)cg_qceWorld.grenadeLoop=trap_S_RegisterSound("sound/qce/halo/grenade/plasma-loop1.wav",qfalse);
+ {int row,n;const char *names[3]={"grenade-explosion","plasma-explosion","grenade-smoke"};
+  for(row=0;row<3;row++)for(n=0;n<64;n++) {
+   Com_sprintf(path,sizeof(path),"textures/qce/particles/%s/%02d.tga",names[row],n);
+   {fileHandle_t spriteFile;byte header[18];int size;
+    size=trap_FS_FOpenFile(path,&spriteFile,FS_READ);
+    if(size<18){if(size>=0)trap_FS_FCloseFile(spriteFile);break;}
+    trap_FS_Read(header,18,spriteFile);trap_FS_FCloseFile(spriteFile);
+    cg_qceWorld.grenadeParticleWidths[row][n]=header[12]+256*header[13];
+   }
+   Com_sprintf(path,sizeof(path),n?"qce/halo/%s-%02d":"qce/halo/%s",names[row],n);
+   cg_qceWorld.grenadeParticleShaders[row][n]=trap_R_RegisterShader(path);
+   cg_qceWorld.grenadeParticleCounts[row]++;
+  }
+ }
  cg_qceWorld.grenadeShader=trap_R_RegisterShader("qce/halo/grenade-explosion");
+ cg_qceWorld.plasmaExplosionShader=trap_R_RegisterShader("qce/halo/plasma-explosion");
+ cg_qceWorld.grenadeSmokeShader=trap_R_RegisterShader("qce/halo/grenade-smoke");
  for(i=0;i<4;i++) {
   const char *types[]={"normal","metal","splash"};int rows[]={FOOTSTEP_BOOT,FOOTSTEP_METAL,FOOTSTEP_SPLASH};
   for(j=0;j<3;j++) {
@@ -2548,14 +2552,54 @@ void CG_RegisterHaloWorld(void) {
  }
 }
 void CG_HaloGrenadeExplosion(int type,vec3_t origin) {
- localEntity_t *le=CG_AllocLocalEntity();
- le->leType=LE_SPRITE_EXPLOSION;le->startTime=cg.time;le->endTime=cg.time+650;
- le->lifeRate=1.0f/650;le->radius=80;le->color[0]=type==2?0.2f:1;le->color[1]=type==2?0.6f:0.65f;le->color[2]=type==2?1:0.15f;le->color[3]=1;
- le->light=250;VectorCopy(le->color,le->lightColor);
- le->refEntity.reType=RT_SPRITE;le->refEntity.radius=32;le->refEntity.rotation=rand()%360;
- VectorCopy(origin,le->refEntity.origin);le->refEntity.customShader=cg_qceWorld.grenadeShader;
- le->refEntity.shaderRGBA[0]=(byte)(le->color[0]*255);le->refEntity.shaderRGBA[1]=(byte)(le->color[1]*255);le->refEntity.shaderRGBA[2]=(byte)(le->color[2]*255);le->refEntity.shaderRGBA[3]=255;
- trap_S_StartSound(origin,ENTITYNUM_WORLD,CHAN_AUTO,cg_qceWorld.grenadeExplode[type==2]);
+ int i,state,j,kind=type==2?1:0,extra,grounded;float birth,transition,rate;
+ trace_t ground;vec3_t below;
+ const qce_particle_type_t *def=&qce_grenade_particles[kind];
+ birth=def->emitterDuration[0]+random()*(def->emitterDuration[1]-def->emitterDuration[0]);
+ transition=def->emitterTransition[0]+random()*(def->emitterTransition[1]-def->emitterTransition[0]);
+ rate=def->creationRate[0];extra=(int)(rate*(birth+transition*0.5f));
+ VectorCopy(origin,below);below[2]-=8;CG_Trace(&ground,origin,NULL,NULL,below,ENTITYNUM_NONE,MASK_SOLID);
+ grounded=ground.fraction<1 && ground.plane.normal[2]>0.7f;
+ trap_S_StartSound(origin,ENTITYNUM_WORLD,CHAN_AUTO,cg_qceWorld.grenadeExplode[kind]);
+ for(i=0;i<def->count+extra;i++) {
+  localEntity_t *le=CG_AllocLocalEntity();int total=0,spawnMs=0,spriteSeed=rand();
+  if(i>=def->count && rate>0) {
+   float n=(i-def->count+1)/(float)rate,t;
+   if(n<=birth)t=n;
+   else t=birth+transition*(1-sqrt(1-2*(n-birth)/transition));
+   spawnMs=(int)(ceil(t*30)*1000/30); /* Match the source emission tick. */
+  }
+  le->leType=LE_QCE_GRENADE_PARTICLE;le->qceParticleType=kind;le->startTime=cg.time+spawnMs;
+  le->qceParticleEmitterStart=cg.time;le->qceParticleEmitterBirth=(int)(birth*1000);le->qceParticleEmitterTransition=(int)(transition*1000);
+  memcpy(le->qceParticleTypeColor,def->typeColor,sizeof(le->qceParticleTypeColor));
+  for(state=0;state<3;state++) {
+   const qce_particle_state_t *ps=&def->states[state];float f=random();
+   int row=kind?1:(state?2:0),count=cg_qceWorld.grenadeParticleCounts[row],sprite=count?spriteSeed%count:0;
+   float width=count?cg_qceWorld.grenadeParticleWidths[row][sprite]:36;
+   le->qceParticlePhysics[state][0]=ps->mass;le->qceParticlePhysics[state][1]=ps->buoyancy;
+   le->qceParticlePhysics[state][2]=ps->friction;le->qceParticlePhysics[state][3]=ps->radius;
+   for(j=0;j<4;j++)le->qceParticleColor[state][j]=ps->argbMin[j]+f*(ps->argbMax[j]-ps->argbMin[j]);
+   /* Source scale multiplies sprite pixels, converted to our chosen world scale. */
+   le->qceParticleScale[state]=(ps->scale[0]+random()*(ps->scale[1]-ps->scale[0]))*width*80.0f*0.5f;
+   le->qceParticleRotation[state]=(ps->rotation[0]+random()*(ps->rotation[1]-ps->rotation[0]))*180.0f/M_PI;
+   le->qceParticleShader[state]=count?cg_qceWorld.grenadeParticleShaders[row][sprite]:(kind?cg_qceWorld.plasmaExplosionShader:(state?cg_qceWorld.grenadeSmokeShader:cg_qceWorld.grenadeShader));
+   if(state<2) {
+    le->qceParticlePhaseMs[state*2]=(int)((ps->duration[0]+random()*(ps->duration[1]-ps->duration[0]))*1000);
+    le->qceParticlePhaseMs[state*2+1]=(int)((ps->transition[0]+random()*(ps->transition[1]-ps->transition[0]))*1000);
+    total+=le->qceParticlePhaseMs[state*2]+le->qceParticlePhaseMs[state*2+1];
+   }
+  }
+  le->endTime=le->startTime+(total>0?total:1);
+  if(le->endTime>cg.time+le->qceParticleEmitterBirth+le->qceParticleEmitterTransition)
+   le->endTime=cg.time+le->qceParticleEmitterBirth+le->qceParticleEmitterTransition;
+  le->pos.trType=TR_LINEAR;le->pos.trTime=le->startTime;
+  {float z=crandom(),theta=random()*2*M_PI,r=sqrt(1-z*z);vec3_t offset;
+   if(grounded)z=fabs(z);
+   VectorSet(offset,r*cos(theta)*def->explosion[0]*80,r*sin(theta)*def->explosion[0]*80,z*def->explosion[1]*80);
+   VectorAdd(origin,offset,le->pos.trBase);VectorScale(offset,def->explosion[2],le->pos.trDelta);
+  }
+  le->refEntity.reType=RT_SPRITE;le->refEntity.rotation=random()*360;
+ }
 }
 
 void CG_HaloWorldFrames(const qceViewClip_t *clip,int oneshot,int elapsed,int *oldframe,int *frame,float *backlerp) {

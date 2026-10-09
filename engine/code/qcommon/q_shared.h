@@ -1079,7 +1079,7 @@ typedef enum {
 //
 // per-level limits
 //
-#define	MAX_CLIENTS			64		// absolute limit
+#define	MAX_CLIENTS			128		// absolute limit
 #define MAX_LOCATIONS		64
 
 #define	GENTITYNUM_BITS		10		// don't need to send any more
@@ -1106,7 +1106,7 @@ typedef enum {
 
 #define	RESERVED_CONFIGSTRINGS	2	// game can't modify below this, only the system can
 
-#define	MAX_GAMESTATE_CHARS	16000
+#define	MAX_GAMESTATE_CHARS	65536
 typedef struct {
 	int			stringOffsets[MAX_CONFIGSTRINGS];
 	char		stringData[MAX_GAMESTATE_CHARS];
@@ -1149,6 +1149,7 @@ typedef struct playerState_s {
  int qceError[2], qceErrorRemainder[2];
  int qceRate[2], qceRateRemainder[2], qceBattery[2];
  int qceZoom, qceCrouch, qceOverheatTime[2];
+ int qceReloadCommit, qceReloadEmpty;
 	int			gravity;
 	int			speed;
 	int			delta_angles[3];	// add to command angles to get view direction

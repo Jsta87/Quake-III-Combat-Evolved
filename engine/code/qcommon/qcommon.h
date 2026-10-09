@@ -130,7 +130,7 @@ NET
 
 #define	PORT_ANY			-1
 
-#define	MAX_RELIABLE_COMMANDS	64			// max string commands buffered for restransmit
+#define	MAX_RELIABLE_COMMANDS	512			// max string commands buffered for restransmit
 
 typedef enum {
 	NA_BAD = 0,					// an address lookup failed
@@ -181,7 +181,7 @@ void		NET_LeaveMulticast6(void);
 void		NET_Sleep(int msec);
 
 
-#define	MAX_MSGLEN				16384		// max length of a message, which may
+#define	MAX_MSGLEN				65536		// max length of a message, which may
 											// be fragmented into multiple packets
 
 #define MAX_DOWNLOAD_WINDOW		48	// ACK window of 48 download chunks. Cannot set this higher, or clients
@@ -244,8 +244,8 @@ PROTOCOL
 ==============================================================
 */
 
-#define	PROTOCOL_VERSION	95 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
-#define PROTOCOL_LEGACY_VERSION	68
+#define	PROTOCOL_VERSION	96 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
+#define PROTOCOL_LEGACY_VERSION 0 /* QCE wire layouts require matching protocol-96 peers. */
 // 1.31 - 67
 
 // maintain a list of compatible protocols for demo playing

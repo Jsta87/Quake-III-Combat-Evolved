@@ -168,7 +168,8 @@ typedef struct centity_s {
 	qboolean		currentValid;	// true if cg.frame holds this entity
 
 	int				muzzleFlashTime;	// move to playerEntity?
-	int qcePlayerClip,qcePlayerStart;
+	int qcePlayerClip,qcePlayerStart,qcePlayerPreviousFrame,qcePlayerRenderedFrame,qcePlayerBlendMs;
+ qboolean qcePlayerPoseValid;
 	int qceMeleeTime, qceGrenadeTime, qceChargedFire, qceFireSequence, qceFireWeapon;
 	int				previousEvent;
 	int				teleportFlag;
@@ -217,6 +218,7 @@ typedef enum {
 	LE_MARK,
 	LE_EXPLOSION,
 	LE_SPRITE_EXPLOSION,
+ LE_QCE_GRENADE_PARTICLE,
 	LE_FRAGMENT,
 	LE_MOVE_SCALE_FADE,
 	LE_FALL_SCALE_FADE,
@@ -263,6 +265,12 @@ typedef struct localEntity_s {
 
 	trajectory_t	pos;
 	trajectory_t	angles;
+
+ int qceParticleType,qceParticlePhaseMs[4],qceParticleTick;
+ int qceParticleEmitterStart,qceParticleEmitterBirth,qceParticleEmitterTransition;
+ float qceParticleTypeColor[2][4],qceParticlePhysics[3][4];
+ float qceParticleColor[3][4],qceParticleScale[3],qceParticleRotation[3];
+ qhandle_t qceParticleShader[3];
 
 	float			bounceFactor;		// 0.0 = no bounce, 1.0 = perfect
 
@@ -397,8 +405,11 @@ typedef struct {
  int fireTime, chargedFire, grenadeTime, meleeTime, reloadRounds, phaseMs;
 } qceViewInput_t;
 typedef struct {
- qhandle_t playerModel,headModel,grenadeModels[2],grenadeShader;
- qceViewClip_t playerClips[11];
+ qhandle_t playerModel,headModel,grenadeModels[2],grenadeShader,plasmaExplosionShader,grenadeSmokeShader;
+ qhandle_t grenadeParticleShaders[3][64];
+ int grenadeParticleCounts[3];
+ float grenadeParticleWidths[3][64];
+ qceViewClip_t playerClips[49];
  sfxHandle_t grenadeLoop,grenadeThrow,grenadeExplode[2],grenadeBounce[2];
 } qceWorldMedia_t;
 extern qceWorldMedia_t cg_qceWorld;
@@ -1161,6 +1172,8 @@ extern	vmCvar_t		cg_addMarks;
 extern	vmCvar_t		cg_brassTime;
 extern vmCvar_t cg_qceFlashlight;
 extern vmCvar_t cg_qceWeaponScale;
+extern vmCvar_t cg_qceWorldWeaponScale;
+extern vmCvar_t cg_qceScorePage;
 extern	vmCvar_t		cg_gun_frame;
 extern	vmCvar_t		cg_gun_x;
 extern	vmCvar_t		cg_gun_y;

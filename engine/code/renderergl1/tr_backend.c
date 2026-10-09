@@ -606,36 +606,24 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			{
 				if (depthRange)
 				{
-					if(backEnd.viewParms.stereoFrame != STEREO_CENTER)
-					{
-						if(isCrosshair)
-						{
-							if(oldDepthRange)
-							{
-								// was not a crosshair but now is, change back proj matrix
-								qglMatrixMode(GL_PROJECTION);
-								qglLoadMatrixf(backEnd.viewParms.projectionMatrix);
-								qglMatrixMode(GL_MODELVIEW);
-							}
-						}
-						else
-						{
-							viewParms_t temp = backEnd.viewParms;
-
-							R_SetupProjection(&temp, r_znear->value, qfalse);
-
-							qglMatrixMode(GL_PROJECTION);
-							qglLoadMatrixf(temp.projectionMatrix);
-							qglMatrixMode(GL_MODELVIEW);
-						}
-					}
+                    if(isCrosshair) { qglMatrixMode(GL_PROJECTION);qglLoadMatrixf(backEnd.viewParms.projectionMatrix);qglMatrixMode(GL_MODELVIEW); }
+                    else {
+                        viewParms_t temp=backEnd.viewParms;
+                        float nearClip=0.1f,depth=temp.zFar-nearClip;
+                        R_SetupProjection(&temp, r_znear->value, qfalse);
+                        /* Projection XY preserves FOV; replace its geometric near plane. */
+                        temp.projectionMatrix[2]=temp.projectionMatrix[6]=0;
+                        temp.projectionMatrix[10]=-(temp.zFar+nearClip)/depth;
+                        temp.projectionMatrix[14]=-2*temp.zFar*nearClip/depth;
+                        qglMatrixMode(GL_PROJECTION);qglLoadMatrixf(temp.projectionMatrix);qglMatrixMode(GL_MODELVIEW);
+                    }
 
 					if(!oldDepthRange)
 						qglDepthRange (0, 0.3);
 				}
 				else
 				{
-					if(!wasCrosshair && backEnd.viewParms.stereoFrame != STEREO_CENTER)
+					if(!wasCrosshair)
 					{
 						qglMatrixMode(GL_PROJECTION);
 						qglLoadMatrixf(backEnd.viewParms.projectionMatrix);
@@ -666,6 +654,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// go back to the world modelview matrix
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	if ( depthRange ) {
+        qglMatrixMode(GL_PROJECTION);qglLoadMatrixf(backEnd.viewParms.projectionMatrix);qglMatrixMode(GL_MODELVIEW);
 		qglDepthRange (0, 1);
 	}
 

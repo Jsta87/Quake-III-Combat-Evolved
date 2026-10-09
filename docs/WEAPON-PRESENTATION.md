@@ -92,7 +92,7 @@ recovery priority, interpolation and once-per-instance sound scheduling.
 IQM meshes include orthogonal tangents required by OpenGL 2. Renderer tests
 exercise actual IQM tag interpolation in OpenGL 1 and 2, including
 endpoints, reverse interpolation and child bind transforms. Gameplay tests cover
-shotgun phases, interruption, conservation, prediction and protocol-95 state.
+shotgun phases, interruption, conservation, prediction and protocol-96 state.
 
 Native/QVM client and dedicated-server builds pass. Local offscreen runs in
 OpenGL 1 and 2 validate source audio loading,
@@ -103,3 +103,6 @@ Retail side-by-side validation remains outstanding.
 Format/layout reference: Invader commit
 `696830ff80af227e84e7237c2ef26eb2301ed110`; quaternion convention cross-checked
 against Reclaimer commit `a0a56ca7e95957e4cef165f606ae6ab6b659113a`.
+
+See [the playtest follow-up](PLAYTEST-FOLLOWUP.md) for protocol 96, 128 slots,
+reload interruption, new material conversion and scoreboard controls.

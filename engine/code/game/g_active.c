@@ -344,7 +344,10 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 
 		// perform a pmove
 		Pmove (&pm);
-		// save results of pmove
+	 /* Advance reload insertion before replacing a weapon, including commands
+       that cross the insertion time while the pickup key is already held. */
+ if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched)G_QceSwapWeapon(ent);
+	// save results of pmove
 		VectorCopy( client->ps.origin, ent->s.origin );
 
 		G_TouchTriggers( ent );
@@ -576,7 +579,7 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 			break;
 
 		case EV_QCE_GRENADE:
-			if (client->ps.stats[STAT_QCE_COMBAT]) G_QceThrowGrenade(ent,client->ps.eventParms[i & (MAX_PS_EVENTS-1)]);
+   G_QceBeginGrenadeThrow(ent,client->ps.eventParms[i & (MAX_PS_EVENTS-1)]);
 			break;
 
 		case EV_FIRE_WEAPON:
@@ -849,7 +852,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 	if(client->ps.stats[STAT_QCE_COMBAT])client->ps.stats[STAT_QCE_COMBAT]=1|(g_qceMeleeLunge.integer?2:0);
 	if(!(ucmd->buttons&BUTTON_QCE_PICKUP))client->qcePickupLatched=qfalse;
- else if(!client->qcePickupLatched)G_QceSwapWeapon(ent);
+
 	client->ps.gravity = g_gravity.value;
 
 	// set speed
@@ -955,6 +958,9 @@ void ClientThink_real( gentity_t *ent ) {
 		Pmove (&pm);
 #endif
 
+ /* Advance reload insertion before replacing a weapon, including commands
+       that cross the insertion time while the pickup key is already held. */
+ if((ucmd->buttons&BUTTON_QCE_PICKUP) && !client->qcePickupLatched)G_QceSwapWeapon(ent);
 	// save results of pmove
 	if ( ent->client->ps.eventSequence != oldEventSequence ) {
 		ent->eventTime = level.time;
@@ -1123,6 +1129,8 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 */
 void ClientEndFrame( gentity_t *ent ) {
 	int			i;
+
+ G_QceUpdateGrenadeRelease(ent);
 
 	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
 		SpectatorClientEndFrame( ent );

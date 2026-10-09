@@ -1,0 +1,320 @@
+{
+  "source_map": {
+    "filename": "bloodgulch.map",
+    "name": "bloodgulch",
+    "build": "01.10.12.2276",
+    "version": 5,
+    "compressed": true,
+    "file_size": 22571008,
+    "decompressed_size": 44328960,
+    "sha256": "50fe52406f075d975e24100a65b26ff696458023dd3509878953052ab0ef858f",
+    "header_crc32": "035e2da3",
+    "header_crc_verified": false,
+    "tag_count": 1806
+  },
+  "grenade_release_frame": 8,
+  "animation_fps": 30,
+  "blend_ticks": 6,
+  "idle_blend_ticks": 1,
+  "behavior_reference": {
+    "repository": "https://github.com/cybersecurity/halo-ce-universal",
+    "commit": "73dc01d09a21875f14c77b4430f20518d1f5ad09",
+    "functions": [
+      "unit_throw_grenade_release",
+      "unit_animation_compute_interpolation_frame_count",
+      "animation_update_internal"
+    ]
+  },
+  "particles": [
+    {
+      "tag": "weapons\\frag grenade\\effects\\explosion med",
+      "count": 35,
+      "states": [
+        {
+          "name": "fire",
+          "point_physics": "weapons\\frag grenade\\effects\\fire explosion",
+          "mass": 59.30667495727539,
+          "buoyancy": 0.3749999701976776,
+          "friction": 2000.0,
+          "radius": 1.5,
+          "duration": [
+            0.10000000149011612,
+            0.20000000298023224
+          ],
+          "transition": [
+            0.10000000149011612,
+            0.800000011920929
+          ],
+          "scale": [
+            0.009999999776482582,
+            0.029999999329447746
+          ],
+          "rotation": [
+            3.4906585216522217,
+            6.981317043304443
+          ],
+          "argb_min": [
+            1.0,
+            1.0,
+            0.9215689897537231,
+            0.6431369781494141
+          ],
+          "argb_max": [
+            1.0,
+            1.0,
+            0.5019609928131104,
+            0.282353013753891
+          ]
+        },
+        {
+          "name": "smoke plume",
+          "point_physics": "weapons\\frag grenade\\effects\\fire explosion",
+          "mass": 59.30667495727539,
+          "buoyancy": 0.3749999701976776,
+          "friction": 2000.0,
+          "radius": 1.5,
+          "duration": [
+            0.30000001192092896,
+            0.6000000238418579
+          ],
+          "transition": [
+            0.30000001192092896,
+            0.800000011920929
+          ],
+          "scale": [
+            0.009999999776482582,
+            0.03999999910593033
+          ],
+          "rotation": [
+            2.6179938316345215,
+            4.363323211669922
+          ],
+          "argb_min": [
+            0.20000000298023224,
+            0.6431369781494141,
+            0.6078429818153381,
+            0.5686269998550415
+          ],
+          "argb_max": [
+            0.4000000059604645,
+            0.48627498745918274,
+            0.4627450108528137,
+            0.4196079969406128
+          ]
+        },
+        {
+          "name": "death",
+          "point_physics": "weapons\\frag grenade\\effects\\smoke explosion",
+          "mass": 94.89067077636719,
+          "buoyancy": 0.15789474546909332,
+          "friction": 200.0,
+          "radius": 1.5,
+          "duration": [
+            0.0,
+            0.0
+          ],
+          "transition": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.009999999776482582,
+            0.03999999910593033
+          ],
+          "rotation": [
+            1.7453292608261108,
+            3.4906585216522217
+          ],
+          "argb_min": [
+            0.0,
+            0.4588240087032318,
+            0.4588240087032318,
+            0.4588240087032318
+          ],
+          "argb_max": [
+            0.0,
+            0.4039219915866852,
+            0.4039219915866852,
+            0.4039219915866852
+          ]
+        }
+      ],
+      "explosion": [
+        0.012000000104308128,
+        0.07999999821186066,
+        200.0
+      ],
+      "emitter_duration": [
+        1.0,
+        1.5
+      ],
+      "emitter_transition": [
+        4.0,
+        5.0
+      ],
+      "type_color": [
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "creation_rate": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "tag": "weapons\\plasma grenade\\effects\\explosion",
+      "count": 10,
+      "states": [
+        {
+          "name": "fuelrod burst",
+          "point_physics": "weapons\\frag grenade\\effects\\fire explosion",
+          "mass": 59.30667495727539,
+          "buoyancy": 0.3749999701976776,
+          "friction": 2000.0,
+          "radius": 1.5,
+          "duration": [
+            0.0,
+            0.0
+          ],
+          "transition": [
+            0.4000000059604645,
+            0.5
+          ],
+          "scale": [
+            0.014999999664723873,
+            0.02500000037252903
+          ],
+          "rotation": [
+            3.4906585216522217,
+            6.981317043304443
+          ],
+          "argb_min": [
+            1.0,
+            0.0,
+            0.8431370258331299,
+            0.992156982421875
+          ],
+          "argb_max": [
+            1.0,
+            0.0,
+            0.8431370258331299,
+            0.992156982421875
+          ]
+        },
+        {
+          "name": "c energy smoke",
+          "point_physics": "weapons\\frag grenade\\effects\\fire explosion",
+          "mass": 59.30667495727539,
+          "buoyancy": 0.3749999701976776,
+          "friction": 2000.0,
+          "radius": 1.5,
+          "duration": [
+            0.0,
+            0.0
+          ],
+          "transition": [
+            1.75,
+            2.0
+          ],
+          "scale": [
+            0.05999999865889549,
+            0.06499999761581421
+          ],
+          "rotation": [
+            2.6179938316345215,
+            4.363323211669922
+          ],
+          "argb_min": [
+            0.6499999761581421,
+            0.01568629965186119,
+            0.8549020290374756,
+            1.0
+          ],
+          "argb_max": [
+            0.8500000238418579,
+            0.035294100642204285,
+            0.8549020290374756,
+            1.0
+          ]
+        },
+        {
+          "name": "death",
+          "point_physics": "effects\\point physics\\hot smoke cloud",
+          "mass": 59.30667495727539,
+          "buoyancy": 0.3749999701976776,
+          "friction": 200.0,
+          "radius": 1.5,
+          "duration": [
+            0.0,
+            0.0
+          ],
+          "transition": [
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.07999999821186066,
+            0.09000000357627869
+          ],
+          "rotation": [
+            1.7453292608261108,
+            3.4906585216522217
+          ],
+          "argb_min": [
+            0.0,
+            0.050980400294065475,
+            0.8823530077934265,
+            1.0
+          ],
+          "argb_max": [
+            0.0,
+            0.023529399186372757,
+            0.8274509906768799,
+            1.0
+          ]
+        }
+      ],
+      "explosion": [
+        0.019999999552965164,
+        0.03500000014901161,
+        250.0
+      ],
+      "emitter_duration": [
+        0.25,
+        0.25
+      ],
+      "emitter_transition": [
+        1.0,
+        1.0
+      ],
+      "type_color": [
+        [
+          1.0,
+          0.0823528990149498,
+          0.8431370258331299,
+          1.0
+        ],
+        [
+          0.0,
+          0.1411760002374649,
+          0.9568629860877991,
+          1.0
+        ]
+      ],
+      "creation_rate": [
+        15.0,
+        0.0
+      ]
+    }
+  ]
+}

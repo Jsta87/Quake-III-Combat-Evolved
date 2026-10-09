@@ -279,7 +279,7 @@ qboolean Netchan_Process( netchan_t *chan, msg_t *msg ) {
 
 	// read the fragment information
 	if ( fragmented ) {
-		fragmentStart = MSG_ReadShort( msg );
+		fragmentStart = MSG_ReadShort( msg ) & 0xffff; /* protocol 96: unsigned offset across 64 KiB */
 		fragmentLength = MSG_ReadShort( msg );
 	} else {
 		fragmentStart = 0;		// stop warning message

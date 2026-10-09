@@ -47,6 +47,7 @@ def import_profile(report,profile):
   if mag['rounds reloaded']>1 and full:w['reload_ms']=round(full['frame count']*1000/30)
   w['reload_empty_ms']=round(empty['frame count']*1000/30) if empty else w['reload_ms']
   w.update(reload_enter_ms=0,reload_exit_ms=0,reload_exit_empty_ms=0)
+  w.setdefault('reload_commit_ms',w['reload_ms']);w.setdefault('reload_empty_commit_ms',w['reload_empty_ms'])
   if w['reload_rounds']==1:
    for field,clip in [('reload_enter_ms','enter'),('reload_exit_ms','exit-full'),('reload_exit_empty_ms','exit-empty')]:
     track=animations.get('first-person '+clip)

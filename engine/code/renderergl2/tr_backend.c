@@ -542,32 +542,24 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			{
 				if (depthRange)
 				{
-					if(backEnd.viewParms.stereoFrame != STEREO_CENTER)
-					{
-						if(isCrosshair)
-						{
-							if(oldDepthRange)
-							{
-								// was not a crosshair but now is, change back proj matrix
-								GL_SetProjectionMatrix( backEnd.viewParms.projectionMatrix );
-							}
-						}
-						else
-						{
-							viewParms_t temp = backEnd.viewParms;
-
-							R_SetupProjection(&temp, r_znear->value, 0, qfalse);
-
-							GL_SetProjectionMatrix( temp.projectionMatrix );
-						}
-					}
+                    if(isCrosshair) { GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix); }
+                    else {
+                        viewParms_t temp=backEnd.viewParms;
+                        float nearClip=0.1f,depth=temp.zFar-nearClip;
+                        R_SetupProjection(&temp, r_znear->value, 0, qfalse);
+                        /* Projection XY preserves FOV; replace its geometric near plane. */
+                        temp.projectionMatrix[2]=temp.projectionMatrix[6]=0;
+                        temp.projectionMatrix[10]=-(temp.zFar+nearClip)/depth;
+                        temp.projectionMatrix[14]=-2*temp.zFar*nearClip/depth;
+                        GL_SetProjectionMatrix(temp.projectionMatrix);
+                    }
 
 					if(!oldDepthRange)
 						qglDepthRange (0, 0.3);
 				}
 				else
 				{
-					if(!wasCrosshair && backEnd.viewParms.stereoFrame != STEREO_CENTER)
+					if(!wasCrosshair)
 					{
 						GL_SetProjectionMatrix( backEnd.viewParms.projectionMatrix );
 					}
@@ -599,6 +591,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// go back to the world modelview matrix
 
 	GL_SetModelviewMatrix( backEnd.viewParms.world.modelMatrix );
+    if(oldDepthRange && !wasCrosshair)GL_SetProjectionMatrix(backEnd.viewParms.projectionMatrix);
 
 	qglDepthRange (0, 1);
 }

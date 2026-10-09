@@ -250,7 +250,7 @@ class Assets:
         return [start+i*size for i in range(count)]
     def write(self,path,data,source):
         if path in self.files: raise halo.CacheError('Output collision')
-        self.files[path] = {'sha256':hashlib.sha256(data).hexdigest(),'size':len(data),**source}
+        self.files[path] = {**source,'sha256':hashlib.sha256(data).hexdigest(),'size':len(data)}
         dest = self.output/path; dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
         return path
     def texture(self,tag):
@@ -323,6 +323,29 @@ class Assets:
                     skip,gain = struct.unpack_from('<2f',self.cache.data,parts[pi]+32)
                     settings = {'minimum_distance_halo_units':root_min,'maximum_distance_halo_units':root_max,'skip_fraction':root_skip,'random_pitch_bounds':[pitch_min,pitch_max],'natural_pitch':natural,'bend_bounds':[bend_min,bend_max],'permutation_skip_fraction':skip,'permutation_gain':gain}
                     self.records.append({'tag':tag['path'],'id':tag['id'],'range':ri,'permutation':pi,'names':names,'channels':channels,'sample_rate':rate,'frames':len(pcm)//(2*channels),'duration_seconds':len(pcm)/(2*channels*rate),'playback_settings':settings,'segments':segments,'outputs':[path]})
+    def calibrated_sound(self,record):
+        """Bake source gain/playback rate once into a runtime alias; retain raw PCM."""
+        tag=self.cache.tags[record['id']]
+        gain=struct.unpack_from('<f',self.cache.data,tag['offset']+40)[0]
+        ranges=self.reflexive('Sound','pitch ranges',tag['offset'],'SoundPitchRange')
+        r=ranges[record['range']]
+        playback=struct.unpack_from('<f',self.cache.data,r+48)[0]
+        parts=self.reflexive('SoundPitchRange','permutations',r,'SoundPermutation')
+        permutation_gain=struct.unpack_from('<f',self.cache.data,parts[record['permutation']]+36)[0]
+        factor=gain*permutation_gain
+        if not math.isfinite(factor) or not 0<=factor<=4 or not math.isfinite(playback) or not 0.25<=playback<=4:
+            raise halo.CacheError('Invalid source sound calibration')
+        with wave.open(str(self.output/record['outputs'][0]),'rb') as stream:
+            if stream.getsampwidth()!=2:raise halo.CacheError('Expected signed 16-bit PCM')
+            channels,rate=stream.getnchannels(),stream.getframerate()
+            raw=stream.readframes(stream.getnframes())
+        samples=struct.unpack('<'+'h'*(len(raw)//2),raw)
+        calibrated=[max(-32768,min(32767,round(x*factor))) for x in samples]
+        pcm=struct.pack('<'+'h'*len(calibrated),*calibrated)
+        info={'definition_gain':gain,'permutation_gain':permutation_gain,'applied_gain':factor,'playback_rate':playback,
+              'clipped_samples':sum(abs(x*factor)>32767 for x in samples),
+              'raw_peak':max((abs(x) for x in samples),default=0),'calibrated_peak':max((abs(x) for x in calibrated),default=0)}
+        return wav(pcm,channels,round(rate*playback)),info
     def inventory(self):
         result = {}
         for slot,path in halo.WEAPONS.items():
