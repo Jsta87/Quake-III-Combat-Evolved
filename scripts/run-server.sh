@@ -7,6 +7,9 @@ if [[ ! -f "$data/baseq3/pak0.pk3" ]]; then
   exit 2
 fi
 mkdir -p "$root/runtime/baseq3"
+if [[ "${QCE_MAP:-q3dm1}" == qce_bloodgulch ]]; then
+ python3 "$root/scripts/build-bloodgulch-bots.py" --check-data "$data" --home "$root/runtime"
+fi
 cp "$root"/build/server/RelWithDebInfo/baseq3/*.so "$root/runtime/baseq3/"
 exec "$root/build/server/RelWithDebInfo/ioq3ded" +set fs_basepath "$data" \
   +set fs_homepath "$root/runtime" +set fs_game baseq3 \

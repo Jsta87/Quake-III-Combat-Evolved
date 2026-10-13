@@ -84,6 +84,9 @@ void G_QceVariantUpdate(void) {
 }
 void G_QceVariantPlayer(playerState_t *ps) {
  int slot,weapon;
+ /* Capacity changes apply to living players, not just their next spawn.
+  * Lowering the limit prevents new additions; existing guns remain until dropped. */
+ ps->qceMaxHeldWeapons=GV(GV_MAX_HELD)?(int)GV(GV_MAX_HELD):9;
  ps->qceVariantScale[0]=(int)(GV(GV_MOVE)*1000+1.5f);
  ps->qceVariantScale[1]=(int)(GV(GV_JUMP)*1000+1.5f);
  ps->qceVariantScale[2]=(int)(GV(GV_GRAVITY)*1000+1.5f);

@@ -1245,7 +1245,7 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 	}
 
 	if (!trap_AAS_Initialized()) {
-		BotAI_Print(PRT_FATAL, "AAS not initialized\n");
+		BotAI_Print(PRT_ERROR, "Bot navigation is not initialized. Check earlier AAS load errors. For Blood Gulch, run scripts/build-bloodgulch-bots.py after map conversion and restart the game.\n");
 		return qfalse;
 	}
 

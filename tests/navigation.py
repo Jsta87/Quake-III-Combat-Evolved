@@ -3,6 +3,8 @@ import importlib.util
 from pathlib import Path
 import struct
 import unittest
+import tempfile
+import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('nav',ROOT/'scripts/build-bloodgulch-bots.py');n=importlib.util.module_from_spec(s);s.loader.exec_module(n)
 class NavigationTests(unittest.TestCase):
@@ -19,4 +21,24 @@ class NavigationTests(unittest.TestCase):
   self.assertEqual(n.validate_aas(self.file(),123),1)
   with self.assertRaises(ValueError):n.validate_aas(self.file(),456)
   with self.assertRaises(ValueError):n.validate_aas(self.file()[:-1],123)
+ def test_packaged_navigation_and_overrides(self):
+  with tempfile.TemporaryDirectory() as temp:
+   root=Path(temp);data=root/'assets';home=root/'home';(data/'baseq3').mkdir(parents=True)
+   checksum=n.bsp_checksum(b'abc');aas=self.file();header=bytearray(aas[:124])
+   for i in range(8,124):header[i]^=(i-8)*119 & 255
+   struct.pack_into('<I',header,8,checksum)
+   for i in range(8,124):header[i]^=(i-8)*119 & 255
+   aas[:124]=header
+   def package(name,entries):
+    with zipfile.ZipFile(data/'baseq3'/name,'w') as archive:
+     for key,value in entries.items():archive.writestr(key,value)
+   package('map.pk3',{'maps/qce_bloodgulch.bsp':b'abc'})
+   with self.assertRaisesRegex(ValueError,'Missing'):n.check_game_data(data,home)
+   package('navigation.pk3',{'maps/qce_bloodgulch.aas':aas})
+   self.assertEqual(n.check_game_data(data,home),1)
+   package('zzz-old.pk3',{'maps/qce_bloodgulch.bsp':b'wrong'})
+   with self.assertRaisesRegex(ValueError,'different BSP'):n.check_game_data(data,home)
+   (data/'baseq3/zzz-old.pk3').unlink();(home/'baseq3/maps').mkdir(parents=True)
+   (home/'baseq3/maps/qce_bloodgulch.bsp').write_bytes(b'wrong')
+   with self.assertRaisesRegex(ValueError,'different BSP'):n.check_game_data(data,home)
 if __name__=='__main__':unittest.main()

@@ -48,6 +48,12 @@ int main(void) {
  Set("gv_mapWeaponSet","none");assert(!G_QceVariantMapWeapon(BG_FindItemForWeapon(WP_ROCKET_LAUNCHER)));
  Set("gv_mapWeaponSet","shotguns");assert(G_QceVariantMapWeapon(BG_FindItemForWeapon(WP_BFG))->giTag==WP_SHOTGUN);
  Set("gv_maxHeldWeapons","0");G_QceVariantSpawn(&ps);assert(ps.qceMaxHeldWeapons==9);Set("gv_maxHeldWeapons","1");G_QceVariantSpawn(&ps);assert(BG_QceSlot(&ps,WP_MACHINEGUN)<0);Set("gv_maxHeldWeapons","2");
+ G_QceVariantSpawn(&ps);Set("gv_maxHeldWeapons","0");G_QceVariantPlayer(&ps);
+ for(i=WP_MACHINEGUN;i<=WP_BFG;i++)assert(BG_QceAddWeapon(&ps,i,BG_QceWeaponDef(i)->ammo_initial));
+ assert(BG_QceHeldLimit(&ps)==8);
+ for(i=WP_MACHINEGUN;i<=WP_BFG;i++)assert(BG_QceSlot(&ps,i)>=0 && BG_QceMagazine(&ps,i)>0);
+ Set("gv_maxHeldWeapons","2");G_QceVariantPlayer(&ps);assert(BG_QceHeldLimit(&ps)==2);
+ BG_QceRemoveWeapon(&ps,WP_SHOTGUN);assert(!BG_QceAddWeapon(&ps,WP_SHOTGUN,12));
  Set("gv_primaryWeapon","random");Set("gv_secondaryWeapon","random");for(i=0;i<100;i++) {memset(&ps,0,sizeof(ps));ps.stats[STAT_QCE_COMBAT]=1;G_QceVariantSpawn(&ps);assert((ps.stats[STAT_QCE_SLOTS]&15)!=((ps.stats[STAT_QCE_SLOTS]>>4)&15));}
  memset(&ent,0,sizeof(ent));memset(&cl,0,sizeof(cl));ent.client=&cl;ent.health=75;cl.ps.qceMaxShield=150;level.time=1000;G_QceVariantRecharge(&ent);assert(cl.ps.stats[STAT_QCE_SHIELD]>0 && cl.ps.stats[STAT_QCE_SHIELD]<150);
  level.time=10000;G_QceVariantRecharge(&ent);assert(cl.ps.stats[STAT_QCE_SHIELD]==150);

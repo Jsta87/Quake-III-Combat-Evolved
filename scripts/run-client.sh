@@ -8,6 +8,9 @@ if [[ ! "$max_clients" =~ ^[0-9]+$ ]] || ((10#$max_clients < 1 || 10#$max_client
  echo 'QCE_MAX_CLIENTS must be between 1 and 128' >&2; exit 2
 fi
 mkdir -p "$root/runtime-client/baseq3"
+if [[ "${QCE_MAP:-q3dm1}" == qce_bloodgulch ]]; then
+ python3 "$root/scripts/build-bloodgulch-bots.py" --check-data "$data" --home "$root/runtime-client"
+fi
 cp "$root"/build/client/RelWithDebInfo/baseq3/*.so "$root/runtime-client/baseq3/"
 cp "$root/config/qce-controls.cfg" "$root/runtime-client/baseq3/qce-controls.cfg"
 # Prefer the machine's SDL runtime, which supports desktop OpenGL. The locally

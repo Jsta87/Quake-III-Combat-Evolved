@@ -9,6 +9,18 @@ import struct
 import subprocess
 import zipfile
 ROOT=Path(__file__).resolve().parents[1]
+def check_game_data(data,home):
+    """Follow loose-file / reverse PK3 search order in each baseq3 directory."""
+    def read(name):
+        for directory in (home/'baseq3',data/'baseq3'):
+            loose=directory/name
+            if loose.is_file():return loose.read_bytes()
+            for package in sorted(directory.glob('*.pk3'),reverse=True):
+                with zipfile.ZipFile(package) as archive:
+                    if name in archive.namelist():return archive.read(name)
+        raise ValueError(f'Missing {name}')
+    bsp=read('maps/qce_bloodgulch.bsp')
+    return validate_aas(read('maps/qce_bloodgulch.aas'),bsp_checksum(bsp))
 def bsp_checksum(data):
     """Quake's XOR of the four MD4 digest words (not a CRC or timestamp)."""
     bits=len(data)*8;data+=b'\x80';data+=b'\0'*((56-len(data))%64)+struct.pack('<Q',bits)
@@ -69,4 +81,10 @@ def build(output,pk3,bspc,import_aas=None):
         temporary.replace(pk3)
     print(json.dumps({'aas':str(aas),'bytes':len(data),'areas':areas,'cached':cached,'log':str(log)}))
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'assets/halo/converted/map');p.add_argument('--pk3',type=Path,default=ROOT/'assets/baseq3/zz-qce-bloodgulch.pk3');p.add_argument('--bspc',type=Path,default=ROOT/'.tools/bin/bspc');p.add_argument('--import-aas',type=Path);a=p.parse_args();build(a.output,a.pk3,a.bspc,a.import_aas)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'assets/halo/converted/map');p.add_argument('--pk3',type=Path,default=ROOT/'assets/baseq3/zz-qce-bloodgulch.pk3');p.add_argument('--bspc',type=Path,default=ROOT/'.tools/bin/bspc');p.add_argument('--import-aas',type=Path)
+    p.add_argument('--check-data',type=Path);p.add_argument('--home',type=Path,default=ROOT/'runtime-client');a=p.parse_args()
+    if a.check_data:
+        try:print(f'Blood Gulch navigation verified: {check_game_data(a.check_data,a.home)} areas')
+        except (ValueError,OSError,zipfile.BadZipFile) as error:
+            p.exit(2,f'Blood Gulch navigation unavailable: {error}\nRun ./scripts/bootstrap-bspc.sh and python3 scripts/build-bloodgulch-bots.py after converting the map, then restart the game.\nCheck for older loose BSP/AAS files or duplicate map PK3s overriding the new package.\n')
+    else:build(a.output,a.pk3,a.bspc,a.import_aas)

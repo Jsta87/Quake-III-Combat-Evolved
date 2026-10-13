@@ -4,6 +4,10 @@ Commands below run in a terminal. The package-install command is for Ubuntu/Debi
 on other distributions install equivalent Git, C/C++ build tools, Python development
 headers/venv, SDL2 development files and pkg-config. Run the game on a graphical desktop.
 
+On CachyOS/Arch, replace the two `apt` commands below with
+`sudo pacman -Syu` and
+`sudo pacman -S --needed git base-devel python python-pip sdl2 pkgconf`.
+
 ```sh
 sudo apt update
 sudo apt install -y git build-essential python3 python3-dev python3-venv libsdl2-dev pkg-config
@@ -48,6 +52,20 @@ It also expands the compiler's fixed reachability pool and fixes its 32-bit MD4
 word type on 64-bit Linux. Navigation is stored in the same local
 Blood Gulch PK3 as the matching BSP. Rebuilding the map requires rebuilding its
 AAS; an AAS from a different map revision will not work.
+
+If adding bots reports `AAS not initialized`, quit the game and run
+`./scripts/bootstrap-bspc.sh`, then
+`python3 scripts/build-bloodgulch-bots.py`, then launch again. The launcher now
+checks for matching navigation before opening Blood Gulch. If it reports a
+mismatch despite rebuilding, check for older map PK3s or loose files under
+`assets/baseq3/maps` and `runtime-client/baseq3/maps` overriding the new package.
+Running map conversion again replaces the PK3; always run the navigation builder
+afterward to put its matching AAS back into the package.
+
+`gv_maxHeldWeapons 0` applies immediately to living players; `give all` then
+provides all eight Halo weapons, which you can cycle with Q. Lowering the limit
+prevents new additions until your inventory is under that limit; it preserves
+weapons you already hold until you drop or replace them.
 
 Open the console with **~** and add bots:
 
