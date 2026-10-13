@@ -17,7 +17,9 @@ for patch in bspc-parent-planes.patch bspc-terrain-partition.patch bspc-reachabi
   git -C "$source_dir" apply --reverse --check "$root/scripts/patches/$patch"
  fi
 done
-make -C "$source_dir" -j"${QCE_BUILD_JOBS:-4}" CFLAGS='-Dstricmp=strcasecmp -DCom_Memcpy=memcpy -DCom_Memset=memset -DMAC_STATIC= -DQDECL= -DLINUX -DBSPC -D_FORTIFY_SOURCE=2 -I. -Ideps -Wall -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -fcommon -O2'
+# BSPC predates C23, whose true/false keywords conflict with its qboolean enum.
+# Pin the dialect rather than inheriting the host GCC default.
+make -C "$source_dir" -j"${QCE_BUILD_JOBS:-4}" CFLAGS='-std=gnu99 -Dstricmp=strcasecmp -DCom_Memcpy=memcpy -DCom_Memset=memset -DMAC_STATIC= -DQDECL= -DLINUX -DBSPC -D_FORTIFY_SOURCE=2 -I. -Ideps -Wall -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -fcommon -O2'
 mkdir -p "$root/.tools/bin"
 cp "$source_dir/bspc" "$root/.tools/bin/.bspc.$$"
 mv -f "$root/.tools/bin/.bspc.$$" "$root/.tools/bin/bspc"
