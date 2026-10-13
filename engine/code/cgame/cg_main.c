@@ -146,7 +146,7 @@ vmCvar_t	cg_fov;
 vmCvar_t	cg_zoomFov;
 vmCvar_t	cg_thirdPerson;
 vmCvar_t cg_qceCameraMode;
-vmCvar_t cg_qceCameraBack,cg_qceCameraUp,cg_qceCameraSide;
+vmCvar_t cg_qceCameraBack,cg_qceCameraUp,cg_qceCameraSide,cg_qceDynamicCrosshair;
 vmCvar_t	cg_thirdPersonRange;
 vmCvar_t	cg_thirdPersonAngle;
 vmCvar_t	cg_lagometer;
@@ -250,6 +250,7 @@ static cvarTable_t cvarTable[] = {
  { &cg_qceCameraBack, "cg_qceCameraBack", "90", CVAR_ARCHIVE },
  { &cg_qceCameraUp, "cg_qceCameraUp", "8", CVAR_ARCHIVE },
  { &cg_qceCameraSide, "cg_qceCameraSide", "24", CVAR_ARCHIVE },
+ { &cg_qceDynamicCrosshair, "cg_qceDynamicCrosshair", "0", CVAR_ARCHIVE },
  { &cg_qceFlashlight, "cg_qceFlashlight", "0", CVAR_ARCHIVE },
 	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
 	{ &cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE },

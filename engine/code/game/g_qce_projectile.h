@@ -5,6 +5,14 @@ void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon) {
  bolt->s.pos.trTime=level.time;bolt->s.pos.trType=TR_LINEAR;
  /* Render-only launch metadata; simulation always uses the first-person muzzle. */
  bolt->s.time=level.time;bolt->s.otherEntityNum2=owner->s.number+1;
+ if(!(bolt->r.svFlags&SVF_NOCLIENT)) {
+  const qce_weapondef_t *def=BG_QceWeaponDef(weapon);vec3_t direction,end;trace_t trace;
+  VectorCopy(bolt->s.pos.trBase,bolt->s.origin2);VectorCopy(bolt->s.pos.trDelta,direction);
+  if(VectorNormalize(direction)==0)AngleVectors(owner->client->ps.viewangles,direction,NULL,NULL);
+  VectorMA(bolt->s.origin2,def->projectile_range>0?def->projectile_range:8192,direction,end);
+  trap_Trace(&trace,bolt->s.origin2,NULL,NULL,end,owner->s.number,MASK_SHOT);
+  VectorCopy(trace.endpos,bolt->s.angles2);
+ }
 }
 
 gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {

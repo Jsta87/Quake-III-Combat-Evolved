@@ -6,6 +6,12 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('cyborg',ROOT/'scripts/convert-halo-cyborg.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c)
 class ImportTests(unittest.TestCase):
+ def test_e3_and_mac_shader_indices_are_not_assumed(self):
+  self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\99_e3\shaders\e3_99_armor'),'armor')
+  self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\99_e3\shaders\e3_99_visor'),'visor')
+  self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\00_mac\shaders\head visor'),'visor')
+  self.assertIsNone(c.shader_kind('shaders/emblem'))
+  with self.assertRaises(ValueError):c.shader_kind('shaders/unexpected')
  def test_iqm_rotation_and_attachment_roundtrip(self):
   p=c.p;bones=[{'name':'root','parent':-1},{'name':'bip01 r hand','parent':0}]
   rotated=((0,-1,0),(1,0,0),(0,0,1));frames=[[(p.IDENTITY,(1,2,3)),(p.IDENTITY,(4,0,0))],[(rotated,(3,2,1)),(p.IDENTITY,(4,0,0))]]

@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // cg_weapons.c -- events and effects dealing with weapons
 #include "cg_local.h"
+#include "../game/bg_qce_world_muzzles.generated.h"
+#include "cg_qce_projectile_visual.h"
 #include "cg_qce_visual.h"
 #define QCE_DEFINE_PARTICLE_DATA
 #include "../game/bg_qce_presentation.generated.h"
@@ -216,6 +218,28 @@ static void CG_NailgunEjectBrass( centity_t *cent ) {
 CG_RailTrail
 ==========================
 */
+void CG_HaloSniperTrail(const vec3_t start,const vec3_t end,int clientNum) {
+ vec3_t offset={0,0,0},delta,a,b;int i,segments=1;
+ if(clientNum>=0 && clientNum<MAX_CLIENTS && (clientNum!=cg.predictedPlayerState.clientNum || cg.renderingThirdPerson)) {
+  centity_t *shooter=&cg_entities[clientNum];trace_t trace;
+  if(shooter->qceWorldMuzzleTime>0 && cg.time-shooter->qceWorldMuzzleTime<250) {
+   CG_Trace(&trace,start,NULL,NULL,shooter->qceWorldMuzzle,clientNum,MASK_SOLID);
+   VectorSubtract(trace.endpos,start,offset);segments=4;
+  }
+ }
+ VectorSubtract(end,start,delta);
+ for(i=0;i<segments;i++) {
+  localEntity_t *le;refEntity_t *re;float t;
+  t=i/(float)segments;VectorMA(start,t,delta,a);VectorMA(a,QCE_VisualOffsetWeight(t),offset,a);
+  t=(i+1)/(float)segments;VectorMA(start,t,delta,b);VectorMA(b,QCE_VisualOffsetWeight(t),offset,b);
+  le=CG_AllocLocalEntity();re=&le->refEntity;
+  le->leType=LE_FADE_RGB;le->startTime=cg.time;le->endTime=cg.time+1500;le->lifeRate=1.0f/1500;
+  re->reType=RT_RAIL_CORE;re->customShader=cg_qceWorld.sniperSmokeShader;
+  VectorCopy(a,re->origin);VectorCopy(b,re->oldorigin);
+  le->color[0]=le->color[1]=le->color[2]=0.7f;le->color[3]=0.65f;
+  re->shaderRGBA[0]=re->shaderRGBA[1]=re->shaderRGBA[2]=180;re->shaderRGBA[3]=166;
+ }
+}
 void CG_RailTrail (clientInfo_t *ci, vec3_t start, vec3_t end) {
 	vec3_t axis[36], move, move2, vec, temp;
 	float  len;
@@ -1317,7 +1341,12 @@ static void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,int ren
 void CG_HaloWorldMuzzle(refEntity_t *gun,centity_t *cent) {
  vec3_t origin;int weapon=cent->currentState.weapon;
  if(weapon<=WP_GAUNTLET || weapon>=WP_NUM_WEAPONS)return;
- VectorMA(gun->origin,12,gun->axis[0],origin);
+ VectorCopy(gun->origin,origin);
+ {orientation_t marker;int i;
+  if(trap_R_LerpTagRef(&marker,gun,"tag_flash")) {
+   for(i=0;i<3;i++)VectorMA(origin,marker.origin[i],gun->axis[i],origin);
+  } else for(i=0;i<3;i++)VectorMA(origin,qceWorldMuzzles[weapon][i],gun->axis[i],origin);
+ }
  VectorCopy(origin,cent->qceWorldMuzzle);cent->qceWorldMuzzleTime=cg.time;
  if(cent->currentState.number>=0 && cent->currentState.number<MAX_CLIENTS) {
   VectorCopy(origin,cg_entities[cent->currentState.number].qceWorldMuzzle);

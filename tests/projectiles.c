@@ -48,6 +48,11 @@ int main(void) {
  assert(e->s.pos.trDelta[0]>23439 && e->s.pos.trDelta[0]<23441);run(e,16);assert(!damage_calls);run(e,8);assert(damage_calls==1 && amount>=16 && amount<=24);
  assert(e->target_ent==&g_entities[1]); /* source flesh passthrough; no instant head kill */
  setup(WP_MACHINEGUN);G_QceFireBullet(&g_entities[0],start,end,QCE_HOG_TURRET_WEAPON,MOD_MACHINEGUN,1);e=&g_entities[2];run(e,2000);assert(!e->inuse && !damage_calls);
+ setup(WP_PLASMAGUN);level.time=100;wall=500;e=fire_plasma(&g_entities[0],start,dir);
+ assert(e->s.time==100 && e->s.otherEntityNum2==1 && !damage_calls);
+ assert(e->s.origin2[0]==start[0] && e->s.origin2[2]==start[2]);
+ assert(e->s.angles2[0]==500 && e->s.angles2[2]==1000);
+ assert(e->r.currentOrigin[0]==start[0] && e->s.pos.trBase[0]==start[0]);
  setup(WP_LIGHTNING);e=fire_plasma(&g_entities[0],start,dir);copy=*e;run(e,80);
  assert(fabs(e->r.currentOrigin[2]-(1000-0.5*256.692913*0.1*0.08*0.08))<0.001);
  level.time=level.previousTime=0;g_entities[3]=copy;for(i=0;i<10;i++)run(&g_entities[3],8);

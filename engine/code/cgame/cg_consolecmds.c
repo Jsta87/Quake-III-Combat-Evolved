@@ -502,7 +502,11 @@ static void CG_QceCamera_f(void) {
 }
 
 static void CG_QceModels_f(void) {
- CG_Printf("Spartan: %s. Cyborg: %s.\n",cg_qceWorld.playerModel?"loaded":"unavailable",cg_qceWorld.cyborgModel?"loaded":"unavailable (Spartan fallback)");
+ fileHandle_t file;char variant[16];int length;
+ Q_strncpyz(variant,"legacy/unknown",sizeof(variant));
+ length=trap_FS_FOpenFile("models/qce/halo/player/cyborg-source.txt",&file,FS_READ);
+ if(file){if(length>0 && length<sizeof(variant)){trap_FS_Read(variant,length,file);variant[length]=0;if(variant[length-1]=='\n')variant[length-1]=0;}trap_FS_FCloseFile(file);}
+ CG_Printf("Spartan: %s. Cyborg: %s [%s].\n",cg_qceWorld.playerModel?"loaded":"unavailable",cg_qceWorld.cyborgModel?"loaded":"unavailable (Spartan fallback)",variant);
  CG_Printf("Select with qce_playerModel spartan|cyborg|quake. Cyborg requires your local converted zzzz-qce-cyborg.pk3; see docs/FRESH-LINUX-SETUP.md.\n");
 }
 static consoleCommand_t commands[] = {

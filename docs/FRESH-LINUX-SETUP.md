@@ -95,7 +95,7 @@ stock animations and skins, so their weapon grips and vehicle seat poses are
 not Halo authored. Halo gameplay and weapons remain enabled. The model cvar is
 archived and changes without restarting the map.
 
-## Optional Macworld Cyborg conversion
+## Optional E3-1999 Cyborg conversion
 
 [Digsite's README](https://github.com/digsite/h1#license-information) states that
 its content is **not open source** and is limited to MCC projects. This converter
@@ -107,12 +107,12 @@ If you have permission for this use, obtain the tested source revision locally:
 
 ```sh
 git clone --filter=blob:none --sparse --no-checkout https://github.com/digsite/h1.git assets/halo/digsite
-git -C assets/halo/digsite sparse-checkout set tags/digsite/characters/cyborg/00_mac
+git -C assets/halo/digsite sparse-checkout set tags/digsite/characters/cyborg/99_e3
 git -C assets/halo/digsite checkout --detach 4b326caf864b48c0b9c4db62338082691f2b645b
 ```
 
 Given a local Digsite/HEK `tags` tree containing
-`digsite/characters/cyborg/00_mac`, run after the retail conversion above:
+`digsite/characters/cyborg/99_e3`, run after the retail conversion above:
 
 ```sh
 CC=gcc .tools/bin/python -m pip install reclaimer==2.11.2
@@ -123,11 +123,16 @@ CC=gcc .tools/bin/python -m pip install reclaimer==2.11.2
   --pk3 assets/baseq3/zzzz-qce-cyborg.pk3
 ```
 
-The importer reads `00_mac.gbxmodel`, `atlas_diff.bitmap` and `atlas_multi.bitmap`.
+The importer reads `99_e3.gbxmodel`, `e3_99_diff.bitmap` and `e3_99_multi.bitmap`.
 It reuses the 65 converted retail animations through the matching named skeleton,
 including aim interpolation and hand attachment tags. It also generates RGB armor,
 a visor layer and helmet portraits. Restart the game after adding a package.
 Reconvert Cyborg if the retail animation package changes its frame layout.
+The default `cyborg` now uses E3-1999 (`99_e3`), replacing the old Macworld
+conversion. `--variant 00_mac` retains the previous optional importer. If you
+already cloned the Digsite tree, add the E3 files with
+`git -C assets/halo/digsite sparse-checkout add tags/digsite/characters/cyborg/99_e3`,
+then rerun the converter above to overwrite your local Cyborg PK3 and restart.
 
 ## Cameras and safe spawns
 
@@ -149,13 +154,19 @@ world offset (-200–200). Positive side moves right; negative side moves left
 still traces against walls. Vehicle/death cameras use their existing views.
 
 Gameplay firing, collision and damage always use the first-person eye/muzzle,
-independently of the camera. Third-person reticles project the first-person aim
-trace into the offset camera viewport and are hidden within one metre of the eye
+independently of the camera. The crosshair is static by default in both views.
+Set `cg_qceDynamicCrosshair 1` to project the first-person aim trace into the
+third-person viewport; this option hides the reticle within one metre of the eye
 (80 / 3.048 Quake units) or when the aim point is offscreen/behind the camera.
-Reticle coloring and magnetism still use the first-person view. Projectile
-visuals blend from the world gun muzzle to the authoritative trajectory over the
-first 120 ms; their collision path does not move. No asset reconversion is needed
-for the new lower-body movement/action layers.
+Reticle coloring and magnetism still use the first-person view in either mode.
+
+Observers and third-person players see projectiles launch from the displayed
+gun's authored primary-trigger marker. The offset decreases smoothly with travel
+toward the server's first-person aim point, reaching zero there. It is retained
+across late snapshots, and cannot reappear after convergence/ricochet. Sniper smoke
+uses the same barrel-to-impact curve. Collision/damage always use the real path;
+world geometry also clips the cosmetic launch offset. Numeric muzzle markers are
+part of the source, so weapon assets do not need reconversion for this change.
 
 Run `qce_models` in the console to check whether Cyborg actually loaded. Selecting
 `qce_playerModel cyborg` falls back to Spartan if its optional package is absent

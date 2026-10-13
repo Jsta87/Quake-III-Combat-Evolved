@@ -23,6 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cg_ents.c -- present snapshot entities, happens every single frame
 
 #include "cg_local.h"
+#define QCE_VisualOffsetWeight CG_EntVisualOffsetWeight
+#define QCE_ProjectileVisualWeight CG_EntProjectileVisualWeight
+#include "cg_qce_projectile_visual.h"
 #include "../game/bg_qce_vehicle.h"
 
 
@@ -496,24 +499,27 @@ static void CG_Item( centity_t *cent ) {
 CG_Missile
 ===============
 */
-/* Display the initial flight from the authored gun, converging onto the server
- * trajectory in 120 ms. No camera position enters collision/damage simulation. */
+/* Cosmetic launch path: retain the barrel offset across the shot's travel,
+ * smoothly reaching zero at its authoritative first-person aim point. */
 static void CG_QceProjectileVisualOrigin(centity_t *cent,vec3_t origin) {
- entityState_t *state=&cent->currentState;int owner=state->otherEntityNum2-1,age=cg.time-state->time;
+ entityState_t *state=&cent->currentState;int owner=state->otherEntityNum2-1;
  centity_t *player;vec3_t eye,forward,muzzle,target;trace_t trace;float weight;
  VectorCopy(cent->lerpOrigin,origin);
- if(owner<0 || owner>=MAX_CLIENTS || age<0 || age>=120 || state->pos.trType==TR_STATIONARY)return;
+ if(owner<0 || owner>=MAX_CLIENTS || state->time<=0 || state->pos.trType==TR_STATIONARY)return;
  if(owner==cg.predictedPlayerState.clientNum && !cg.renderingThirdPerson)return;
  player=&cg_entities[owner];
- if(!player->currentValid || cg.time-player->qceWorldMuzzleTime>100 || !player->qceWorldMuzzleTime)return;
  if(cent->qceProjectileVisualStart!=state->time) {
+ if((!player->currentValid && owner!=cg.predictedPlayerState.clientNum) || cg.time-player->qceWorldMuzzleTime>250 || !player->qceWorldMuzzleTime)return;
+  cent->qceProjectileVisualWeight=1;
   VectorCopy(player->lerpOrigin,eye);
   eye[2]+=(player->currentState.legsAnim&~ANIM_TOGGLEBIT)==LEGS_WALKCR || (player->currentState.legsAnim&~ANIM_TOGGLEBIT)==LEGS_IDLECR?CROUCH_VIEWHEIGHT:DEFAULT_VIEWHEIGHT;
   AngleVectors(player->lerpAngles,forward,NULL,NULL);VectorMA(eye,14,forward,muzzle);
   VectorSubtract(player->qceWorldMuzzle,muzzle,cent->qceProjectileVisualOffset);
   cent->qceProjectileVisualStart=state->time;
  }
- weight=1-age/120.0f;VectorMA(origin,weight,cent->qceProjectileVisualOffset,target);
+ weight=QCE_ProjectileVisualWeight(state->origin2,state->angles2,origin);
+ if(weight>cent->qceProjectileVisualWeight)weight=cent->qceProjectileVisualWeight;
+ cent->qceProjectileVisualWeight=weight;VectorMA(origin,weight,cent->qceProjectileVisualOffset,target);
  /* Do not display the launch offset through adjacent world geometry. */
  CG_Trace(&trace,origin,NULL,NULL,target,owner,MASK_SOLID);VectorCopy(trace.endpos,origin);
 }

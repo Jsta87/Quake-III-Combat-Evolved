@@ -1909,7 +1909,7 @@ static qboolean CG_DrawHaloCrosshair(void) {
  VectorCopy(ps->origin,eye);eye[2]+=ps->viewheight;AngleVectors(ps->viewangles,dir,NULL,NULL);
  {trace_t trace;vec3_t end;VectorMA(eye,def->projectile_range>0?def->projectile_range:8192,dir,end);
   CG_Trace(&trace,eye,NULL,NULL,end,ps->clientNum,MASK_SHOT);
-  if(cg.renderingThirdPerson) {
+  if(cg.renderingThirdPerson && cg_qceDynamicCrosshair.integer) {
    vec3_t delta;float screenX,screenY;
    VectorSubtract(trace.endpos,eye,delta);
    if(VectorLength(delta)<=80.0f/3.048f || !QCE_ProjectAim(trace.endpos,cg.refdef.vieworg,cg.refdef.viewaxis,cg.refdef.fov_x,cg.refdef.fov_y,&screenX,&screenY))return qtrue;

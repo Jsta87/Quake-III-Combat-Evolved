@@ -132,7 +132,7 @@ static void HogWorldPoint(const vec3_t origin,vec3_t axis[3],const vec3_t local,
 }
 static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *contacts) {
  vec3_t axis[3],newAxis[3],acceleration,torque,com,oldCOM,newCOM,point,lever,velocity,force,start,end;
- vec3_t normal,tangent,wheelForward,wheelLeft,angles,rotationAxis,localTorque,angularAcceleration,cross,delta,nextOrigin;
+ vec3_t supportNormal={0,0,0},normal,tangent,wheelForward,wheelLeft,angles,rotationAxis,localTorque,angularAcceleration,cross,delta,nextOrigin;
  trace_t tr,hit;float depth,normalSpeed,friction,alignment,fraction,target,parallel,rate,angle,speed,earliest;int i,pass;
  AnglesToAxis(v->r.currentAngles,axis);HogWorldPoint(vec3_origin,axis,qceHogCOM,com);VectorCopy(com,oldCOM);
  VectorSet(acceleration,0,0,-gravity*QCE_HOG_GRAVITY_SCALE);VectorClear(torque);*contacts=0;
@@ -151,6 +151,7 @@ static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *
    VectorCopy(tr.plane.normal,normal);VectorSubtract(point,tr.endpos,delta);depth=p->radius-DotProduct(delta,normal);
    if(depth>0) {
     if(p->node==14)*contacts|=4;if(p->node==15)*contacts|=8;if(p->node==16)*contacts|=1;if(p->node==17)*contacts|=2;
+    if(p->powered>=0)VectorAdd(supportNormal,normal,supportNormal);
     normalSpeed=DotProduct(velocity,normal);
     VectorMA(force,gravity/QCE_HOG_GROUND_DEPTH*depth-normalSpeed*QCE_HOG_GROUND_DAMP,normal,force);
     VectorMA(velocity,-normalSpeed,normal,tangent);
@@ -168,6 +169,22 @@ static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *
    }
   }
   VectorAdd(acceleration,force,acceleration);CrossProduct(lever,force,cross);VectorAdd(torque,cross,torque);
+ }
+ /* Viscous damping alone has a nonzero downhill terminal speed. A limited
+    Coulomb force holds an idle, upright chassis on ordinary slopes. It acts
+    only at tire contacts and never suppresses airborne or blast momentum. */
+ if(fabs(v->qceVehicleSpeed)<1 && VectorLength(v->qceVehicleAngularVelocity)<.5f &&
+    ((*contacts&1)!=0)+((*contacts&2)!=0)+((*contacts&4)!=0)+((*contacts&8)!=0)>=2 && VectorNormalize(supportNormal)>0 && DotProduct(axis[2],supportNormal)>.5f) {
+  float normalVelocity=DotProduct(v->qceVehicleVelocity,supportNormal),load,needed,limit;
+  VectorMA(v->qceVehicleVelocity,-normalVelocity,supportNormal,tangent);
+  if(VectorLength(tangent)<20) {
+   VectorMA(acceleration,-DotProduct(acceleration,supportNormal),supportNormal,force);
+   VectorScale(tangent,-1/dt,cross);VectorSubtract(cross,force,cross);
+   load=DotProduct(acceleration,supportNormal)+gravity*QCE_HOG_GRAVITY_SCALE*supportNormal[2];
+   limit=.65f*(load>0?load:0);needed=VectorLength(cross);
+   if(needed>limit && needed>0)VectorScale(cross,limit/needed,cross);
+   VectorAdd(acceleration,cross,acceleration);
+  }
  }
  for(i=0;i<3;i++)localTorque[i]=DotProduct(torque,axis[i])/qceHogInertiaPerMass[i];
  HogWorldPoint(vec3_origin,axis,localTorque,angularAcceleration);VectorMA(v->qceVehicleAngularVelocity,dt,angularAcceleration,v->qceVehicleAngularVelocity);

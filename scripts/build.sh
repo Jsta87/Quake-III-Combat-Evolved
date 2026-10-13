@@ -16,6 +16,7 @@ if [[ -d "$sdl_prefix" ]]; then
 fi
 python3 "$root/scripts/generate-profile.py"
 python3 "$root/scripts/import-halo-presentation.py" --check
+python3 "$root/scripts/import-halo-world-muzzles.py" --check
 cmake -S "$root/engine" -B "$root/build/$mode" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_CLIENT="$client" \
   -DBUILD_SERVER=ON -DBUILD_GAME_LIBRARIES=ON -DBUILD_GAME_QVMS=ON \

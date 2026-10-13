@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-"""Owner-local Digsite Macworld Cyborg import; no source art is redistributed.
+"""Owner-local Digsite E3-1999 Cyborg import; no source art is redistributed.
 Requires reclaimer==2.11.2 and an existing converted Spartan IQM package.
 Digsite's MCC-only usage restriction remains applicable to its assets.
 """
@@ -61,11 +61,19 @@ def strip_triangles(indices, vertices):
         result.append(tri)
     return result
 
-def convert(tags,retail,output,pk3):
+def shader_kind(path):
+    name=path.replace('\\','/').split('/')[-1].lower()
+    if name=='emblem':return None
+    if name.endswith('visor'):return 'visor'
+    if name.endswith('armor'):return 'armor'
+    raise ValueError(f'Unsupported Cyborg shader: {path}')
+
+def convert(tags,retail,output,pk3,variant='99_e3'):
     from reclaimer.hek.defs.mod2 import mod2_def
     from reclaimer.hek.defs.bitm import bitm_def
-    directory=tags/'digsite/characters/cyborg/00_mac'
-    source=directory/'00_mac.gbxmodel';d=mod2_def.build(filepath=source).data.tagdata
+    if variant not in ('99_e3','00_mac'):raise ValueError('Unsupported Cyborg variant')
+    directory=tags/f'digsite/characters/cyborg/{variant}'
+    source=directory/f'{variant}.gbxmodel';d=mod2_def.build(filepath=source).data.tagdata
     if not 1<=len(d.nodes.STEPTREE)<=128:raise ValueError('Invalid Cyborg skeleton')
     bones=[{'name':n.name,'parent':n.parent_node} for n in d.nodes.STEPTREE]
     if any(b['parent']>=i or b['parent']< -1 for i,b in enumerate(bones)):raise ValueError('Invalid Cyborg bone hierarchy')
@@ -77,7 +85,7 @@ def convert(tags,retail,output,pk3):
         files[name]=data;dest=output/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     pixels={}
     for name in ('diff','multi'):
-        bitmap=bitm_def.build(filepath=directory/f'bitmaps/atlas_{name}.bitmap').data.tagdata
+        bitmap=bitm_def.build(filepath=directory/f'bitmaps/{"e3_99" if variant=="99_e3" else "atlas"}_{name}.bitmap').data.tagdata
         image=bitmap.bitmaps.STEPTREE[0];raw=bitmap.processed_pixel_data.data
         rgba=p.a.decode_pixels(raw[image.pixels_offset:],image.width,image.height,image.format.data)
         pixels[name]=(image.width,image.height,rgba)
@@ -89,8 +97,9 @@ def convert(tags,retail,output,pk3):
     write('textures/qce/cyborg/color.tga',p.a.tga(w,h,color))
     surfaces=[];visors=[]
     for part in d.geometries.STEPTREE[0].parts.STEPTREE:
-        if part.shader_index==0:continue # Source emblem uses an invisible placeholder.
-        if part.shader_index not in (1,2):raise ValueError('Unsupported Cyborg shader')
+        if not 0<=part.shader_index<len(d.shaders.STEPTREE):raise ValueError('Invalid Cyborg shader index')
+        kind=shader_kind(d.shaders.STEPTREE[part.shader_index].shader.filepath)
+        if kind is None:continue
         verts=[]
         for v in part.uncompressed_vertices.STEPTREE:
             values=list(v)
@@ -100,13 +109,14 @@ def convert(tags,retail,output,pk3):
             if v.node_0_weight<1 and not 0<=nodes[1]<len(bones):raise ValueError('Invalid second influence')
             verts.append({'position':[x*80 for x in values[:3]],'normal':values[3:6],'uv':[v.u,v.v], 'nodes':nodes,'node0_weight':v.node_0_weight})
         indices=[index for tri in part.triangles.STEPTREE for index in tri]
-        pieces=p.a.split_surface(verts,strip_triangles(indices,verts),'qce/cyborg/visor' if part.shader_index==2 else 'qce/cyborg/armor')
-        for piece in pieces:visors.append(part.shader_index==2);surfaces.append(piece)
+        pieces=p.a.split_surface(verts,strip_triangles(indices,verts),'qce/cyborg/visor' if kind=='visor' else 'qce/cyborg/armor')
+        for piece in pieces:visors.append(kind=='visor');surfaces.append(piece)
     if not surfaces:raise ValueError('No Cyborg mesh')
     posed=p.PoseFrames(surfaces)
     for frame in frames:posed.poses.append([p.skin_matrices(bind,p.globals_for(bones,frame))]*len(surfaces))
     iqm=p.animated_iqm(surfaces,bones,bind,frames,[(bind,list(range(len(bones))))]*len(surfaces),[marker],list(range(len(bones))),80,clips,posed)
     write('models/qce/halo/player/cyborg.iqm',iqm)
+    write('models/qce/halo/player/cyborg-source.txt',(variant+'\n').encode())
     def skins(prefix,parts,flags):
         write(prefix+'-body.skin',('\n'.join(f'part{i},{"qce/halo/invisible" if visor else "qce/cyborg/armor"}' for i,visor in enumerate(flags))+'\n').encode())
         write(prefix+'-visor.skin',('\n'.join(f'part{i},{"qce/cyborg/visor" if visor else "qce/halo/invisible"}' for i,visor in enumerate(flags))+'\n').encode())
@@ -129,7 +139,7 @@ def convert(tags,retail,output,pk3):
 }
 qce/cyborg/visor
 {
- { map textures/qce/cyborg/diff.tga
+ { map $whiteimage
  rgbGen entity }
  { map $whiteimage
  blendFunc GL_SRC_ALPHA GL_ONE
@@ -138,7 +148,7 @@ qce/cyborg/visor
 }
 '''
     write('scripts/qce-cyborg.shader',shader.encode())
-    report={'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'clips':len(clips),'frames':len(frames),'surfaces':len(surfaces),'triangles':sum(len(s['triangles']) for s in surfaces),'license':'Digsite assets are MCC-only; no redistribution permission is supplied by this converter.'}
+    report={'variant':variant,'source_model':str(source.relative_to(tags)),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'clips':len(clips),'frames':len(frames),'surfaces':len(surfaces),'triangles':sum(len(s['triangles']) for s in surfaces),'license':'Digsite assets are MCC-only; no redistribution permission is supplied by this converter.'}
     output.mkdir(parents=True,exist_ok=True);(output/'cyborg-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
     if pk3:
         pk3.parent.mkdir(parents=True,exist_ok=True)
@@ -147,5 +157,5 @@ qce/cyborg/visor
     print(json.dumps(report))
 
 if __name__=='__main__':
-    a=argparse.ArgumentParser(description=__doc__);a.add_argument('--tags',type=Path,required=True);a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path);args=a.parse_args()
-    convert(args.tags,args.retail_output,args.output,args.pk3)
+    a=argparse.ArgumentParser(description=__doc__);a.add_argument('--tags',type=Path,required=True);a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path);a.add_argument('--variant',choices=('99_e3','00_mac'),default='99_e3');args=a.parse_args()
+    convert(args.tags,args.retail_output,args.output,args.pk3,args.variant)

@@ -225,3 +225,13 @@ word type. The checksum change is derived from BSPC's RSA Data Security, Inc. MD
 Message-Digest Algorithm implementation. The navigation script verifies connected areas
 and the full Quake BSP checksum before packaging or reusing a cached output.
 See [fresh Linux setup](FRESH-LINUX-SETUP.md) for the complete commands.
+
+## Parked slope friction
+
+Idle Warthogs now apply a bounded static friction force when at least two tires
+contact the ground. This cancels low-speed downhill creep on ordinary slopes.
+The coefficient is 0.65; steeper slopes can exceed available grip. The force is
+limited by normal support load and is disabled during powered movement, fast
+sliding, airborne travel and rapid chassis rotation. Suspension and explosion
+impulses retain their existing simulation. Regression tests cover slope rest at
+8/16/32-ms server steps and blast motion after parking.

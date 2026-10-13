@@ -102,5 +102,21 @@ int main(void){
   for(i=0;i<300;i++){level.time+=8;v->think(v);if(v->r.currentOrigin[0]>crestX+100 && !v->s.angles2[2]){airborne=1;z=v->r.currentOrigin[2];vz=v->qceVehicleVelocity[2];break;}}
   assert(airborne);for(i=0;i<10;i++){level.time+=8;v->think(v);}assert(v->qceVehicleVelocity[2]<vz-18 && v->qceVehicleVelocity[2]>vz-21 && v->qceVehicleVelocity[0]>100);assert(v->r.currentOrigin[2]>z-100);
  }
+ /* Parked tires hold a slope at several server tick rates. On steep slopes
+    friction may be exceeded; the vehicle is not welded to the terrain. */
+ {int tick;float restingX,restingY;
+  crestX=1000000;rampSlope=.2f;
+  for(tick=8;tick<=32;tick*=2) {
+   memset(v,0,sizeof(*v));v->s.number=MAX_CLIENTS;v->inuse=1;v->s.origin[2]=3;
+   v->s.angles[PITCH]=-RAD2DEG(atan(rampSlope));SP_qce_warthog(v);
+   for(i=0;i<6000/tick;i++){level.time+=tick;v->think(v);}
+   restingX=v->r.currentOrigin[0];restingY=v->r.currentOrigin[1];
+   for(i=0;i<6000/tick;i++){level.time+=tick;v->think(v);}
+   assert(fabs(v->r.currentOrigin[0]-restingX)<.15f && fabs(v->r.currentOrigin[1]-restingY)<.15f);
+   assert(VectorLength(v->qceVehicleVelocity)<.1f);
+   {vec3_t direction={0,1,0};QCE_HogBlastImpulse(direction,96,v->qceVehicleVelocity,v->qceVehicleAngularVelocity);
+    level.time+=tick;v->think(v);assert(VectorLength(v->qceVehicleVelocity)>30);}
+  }
+ }
  assert(linked>0);puts("PASS: Warthog speed/braking frame independence, seat ownership, blocked exit, forced release, full/dead/spectator entry, timed exits, turret control/spin/aim, force-supported ground motion and ballistic crest departure");return 0;
 }
