@@ -95,7 +95,7 @@ stock animations and skins, so their weapon grips and vehicle seat poses are
 not Halo authored. Halo gameplay and weapons remain enabled. The model cvar is
 archived and changes without restarting the map.
 
-## Optional E3-1999 Cyborg conversion
+## Optional E3-2000 Cyborg conversion
 
 [Digsite's README](https://github.com/digsite/h1#license-information) states that
 its content is **not open source** and is limited to MCC projects. This converter
@@ -107,12 +107,12 @@ If you have permission for this use, obtain the tested source revision locally:
 
 ```sh
 git clone --filter=blob:none --sparse --no-checkout https://github.com/digsite/h1.git assets/halo/digsite
-git -C assets/halo/digsite sparse-checkout set tags/digsite/characters/cyborg/99_e3
+git -C assets/halo/digsite sparse-checkout set tags/digsite/characters/cyborg/00_e3
 git -C assets/halo/digsite checkout --detach 4b326caf864b48c0b9c4db62338082691f2b645b
 ```
 
 Given a local Digsite/HEK `tags` tree containing
-`digsite/characters/cyborg/99_e3`, run after the retail conversion above:
+`digsite/characters/cyborg/00_e3`, run after the retail conversion above:
 
 ```sh
 CC=gcc .tools/bin/python -m pip install reclaimer==2.11.2
@@ -123,15 +123,15 @@ CC=gcc .tools/bin/python -m pip install reclaimer==2.11.2
   --pk3 assets/baseq3/zzzz-qce-cyborg.pk3
 ```
 
-The importer reads `99_e3.gbxmodel`, `e3_99_diff.bitmap` and `e3_99_multi.bitmap`.
+The importer reads `00_e3.gbxmodel`, `cyborg.bitmap` and `cyborg multipurpose.bitmap`.
 It reuses the 65 converted retail animations through the matching named skeleton,
 including aim interpolation and hand attachment tags. It also generates RGB armor,
 a visor layer and helmet portraits. Restart the game after adding a package.
 Reconvert Cyborg if the retail animation package changes its frame layout.
-The default `cyborg` now uses E3-1999 (`99_e3`), replacing the old Macworld
-conversion. `--variant 00_mac` retains the previous optional importer. If you
+The default `cyborg` now uses E3-2000 (`00_e3`), replacing the previous E3-1999
+conversion. `--variant 99_e3` and `--variant 00_mac` retain the earlier optional importers. If you
 already cloned the Digsite tree, add the E3 files with
-`git -C assets/halo/digsite sparse-checkout add tags/digsite/characters/cyborg/99_e3`,
+`git -C assets/halo/digsite sparse-checkout add tags/digsite/characters/cyborg/00_e3`,
 then rerun the converter above to overwrite your local Cyborg PK3 and restart.
 
 ## Cameras and safe spawns
@@ -153,12 +153,17 @@ world offset (-200–200). Positive side moves right; negative side moves left
 (-200–200). Old camera mode 2 migrates to mode 1 with side -24. Camera placement
 still traces against walls. Vehicle/death cameras use their existing views.
 
-Gameplay firing, collision and damage always use the first-person eye/muzzle,
-independently of the camera. The crosshair is static by default in both views.
-Set `cg_qceDynamicCrosshair 1` to project the first-person aim trace into the
-third-person viewport; this option hides the reticle within one metre of the eye
-(80 / 3.048 Quake units) or when the aim point is offscreen/behind the camera.
-Reticle coloring and magnetism still use the first-person view in either mode.
+The crosshair is fixed at screen center. Dynamic crosshair positioning has been
+removed. In third person, prediction and the server trace from the wall-colliding
+shoulder camera along its center line, then turn the hypothetical first-person
+view toward that point. Camera orbit and movement use the raw camera angles,
+keeping the camera stable even when aiming very close to the player.
+
+Projectiles still spawn at the first-person eye-side muzzle. They collide with
+walls on that path, even when the shoulder camera can see around a corner. The
+short forward muzzle offset is also clipped against world/players, so it cannot
+place a projectile beyond a wall immediately in front of the eye. This revision
+uses protocol **101**; rebuild the client and any dedicated server together.
 
 Observers and third-person players see projectiles launch from the displayed
 gun's authored primary-trigger marker. The offset decreases smoothly with travel
@@ -210,3 +215,18 @@ optimized visibility, bot vehicle driving and bespoke Quake vehicle seat poses
 remain outside this pass. Bot navigation compilation may emit numerical geometry
 warnings; the produced file must pass the checksum/area checks and an in-game
 load, as it did in these tests.
+
+## Refresh AR muzzle effects
+
+The AR now uses the six source direction-aligned flare frames and three separate
+screen-facing center frames (75/300 ms lifetimes), with sprite aspect and
+registration points retained. Refresh the local combat package after updating:
+
+```sh
+python3 scripts/convert-halo-combat.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/bloodgulch --pk3 assets/baseq3/zzz-qce-halo.pk3
+```
+
+This updates effects without rebaking weapon/player animation. Restart the game
+after repackaging. Older packages use the corrected barrel alignment without the
+new center layer; no random AR billboard rotation is applied.

@@ -425,6 +425,7 @@ typedef struct {
  sfxHandle_t shieldHitSound,shieldBreakSound,plasmaFlyby,needleFlyby,plasmaImpact,needleImpact;
  qhandle_t shieldViewShader,sniperSmokeShader;
  qhandle_t muzzleShaders[WP_NUM_WEAPONS][16];
+ qhandle_t arMuzzleCore[3];float arMuzzleAspect[6],arMuzzlePivot[6][2];int arMuzzleLayers;
  int muzzleCounts[WP_NUM_WEAPONS];float muzzleRadius[WP_NUM_WEAPONS],muzzleColors[WP_NUM_WEAPONS][3];
  qhandle_t bodySkin,visorSkin,shieldShader,shieldBreakShader,projectileModels[2],plasmaShaders[2],plasmaModels[3];
  float plasmaVolumes[3][14];
@@ -441,6 +442,7 @@ typedef struct {
 extern qceWorldMedia_t cg_qceWorld;
 void CG_RegisterHaloWorld(void);
 void CG_HaloWorldMuzzle(refEntity_t *gun,centity_t *cent);
+void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,vec3_t axis[3],int renderfx);
 void CG_HaloSniperTrail(const vec3_t start,const vec3_t end,int clientNum);
 void CG_HaloWorldFrames(const qceViewClip_t *clip,int oneshot,int elapsed,int *oldframe,int *frame,float *backlerp);
 void CG_HaloGrenadeExplosion(int type,vec3_t origin);
@@ -1221,7 +1223,7 @@ extern	vmCvar_t		cg_zoomFov;
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonAngle;
 extern	vmCvar_t		cg_thirdPerson;
-extern vmCvar_t cg_qceCameraMode,cg_qceCameraBack,cg_qceCameraUp,cg_qceCameraSide,cg_qceDynamicCrosshair;
+extern vmCvar_t cg_qceCameraMode,cg_qceCameraBack,cg_qceCameraUp,cg_qceCameraSide;
 extern	vmCvar_t		cg_lagometer;
 extern	vmCvar_t		cg_drawAttacker;
 extern	vmCvar_t		cg_synchronousClients;

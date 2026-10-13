@@ -202,7 +202,8 @@ typedef struct {
 } pmove_t;
 
 // if a full pmove isn't done on the client, you can just update the angles
-void PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd );
+void BG_QceCameraTarget(const vec3_t eye,const vec3_t angles,float back,float up,float side,vec3_t out);
+void	PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd );
 void Pmove (pmove_t *pmove);
 
 //===================================================================================

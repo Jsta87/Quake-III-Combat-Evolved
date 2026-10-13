@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-"""Owner-local Digsite E3-1999 Cyborg import; no source art is redistributed.
+"""Owner-local Digsite E3-2000 Cyborg import; no source art is redistributed.
 Requires reclaimer==2.11.2 and an existing converted Spartan IQM package.
 Digsite's MCC-only usage restriction remains applicable to its assets.
 """
@@ -63,15 +63,15 @@ def strip_triangles(indices, vertices):
 
 def shader_kind(path):
     name=path.replace('\\','/').split('/')[-1].lower()
-    if name=='emblem':return None
+    if name in ('emblem','light shield','light shield generator'):return None
     if name.endswith('visor'):return 'visor'
     if name.endswith('armor'):return 'armor'
     raise ValueError(f'Unsupported Cyborg shader: {path}')
 
-def convert(tags,retail,output,pk3,variant='99_e3'):
+def convert(tags,retail,output,pk3,variant='00_e3'):
     from reclaimer.hek.defs.mod2 import mod2_def
     from reclaimer.hek.defs.bitm import bitm_def
-    if variant not in ('99_e3','00_mac'):raise ValueError('Unsupported Cyborg variant')
+    if variant not in ('00_e3','99_e3','00_mac'):raise ValueError('Unsupported Cyborg variant')
     directory=tags/f'digsite/characters/cyborg/{variant}'
     source=directory/f'{variant}.gbxmodel';d=mod2_def.build(filepath=source).data.tagdata
     if not 1<=len(d.nodes.STEPTREE)<=128:raise ValueError('Invalid Cyborg skeleton')
@@ -85,7 +85,7 @@ def convert(tags,retail,output,pk3,variant='99_e3'):
         files[name]=data;dest=output/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
     pixels={}
     for name in ('diff','multi'):
-        bitmap=bitm_def.build(filepath=directory/f'bitmaps/{"e3_99" if variant=="99_e3" else "atlas"}_{name}.bitmap').data.tagdata
+        bitmap=bitm_def.build(filepath=directory/'bitmaps'/({'00_e3':{'diff':'cyborg','multi':'cyborg multipurpose'},'99_e3':{'diff':'e3_99_diff','multi':'e3_99_multi'},'00_mac':{'diff':'atlas_diff','multi':'atlas_multi'}}[variant][name]+'.bitmap')).data.tagdata
         image=bitmap.bitmaps.STEPTREE[0];raw=bitmap.processed_pixel_data.data
         rgba=p.a.decode_pixels(raw[image.pixels_offset:],image.width,image.height,image.format.data)
         pixels[name]=(image.width,image.height,rgba)
@@ -157,5 +157,5 @@ qce/cyborg/visor
     print(json.dumps(report))
 
 if __name__=='__main__':
-    a=argparse.ArgumentParser(description=__doc__);a.add_argument('--tags',type=Path,required=True);a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path);a.add_argument('--variant',choices=('99_e3','00_mac'),default='99_e3');args=a.parse_args()
+    a=argparse.ArgumentParser(description=__doc__);a.add_argument('--tags',type=Path,required=True);a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path);a.add_argument('--variant',choices=('00_e3','99_e3','00_mac'),default='00_e3');args=a.parse_args()
     convert(args.tags,args.retail_output,args.output,args.pk3,args.variant)

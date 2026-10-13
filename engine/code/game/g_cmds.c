@@ -1881,6 +1881,7 @@ void ClientCommand( int clientNum ) {
 		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d error=%d,%d rate=%d,%d battery=%d,%d zoom=%d crouch=%d recovery=%d,%d profile=%s\n\"",
 			ps->stats[STAT_QCE_COMBAT],ps->weapon,BG_QceWeaponName(ps->weapon),ps->stats[STAT_QCE_SLOTS]&15,(ps->stats[STAT_QCE_SLOTS]>>4)&15,
 			BG_QceMagazine(ps,ps->weapon),ps->ammo[ps->weapon],BG_QceGrenadeCount(ps,0),BG_QceGrenadeCount(ps,1),BG_QceGrenadeType(ps),ps->stats[STAT_QCE_SHIELD],ent->health,ps->weaponstate,ps->qceHeat[0],ps->qceHeat[1],ps->qceOverheated,ps->qceChargeMs,ps->qceError[0],ps->qceError[1],ps->qceRate[0],ps->qceRate[1],ps->qceBattery[0],ps->qceBattery[1],ps->qceZoom&3,ps->qceCrouch,ps->qceOverheatTime[0],ps->qceOverheatTime[1],BG_QceProfileHash()));
+  trap_SendServerCommand(clientNum,va("print \"QCE aim camera=%.3f,%.3f,%.3f firing=%.3f,%.3f,%.3f\n\"",ps->qceCameraAngles[0],ps->qceCameraAngles[1],ps->qceCameraAngles[2],ps->viewangles[0],ps->viewangles[1],ps->viewangles[2]));
   trap_SendServerCommand(clientNum,va("print \"QCE inventory limit=%d mode=%s held=%d,%d,%d,%d,%d,%d,%d,%d\n\"",
    BG_QceHeldLimit(ps),ps->qceMaxHeldWeapons==9?"all":"Halo",BG_QceHeldWeapon(ps,0),BG_QceHeldWeapon(ps,1),BG_QceHeldWeapon(ps,2),BG_QceHeldWeapon(ps,3),BG_QceHeldWeapon(ps,4),BG_QceHeldWeapon(ps,5),BG_QceHeldWeapon(ps,6),BG_QceHeldWeapon(ps,7)));
 	}

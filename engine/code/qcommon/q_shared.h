@@ -1151,6 +1151,7 @@ typedef struct playerState_s {
  int qceZoom, qceCrouch, qceOverheatTime[8];
  int qceReloadCommit, qceReloadEmpty;
  int qceExtraSlots[6], qceExtraMags[6], qceMaxHeldWeapons;
+ vec3_t qceCameraAngles;
  int qceVehicle,qceVehicleSeat,qceVehicleTime; /* Entity zero means on foot. */
  int qceVariantScale[3], qceVariantFlags, qceMaxShield;
 	int			gravity;
@@ -1254,6 +1255,7 @@ typedef struct usercmd_s {
 	int 			buttons;
 	byte			weapon;           // weapon 
 	signed char	forwardmove, rightmove, upmove;
+ int qceCameraMode,qceCameraBack,qceCameraUp,qceCameraSide;
 } usercmd_t;
 
 //===================================================================

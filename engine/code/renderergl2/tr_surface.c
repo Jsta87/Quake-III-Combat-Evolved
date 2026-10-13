@@ -247,7 +247,9 @@ static void RB_SurfaceSprite( void ) {
 
 	// calculate the xyz locations for the four corners
 	radius = ent->e.radius;
-	if ( ent->e.rotation == 0 ) {
+ if(ent->e.qceOrientedSprite) {
+  VectorScale(ent->e.axis[1],radius,left);VectorScale(ent->e.axis[2],radius,up);
+ } else if ( ent->e.rotation == 0 ) {
 		VectorScale( backEnd.viewParms.or.axis[1], radius, left );
 		VectorScale( backEnd.viewParms.or.axis[2], radius, up );
 	} else {

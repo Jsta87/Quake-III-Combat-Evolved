@@ -1893,3 +1893,10 @@ float BG_QceZoom(int weapon,int level) {
  if(level<1 || level>def->zoom_levels)return 1;
  return level==1?def->zoom_min:def->zoom_max;
 }
+
+/* Shoulder camera coordinates in world space; the caller performs wall sweeps. */
+void BG_QceCameraTarget(const vec3_t eye,const vec3_t angles,float back,float up,float side,vec3_t out) {
+ vec3_t forward,right;AngleVectors(angles,forward,right,NULL);
+ VectorMA(eye,-Com_Clamp(0,500,back),forward,out);
+ VectorMA(out,Com_Clamp(-200,200,side),right,out);out[2]+=Com_Clamp(-200,200,up);
+}

@@ -296,13 +296,10 @@ static void CG_OffsetThirdPersonView( void ) {
 
 
 static void CG_OffsetQceShoulderView(void) {
- vec3_t eye,forward,right,target,mins={-4,-4,-4},maxs={4,4,4};trace_t tr;
+ vec3_t eye,target,mins={-4,-4,-4},maxs={4,4,4};trace_t tr;
  VectorCopy(cg.predictedPlayerState.origin,eye);eye[2]+=cg.predictedPlayerState.viewheight;
- VectorCopy(cg.predictedPlayerState.viewangles,cg.refdefViewAngles);
- AngleVectors(cg.predictedPlayerState.viewangles,forward,right,NULL);
- VectorMA(eye,-Com_Clamp(0,500,cg_qceCameraBack.value),forward,target);
- VectorMA(target,Com_Clamp(-200,200,cg_qceCameraSide.value),right,target);
- target[2]+=Com_Clamp(-200,200,cg_qceCameraUp.value);
+ VectorCopy(cg.predictedPlayerState.qceCameraAngles,cg.refdefViewAngles);
+ BG_QceCameraTarget(eye,cg.refdefViewAngles,(int)cg_qceCameraBack.value,(int)cg_qceCameraUp.value,(int)cg_qceCameraSide.value,target);
  CG_Trace(&tr,eye,mins,maxs,target,cg.predictedPlayerState.clientNum,MASK_SOLID);
  VectorCopy(tr.endpos,cg.refdef.vieworg);
 }

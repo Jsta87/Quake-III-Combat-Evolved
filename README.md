@@ -39,7 +39,7 @@ stage native modules and disable pure checking for development. Use
 The latest [combat pass](docs/COMBAT-PRESENTATION.md) adds Halo projectiles/reticles,
 independent RGB visors, up to eight carried weapons, bot grenades/melee and shield effects.
 
-Networking uses QCE protocol **99**. Rebuild both engines and all modules together;
+Networking uses QCE protocol **101**. Rebuild both engines and all modules together;
 stock Quake/ioquake3 and older project connections/demos are incompatible.
 
 ## Halo assets

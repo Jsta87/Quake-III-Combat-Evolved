@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 #include "cg_qce_visual.h"
-#include "cg_qce_camera.h"
 #include "../game/bg_qce_aim.h"
 
 #ifdef MISSIONPACK
@@ -1909,14 +1908,6 @@ static qboolean CG_DrawHaloCrosshair(void) {
  VectorCopy(ps->origin,eye);eye[2]+=ps->viewheight;AngleVectors(ps->viewangles,dir,NULL,NULL);
  {trace_t trace;vec3_t end;VectorMA(eye,def->projectile_range>0?def->projectile_range:8192,dir,end);
   CG_Trace(&trace,eye,NULL,NULL,end,ps->clientNum,MASK_SHOT);
-  if(cg.renderingThirdPerson && cg_qceDynamicCrosshair.integer) {
-   vec3_t delta;float screenX,screenY;
-   VectorSubtract(trace.endpos,eye,delta);
-   if(VectorLength(delta)<=80.0f/3.048f || !QCE_ProjectAim(trace.endpos,cg.refdef.vieworg,cg.refdef.viewaxis,cg.refdef.fov_x,cg.refdef.fov_y,&screenX,&screenY))return qtrue;
-   /* Convert actual viewport coordinates back to the 640x480 HUD space. */
-   centerX=(cg.refdef.x+screenX*cg.refdef.width)/cgs.screenXScale;
-   centerY=(cg.refdef.y+screenY*cg.refdef.height)/cgs.screenYScale;
-  }
   if(trace.entityNum>=0 && trace.entityNum<MAX_CLIENTS && cg_entities[trace.entityNum].currentValid && !(cg_entities[trace.entityNum].currentState.eFlags&EF_DEAD))best=trace.entityNum;
  }
  for(i=0;i<MAX_CLIENTS;i++) {

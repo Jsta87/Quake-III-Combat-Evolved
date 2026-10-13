@@ -11,6 +11,9 @@ class ImportTests(unittest.TestCase):
   self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\99_e3\shaders\e3_99_visor'),'visor')
   self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\00_mac\shaders\head visor'),'visor')
   self.assertIsNone(c.shader_kind('shaders/emblem'))
+  self.assertEqual(c.shader_kind(r'digsite\characters\cyborg\00_e3\shaders\armor'),'armor')
+  self.assertIsNone(c.shader_kind(r'characters\cyborg\shaders\light shield'))
+  self.assertIsNone(c.shader_kind(r'characters\cyborg\shaders\light shield generator'))
   with self.assertRaises(ValueError):c.shader_kind('shaders/unexpected')
  def test_iqm_rotation_and_attachment_roundtrip(self):
   p=c.p;bones=[{'name':'root','parent':-1},{'name':'bip01 r hand','parent':0}]

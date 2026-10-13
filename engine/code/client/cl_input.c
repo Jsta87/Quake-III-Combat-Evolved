@@ -559,6 +559,10 @@ void CL_FinishMove( usercmd_t *cmd ) {
 
 	// copy the state that the cgame is currently sending
 	cmd->weapon = cl.cgameUserCmdValue;
+ cmd->qceCameraMode=Cvar_VariableIntegerValue("cg_qceCameraMode")==1;
+ cmd->qceCameraBack=(int)Com_Clamp(0,500,Cvar_VariableValue("cg_qceCameraBack"));
+ cmd->qceCameraUp=(int)Com_Clamp(-200,200,Cvar_VariableValue("cg_qceCameraUp"));
+ cmd->qceCameraSide=(int)Com_Clamp(-200,200,Cvar_VariableValue("cg_qceCameraSide"));
 
 	// send the current server time so the amount of movement
 	// can be determined without allowing cheating

@@ -2056,6 +2056,7 @@ void PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd ) {
 			}
 		}
 		ps->viewangles[i] = SHORT2ANGLE(temp);
+  ps->qceCameraAngles[i]=ps->viewangles[i];
 	}
 
 }
@@ -2069,6 +2070,19 @@ PmoveSingle
 */
 void trap_SnapVector( float *v );
 
+/* Screen-center targeting is predicted and recomputed by the server. Commands
+ * contain camera geometry, never a trusted target or a camera-side muzzle. */
+static void PM_QceShoulderAim(void) {
+ vec3_t eye,camera,end,direction,mins={-4,-4,-4},maxs={4,4,4};trace_t trace;
+ if(!pm->cmd.qceCameraMode || !pm->ps->stats[STAT_QCE_COMBAT] || pm->ps->qceVehicle || pm->ps->pm_type!=PM_NORMAL || pm->ps->stats[STAT_HEALTH]<=0)return;
+ VectorCopy(pm->ps->origin,eye);eye[2]+=pm->ps->viewheight;
+ BG_QceCameraTarget(eye,pm->ps->qceCameraAngles,pm->cmd.qceCameraBack,pm->cmd.qceCameraUp,pm->cmd.qceCameraSide,camera);
+ pm->trace(&trace,eye,mins,maxs,camera,pm->ps->clientNum,MASK_SOLID);VectorCopy(trace.endpos,camera);
+ AngleVectors(pm->ps->qceCameraAngles,direction,NULL,NULL);VectorMA(camera,8192,direction,end);
+ pm->trace(&trace,camera,NULL,NULL,end,pm->ps->clientNum,MASK_SHOT);
+ VectorSubtract(trace.endpos,eye,direction);
+ if(VectorNormalize(direction)>.001f){vectoangles(direction,pm->ps->viewangles);pm->ps->viewangles[ROLL]=pm->ps->qceCameraAngles[ROLL];}
+}
 void PmoveSingle (pmove_t *pmove) {
 	pm = pmove;
 
@@ -2239,6 +2253,8 @@ void PmoveSingle (pmove_t *pmove) {
 	PM_GroundTrace();
 	PM_SetWaterLevel();
 
+	// Aim from the final eye position; movement continues to use raw camera axes.
+ PM_QceShoulderAim();
 	// weapons
 	PM_Weapon();
 

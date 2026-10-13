@@ -161,5 +161,5 @@ Use E from either side or the rear to enter/exit. Mouse yaw steers, W/S provide
 throttle, and Space brakes. Reconvert both packages as described in the
 vehicle guide to refresh seat animations, moving parts and audio. See [vehicle testing and current limits](VEHICLES.md). This first map
 conversion has no bot navigation. The rear turret now aims and fires; hold attack
-after its boarding animation finishes. Seat exits are animated, and protocol 100
+after its boarding animation finishes. Seat exits are animated, and protocol 101
 requires matching updated client/server builds.

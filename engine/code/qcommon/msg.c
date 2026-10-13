@@ -651,7 +651,9 @@ void MSG_WriteDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *
 		from->rightmove == to->rightmove &&
 		from->upmove == to->upmove &&
 		from->buttons == to->buttons &&
-		from->weapon == to->weapon) {
+		from->weapon == to->weapon &&
+        from->qceCameraMode == to->qceCameraMode && from->qceCameraBack == to->qceCameraBack &&
+        from->qceCameraUp == to->qceCameraUp && from->qceCameraSide == to->qceCameraSide) {
 			MSG_WriteBits( msg, 0, 1 );				// no change
 			oldsize += 7;
 			return;
@@ -666,6 +668,10 @@ void MSG_WriteDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *
 	MSG_WriteDeltaKey( msg, key, from->upmove, to->upmove, 8 );
 	MSG_WriteDeltaKey( msg, key, from->buttons, to->buttons, 16 );
 	MSG_WriteDeltaKey( msg, key, from->weapon, to->weapon, 8 );
+ MSG_WriteDeltaKey(msg,key,from->qceCameraMode,to->qceCameraMode,1);
+ MSG_WriteDeltaKey(msg,key,from->qceCameraBack,to->qceCameraBack,10);
+ MSG_WriteDeltaKey(msg,key,from->qceCameraUp,to->qceCameraUp,16);
+ MSG_WriteDeltaKey(msg,key,from->qceCameraSide,to->qceCameraSide,16);
 }
 
 
@@ -695,7 +701,11 @@ void MSG_ReadDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *t
 		if( to->upmove == -128 )
 			to->upmove = -127;
 		to->buttons = MSG_ReadDeltaKey( msg, key, from->buttons, 16);
-		to->weapon = MSG_ReadDeltaKey( msg, key, from->weapon, 8);
+		to->weapon = MSG_ReadDeltaKey( msg, key, from->weapon, 8 );
+  to->qceCameraMode=MSG_ReadDeltaKey(msg,key,from->qceCameraMode,1);
+  to->qceCameraBack=MSG_ReadDeltaKey(msg,key,from->qceCameraBack,10);
+  to->qceCameraUp=(short)MSG_ReadDeltaKey(msg,key,from->qceCameraUp,16);
+  to->qceCameraSide=(short)MSG_ReadDeltaKey(msg,key,from->qceCameraSide,16);
 	} else {
 		to->angles[0] = from->angles[0];
 		to->angles[1] = from->angles[1];
@@ -705,6 +715,8 @@ void MSG_ReadDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *t
 		to->upmove = from->upmove;
 		to->buttons = from->buttons;
 		to->weapon = from->weapon;
+  to->qceCameraMode=from->qceCameraMode;to->qceCameraBack=from->qceCameraBack;
+  to->qceCameraUp=from->qceCameraUp;to->qceCameraSide=from->qceCameraSide;
 	}
 }
 
@@ -1138,6 +1150,9 @@ netField_t	playerStateFields[] =
 { PSF(qceVehicleSeat), 3 },
 { PSF(qceVehicleTime), 32 },
 { PSF(qceMaxHeldWeapons), 4 },
+{ PSF(qceCameraAngles[0]), 0 },
+{ PSF(qceCameraAngles[1]), 0 },
+{ PSF(qceCameraAngles[2]), 0 },
 { PSF(qceExtraSlots[0]), 4 },
 { PSF(qceExtraSlots[1]), 4 },
 { PSF(qceExtraSlots[2]), 4 },

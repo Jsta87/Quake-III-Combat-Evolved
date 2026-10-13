@@ -119,6 +119,7 @@ typedef struct {
  int qceTransitionFrame,qceTransitionOldFrame;
  float qceTransitionBacklerp,qceTransitionWeight;
 
+ int qceOrientedSprite; /* use entity axis[1/2] for a direction-aligned card */
 	// texturing
 	int			skinNum;			// inline skin index
 	qhandle_t	customSkin;			// NULL for default skin

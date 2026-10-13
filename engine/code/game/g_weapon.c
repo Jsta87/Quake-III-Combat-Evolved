@@ -793,11 +793,16 @@ set muzzle location relative to pivoting eye
 ===============
 */
 void CalcMuzzlePoint ( gentity_t *ent, vec3_t localForward, vec3_t localRight, vec3_t localUp, vec3_t muzzlePoint ) {
-	VectorCopy( ent->s.pos.trBase, muzzlePoint );
-	muzzlePoint[2] += ent->client->ps.viewheight;
-	VectorMA( muzzlePoint, 14, localForward, muzzlePoint );
-	// snap to integer coordinates for more efficient network bandwidth usage
-	SnapVector( muzzlePoint );
+ if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+  vec3_t eye;trace_t trace;
+  VectorCopy(ent->client->ps.origin,eye);eye[2]+=ent->client->ps.viewheight;
+  VectorMA(eye,14,localForward,muzzlePoint);
+  trap_Trace(&trace,eye,NULL,NULL,muzzlePoint,ent->s.number,MASK_SHOT);
+  if(trace.fraction<1)VectorMA(trace.endpos,-.125f,localForward,muzzlePoint);
+ } else {
+  VectorCopy(ent->s.pos.trBase,muzzlePoint);muzzlePoint[2]+=ent->client->ps.viewheight;
+  VectorMA(muzzlePoint,14,localForward,muzzlePoint);SnapVector(muzzlePoint);
+ }
 }
 
 /*
@@ -808,11 +813,16 @@ set muzzle location relative to pivoting eye
 ===============
 */
 void CalcMuzzlePointOrigin ( gentity_t *ent, vec3_t origin, vec3_t localForward, vec3_t localRight, vec3_t localUp, vec3_t muzzlePoint ) {
-	VectorCopy( ent->s.pos.trBase, muzzlePoint );
-	muzzlePoint[2] += ent->client->ps.viewheight;
-	VectorMA( muzzlePoint, 14, localForward, muzzlePoint );
-	// snap to integer coordinates for more efficient network bandwidth usage
-	SnapVector( muzzlePoint );
+ if(ent->client->ps.stats[STAT_QCE_COMBAT]) {
+  vec3_t eye;trace_t trace;
+  VectorCopy(ent->client->ps.origin,eye);eye[2]+=ent->client->ps.viewheight;
+  VectorMA(eye,14,localForward,muzzlePoint);
+  trap_Trace(&trace,eye,NULL,NULL,muzzlePoint,ent->s.number,MASK_SHOT);
+  if(trace.fraction<1)VectorMA(trace.endpos,-.125f,localForward,muzzlePoint);
+ } else {
+  VectorCopy(ent->s.pos.trBase,muzzlePoint);muzzlePoint[2]+=ent->client->ps.viewheight;
+  VectorMA(muzzlePoint,14,localForward,muzzlePoint);SnapVector(muzzlePoint);
+ }
 }
 
 

@@ -107,7 +107,8 @@ def export(p,cache,assets,report,write):
         source=f'textures/qce/halo/{p.a.safe_name(tag["path"])}'
         if not (assets.output/(source+'/000.tga')).exists():assets.texture(tag)
         sequences=assets.reflexive('Bitmap','bitmap group sequence',tag['offset'],'BitmapGroupSequence')
-        sprites=assets.reflexive('BitmapGroupSequence','sprites',sequences[0],'BitmapGroupSprite') if sequences else []
+        sprites=[sp for sq in sequences[:6] for sp in assets.reflexive('BitmapGroupSequence','sprites',sq,'BitmapGroupSprite')] if weapon==2 else (assets.reflexive('BitmapGroupSequence','sprites',sequences[0],'BitmapGroupSprite') if sequences else [])
+        ar_metadata=[]
         colors=[0,0,0];weight=0
         for frame,sprite in enumerate(sprites[:16] or [None]):
             bi=struct.unpack_from('<h',cache.data,sprite)[0] if sprite is not None else 0
@@ -115,12 +116,25 @@ def export(p,cache,assets,report,write):
             if sprite is not None:
                 l,rr,t,b=struct.unpack_from('<4f',cache.data,sprite+8);x0,x1,y0,y1=round(l*w),round(rr*w),round(t*h),round(b*h)
                 if not 0<=x0<x1<=w or not 0<=y0<y1<=h:raise p.a.halo.CacheError('Invalid muzzle sprite bounds')
+                if weapon==2:
+                    rx,ry=struct.unpack_from('<2f',cache.data,sprite+24)
+                    ar_metadata.append([(x1-x0)/(y1-y0),rx/(rr-l),ry/(b-t)])
                 pixels=b''.join(pixels[(y*w+x0)*4:(y*w+x1)*4] for y in range(y0,y1));w,h=x1-x0,y1-y0
             for i in range(0,len(pixels),4):
                 a=pixels[i+3];weight+=a
                 for c in range(3):colors[c]+=pixels[i+c]*a
             output=f'textures/qce/combat/muzzle-{weapon}-{frame}.tga';write(output,p.a.tga(w,h,pixels),{'source':tag,'sprite':frame})
             effects.append(f'qce/halo/muzzle-{weapon}-{frame}\n{{\n cull none\n {{ map {output}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen vertex\n alphaGen vertex }}\n}}\n')
+        if weapon==2:
+            core=[sp for sq in sequences[6:9] for sp in assets.reflexive('BitmapGroupSequence','sprites',sq,'BitmapGroupSprite')]
+            if len(ar_metadata)!=6 or len(core)!=3:raise p.a.halo.CacheError('Unexpected AR directional/core sequences')
+            for frame,sp in enumerate(core):
+                bi=struct.unpack_from('<h',cache.data,sp)[0];w,h,pixels=p.read_tga(assets.output/(source+f'/{bi:03}.tga'))
+                l,r,t,b=struct.unpack_from('<4f',cache.data,sp+8);x0,x1,y0,y1=round(l*w),round(r*w),round(t*h),round(b*h)
+                pixels=b''.join(pixels[(y*w+x0)*4:(y*w+x1)*4] for y in range(y0,y1));w,h=x1-x0,y1-y0
+                output=f'textures/qce/combat/muzzle-ar-core-{frame}.tga';write(output,p.a.tga(w,h,pixels),{'source':tag,'sequence':frame+6})
+                effects.append(f'qce/halo/muzzle-ar-core-{frame}\n{{\n cull none\n {{ map {output}\n blendFunc GL_SRC_ALPHA GL_ONE\n rgbGen vertex\n alphaGen vertex }}\n}}\n')
+            write('models/qce/halo/world/muzzle-ar.cfg',('6 3\n'+'\n'.join(' '.join(map(str,row)) for row in ar_metadata)+'\n').encode(),{'source':'AR directional 0-5 and center 6-8 sequences; source lifetimes 75/300 ms, parallel/screen-facing orientation'})
         peak=max(colors) or 1;rgb=[x/peak for x in colors] if weight else [1,1,1]
         muzzle_rows.append([weapon,min(16,len(sprites)) or 1,radius,*rgb])
     write('models/qce/halo/world/muzzle.cfg',('\n'.join(' '.join(map(str,row)) for row in muzzle_rows)+'\n').encode(),{'source':'Xbox muzzle bitmap sprites','approximation':'sprite radius and 67-ms presentation envelope are calibrated, not full particle simulation'})

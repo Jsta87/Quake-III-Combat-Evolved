@@ -28,5 +28,10 @@ int main(void) {
  shooter.ps.stats[STAT_QCE_COMBAT]=0;distance=1000;assert(ShotgunPellet(start,end,ent));assert(calls==4 && amount==10);
  shooter.ps.stats[STAT_QCE_COMBAT]=1;distance=120;s_qceError=127;s_qceSpread=BG_QceSpread(WP_SHOTGUN,127);VectorSet(forward,1,0,0);VectorClear(muzzle);
  weapon_supershotgun_fire(ent);assert(event.s.generic1==WP_SHOTGUN && event.s.time2==127 && calls==4 && projectiles==15);
+ /* A shoulder camera may see around a corner; the eye-side muzzle cannot
+    cross even a very close occluder. Both firing entry points share the guard. */
+ VectorSet(shooter.ps.origin,0,0,0);shooter.ps.viewheight=26;distance=5;
+ CalcMuzzlePoint(ent,forward,vec3_origin,vec3_origin,muzzle);assert(muzzle[0]<5 && muzzle[0]>4);
+ CalcMuzzlePointOrigin(ent,start,forward,vec3_origin,vec3_origin,muzzle);assert(muzzle[0]<5 && muzzle[0]>4);
  puts("PASS: legacy pellet helper minimum/random attenuation, stock damage and production shotgun finite-projectile dispatch");return 0;
 }
