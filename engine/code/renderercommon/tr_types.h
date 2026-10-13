@@ -111,6 +111,14 @@ typedef struct {
 	int qceAimGrid,qceAimFrames[4];
 	float qceAimYaw,qceAimPitch;
 
+ // Independent Halo lower-body locomotion and two-frame outgoing pose blend.
+ int qceLowerBody,qceLowerFrame,qceLowerOldFrame;
+ float qceLowerBacklerp;
+ int qceLowerPreviousFrame,qceLowerPreviousOldFrame;
+ float qceLowerPreviousBacklerp,qceLowerBlend;
+ int qceTransitionFrame,qceTransitionOldFrame;
+ float qceTransitionBacklerp,qceTransitionWeight;
+
 	// texturing
 	int			skinNum;			// inline skin index
 	qhandle_t	customSkin;			// NULL for default skin

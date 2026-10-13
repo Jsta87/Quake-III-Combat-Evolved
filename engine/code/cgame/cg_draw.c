@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 #include "cg_qce_visual.h"
+#include "cg_qce_camera.h"
 #include "../game/bg_qce_aim.h"
 
 #ifdef MISSIONPACK
@@ -1901,13 +1902,21 @@ CG_DrawCrosshair
 static qboolean CG_DrawHaloCrosshair(void) {
  playerState_t *ps=&cg.predictedPlayerState;int weapon=ps->weapon,i,best=-1,frame=0;
  float bestAuto=0,bestMagnet=0,zoom=1;vec4_t color={0.35f,0.65f,1,1};
- const qce_weapondef_t *def;vec3_t eye,dir;
+ const qce_weapondef_t *def;vec3_t eye,dir;float centerX=320,centerY=240;
  if(!ps->stats[STAT_QCE_COMBAT] || weapon<=WP_NONE || weapon>=WP_NUM_WEAPONS)return qfalse;
  if(!cg_qceWorld.crosshairCount[weapon])return qfalse;
  def=BG_QceWeaponDef(weapon);if(ps->qceZoom&3)zoom=(ps->qceZoom&3)==1?def->zoom_min:def->zoom_max;
  VectorCopy(ps->origin,eye);eye[2]+=ps->viewheight;AngleVectors(ps->viewangles,dir,NULL,NULL);
  {trace_t trace;vec3_t end;VectorMA(eye,def->projectile_range>0?def->projectile_range:8192,dir,end);
   CG_Trace(&trace,eye,NULL,NULL,end,ps->clientNum,MASK_SHOT);
+  if(cg.renderingThirdPerson) {
+   vec3_t delta;float screenX,screenY;
+   VectorSubtract(trace.endpos,eye,delta);
+   if(VectorLength(delta)<=80.0f/3.048f || !QCE_ProjectAim(trace.endpos,cg.refdef.vieworg,cg.refdef.viewaxis,cg.refdef.fov_x,cg.refdef.fov_y,&screenX,&screenY))return qtrue;
+   /* Convert actual viewport coordinates back to the 640x480 HUD space. */
+   centerX=(cg.refdef.x+screenX*cg.refdef.width)/cgs.screenXScale;
+   centerY=(cg.refdef.y+screenY*cg.refdef.height)/cgs.screenYScale;
+  }
   if(trace.entityNum>=0 && trace.entityNum<MAX_CLIENTS && cg_entities[trace.entityNum].currentValid && !(cg_entities[trace.entityNum].currentState.eFlags&EF_DEAD))best=trace.entityNum;
  }
  for(i=0;i<MAX_CLIENTS;i++) {
@@ -1933,7 +1942,7 @@ static qboolean CG_DrawHaloCrosshair(void) {
   if((flags&4) && !(ps->qceZoom&3))continue;
   if((flags&64) && (ps->qceZoom&3))continue;
   if(cg_qceWorld.crosshairs[weapon][i].frame!=((flags&1)?0:frame) && cg_qceWorld.crosshairCount[weapon]>1)continue;
-  x=320+cg_qceWorld.crosshairs[weapon][i].x;y=240+cg_qceWorld.crosshairs[weapon][i].y;
+  x=centerX+cg_qceWorld.crosshairs[weapon][i].x;y=centerY+cg_qceWorld.crosshairs[weapon][i].y;
   w=cg_qceWorld.crosshairs[weapon][i].width;h=cg_qceWorld.crosshairs[weapon][i].height;
   CG_AdjustFrom640(&x,&y,&w,&h);trap_R_DrawStretchPic(x,y,w,h,0,0,1,1,cg_qceWorld.crosshairs[weapon][i].shader);
  }
@@ -1956,7 +1965,7 @@ static void CG_DrawCrosshair(void)
 		return;
 	}
 
-	if ( cg.renderingThirdPerson && !(cg_qceCameraMode.integer>=1 && cg_qceCameraMode.integer<=2 && !cg.snap->ps.qceVehicle) ) {
+	if ( cg.renderingThirdPerson && !(cg_qceCameraMode.integer==1 && !cg.snap->ps.qceVehicle) ) {
 		return;
 	}
 

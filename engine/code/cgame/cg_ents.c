@@ -496,6 +496,27 @@ static void CG_Item( centity_t *cent ) {
 CG_Missile
 ===============
 */
+/* Display the initial flight from the authored gun, converging onto the server
+ * trajectory in 120 ms. No camera position enters collision/damage simulation. */
+static void CG_QceProjectileVisualOrigin(centity_t *cent,vec3_t origin) {
+ entityState_t *state=&cent->currentState;int owner=state->otherEntityNum2-1,age=cg.time-state->time;
+ centity_t *player;vec3_t eye,forward,muzzle,target;trace_t trace;float weight;
+ VectorCopy(cent->lerpOrigin,origin);
+ if(owner<0 || owner>=MAX_CLIENTS || age<0 || age>=120 || state->pos.trType==TR_STATIONARY)return;
+ if(owner==cg.predictedPlayerState.clientNum && !cg.renderingThirdPerson)return;
+ player=&cg_entities[owner];
+ if(!player->currentValid || cg.time-player->qceWorldMuzzleTime>100 || !player->qceWorldMuzzleTime)return;
+ if(cent->qceProjectileVisualStart!=state->time) {
+  VectorCopy(player->lerpOrigin,eye);
+  eye[2]+=(player->currentState.legsAnim&~ANIM_TOGGLEBIT)==LEGS_WALKCR || (player->currentState.legsAnim&~ANIM_TOGGLEBIT)==LEGS_IDLECR?CROUCH_VIEWHEIGHT:DEFAULT_VIEWHEIGHT;
+  AngleVectors(player->lerpAngles,forward,NULL,NULL);VectorMA(eye,14,forward,muzzle);
+  VectorSubtract(player->qceWorldMuzzle,muzzle,cent->qceProjectileVisualOffset);
+  cent->qceProjectileVisualStart=state->time;
+ }
+ weight=1-age/120.0f;VectorMA(origin,weight,cent->qceProjectileVisualOffset,target);
+ /* Do not display the launch offset through adjacent world geometry. */
+ CG_Trace(&trace,origin,NULL,NULL,target,owner,MASK_SOLID);VectorCopy(trace.endpos,origin);
+}
 static void CG_Missile( centity_t *cent ) {
 	refEntity_t			ent;
 	entityState_t		*s1;
@@ -524,7 +545,7 @@ static void CG_Missile( centity_t *cent ) {
  }
 
 	if(cg.snap->ps.stats[STAT_QCE_COMBAT] && (s1->weapon==WP_PLASMAGUN || s1->weapon==WP_LIGHTNING || s1->weapon==WP_GRENADE_LAUNCHER || s1->weapon==WP_ROCKET_LAUNCHER)) {
-  vec3_t velocity;memset(&ent,0,sizeof(ent));VectorCopy(cent->lerpOrigin,ent.origin);VectorCopy(ent.origin,ent.oldorigin);
+  vec3_t velocity,visualOrigin;CG_QceProjectileVisualOrigin(cent,visualOrigin);memset(&ent,0,sizeof(ent));VectorCopy(visualOrigin,ent.origin);VectorCopy(ent.origin,ent.oldorigin);
   memset(ent.shaderRGBA,255,4);ent.renderfx=RF_NOSHADOW;
   BG_EvaluateTrajectoryDelta(&s1->pos,cg.time,velocity);
   if(s1->weapon==WP_GRENADE_LAUNCHER && cg_qceWorld.needleFlyby)trap_S_AddLoopingSound(s1->number,ent.origin,velocity,cg_qceWorld.needleFlyby);
@@ -545,7 +566,7 @@ static void CG_Missile( centity_t *cent ) {
    } else for(k=0;k<count;k++) {
     float t=count>1?k/(float)(count-1):0;int channel;
     ent.radius=volume[3]+(volume[4]-volume[3])*(volume[5]<2?t*sqrt(t):t*t*t*t*t);if(ent.radius<1)ent.radius=1;
-    VectorMA(cent->lerpOrigin,volume[1]+volume[2]*t,direction,ent.origin);
+    VectorMA(visualOrigin,volume[1]+volume[2]*t,direction,ent.origin);
     for(channel=0;channel<4;channel++) {
      float value=volume[6+channel]*(1-t)+volume[10+channel]*t;
      ent.shaderRGBA[channel==0?3:channel-1]=(byte)(value*255);

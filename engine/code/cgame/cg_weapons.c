@@ -1316,8 +1316,14 @@ static void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,int ren
 
 void CG_HaloWorldMuzzle(refEntity_t *gun,centity_t *cent) {
  vec3_t origin;int weapon=cent->currentState.weapon;
- if(weapon<=WP_GAUNTLET || weapon>=WP_NUM_WEAPONS || cent->muzzleFlashTime<=0)return;
+ if(weapon<=WP_GAUNTLET || weapon>=WP_NUM_WEAPONS)return;
  VectorMA(gun->origin,12,gun->axis[0],origin);
+ VectorCopy(origin,cent->qceWorldMuzzle);cent->qceWorldMuzzleTime=cg.time;
+ if(cent->currentState.number>=0 && cent->currentState.number<MAX_CLIENTS) {
+  VectorCopy(origin,cg_entities[cent->currentState.number].qceWorldMuzzle);
+  cg_entities[cent->currentState.number].qceWorldMuzzleTime=cg.time;
+ }
+ if(cent->muzzleFlashTime<=0)return;
  CG_HaloMuzzle(cent,weapon,origin,gun->renderfx);
 }
 

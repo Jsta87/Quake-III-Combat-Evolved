@@ -171,6 +171,12 @@ typedef struct centity_s {
 	int				muzzleFlashTime;	// move to playerEntity?
 	int qcePlayerClip,qcePlayerStart,qcePlayerPreviousFrame,qcePlayerRenderedFrame,qcePlayerBlendMs;
  qboolean qcePlayerPoseValid;
+ int qcePlayerRenderedOldFrame,qcePlayerPreviousOldFrame,qcePlayerAngleTime;
+ float qcePlayerRenderedBacklerp,qcePlayerPreviousBacklerp,qcePlayerYaw;
+ vec3_t qceWorldMuzzle,qceProjectileVisualOffset;
+ int qceWorldMuzzleTime,qceProjectileVisualStart;
+ int qceMovePose,qceMoveStart,qceMoveFrame,qceMoveOldFrame,qceMovePreviousFrame,qceMovePreviousOldFrame;
+ float qceMoveBacklerp,qceMovePreviousBacklerp;
 	float qceWheelRoll,qceHogPitch;int qceHogContacts,qceHogImpactTime;int qceWheelTime,qceTireTime,qceEngineOn;
  int qceVehicleLast,qceVehicleSeatLast,qceVehicleEnterTime,qceVehicleExitTime;
  float qceSuspension[4],qceTurretRoll,qceTurretYaw,qceTurretPitch,qceRPM;int qceTurretShotTime;
@@ -1213,7 +1219,7 @@ extern	vmCvar_t		cg_zoomFov;
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonAngle;
 extern	vmCvar_t		cg_thirdPerson;
-extern vmCvar_t cg_qceCameraMode;
+extern vmCvar_t cg_qceCameraMode,cg_qceCameraBack,cg_qceCameraUp,cg_qceCameraSide;
 extern	vmCvar_t		cg_lagometer;
 extern	vmCvar_t		cg_drawAttacker;
 extern	vmCvar_t		cg_synchronousClients;

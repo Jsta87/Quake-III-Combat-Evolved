@@ -3,6 +3,8 @@ void G_QceInitProjectile(gentity_t *bolt,gentity_t *owner,int weapon) {
  bolt->s.weapon=weapon;bolt->qceProjectileWeapon=weapon;bolt->qceProjectileTime=level.time;
  bolt->qceOwnerSerial=owner->qceEntitySerial;bolt->qceDamageScale=1;
  bolt->s.pos.trTime=level.time;bolt->s.pos.trType=TR_LINEAR;
+ /* Render-only launch metadata; simulation always uses the first-person muzzle. */
+ bolt->s.time=level.time;bolt->s.otherEntityNum2=owner->s.number+1;
 }
 
 gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad) {

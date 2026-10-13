@@ -902,6 +902,8 @@ void CG_NewClientInfo( int clientNum ) {
 
 	// colors
  newInfo.haloModel=!Q_stricmp(Info_ValueForKey(configstring,"qce_model"),"cyborg")?1:!Q_stricmp(Info_ValueForKey(configstring,"qce_model"),"quake")?2:0;
+ if(newInfo.haloModel==1 && !cg_qceWorld.cyborgModel && clientNum==cg.clientNum)
+  CG_Printf("Cyborg selected, but models/qce/halo/player/cyborg.iqm is missing or failed to load. Using Spartan. Run qce_models for asset status and see docs/FRESH-LINUX-SETUP.md for the optional converter.\n");
  QCE_ParseRGB(Info_ValueForKey(configstring,"qce_rgb"),newInfo.haloColor);
  if(!QCE_ParseRGB(Info_ValueForKey(configstring,"qce_visor"),newInfo.haloVisor))QCE_ParseRGB("255 190 30",newInfo.haloVisor);
  if(cg_debugAnim.integer)CG_Printf("QCE armor client=%d RGB=%d %d %d\n",clientNum,newInfo.haloColor[0],newInfo.haloColor[1],newInfo.haloColor[2]);
@@ -2613,7 +2615,7 @@ A player just came into view or teleported, so reset all animation info
 ===============
 */
 void CG_ResetPlayerEntity( centity_t *cent ) {
- cent->qcePlayerPoseValid=qfalse;cent->qcePlayerClip=-1;
+ cent->qcePlayerPoseValid=qfalse;cent->qcePlayerClip=-1;cent->qceMovePose=-1;cent->qceWorldMuzzleTime=0;
  cent->qceMeleeTime=cent->qceGrenadeTime=0;
 	cent->errorTime = -99999;		// guarantee no error decay added
 	cent->extrapolated = qfalse;	
@@ -2649,18 +2651,22 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  refEntity_t body,gun;clientInfo_t *ci;vec3_t angles,velocity,forward,right;orientation_t hand;
  qceViewClip_t *clip;int kind=0,legs=cent->currentState.legsAnim&~ANIM_TOGGLEBIT,i;
- float f,s;int pose,weaponPose=0;
+ float f,s;int pose,weaponPose=0,moveKind=0;
  if(!cg.snap->ps.stats[STAT_QCE_COMBAT] || !cg_qceWorld.playerModel)return qfalse;
  ci=&cgs.clientinfo[cent->currentState.clientNum];
  if(ci->haloModel==2)return qfalse;
- VectorSet(angles,0,cent->lerpAngles[YAW],0);AngleVectors(angles,forward,right,NULL);
+ if(!cent->qcePlayerPoseValid || cg.time<cent->qcePlayerAngleTime)cent->qcePlayerYaw=cent->lerpAngles[YAW];
+ else cent->qcePlayerYaw+=AngleSubtract(cent->lerpAngles[YAW],cent->qcePlayerYaw)*(Com_Clamp(0,100,cg.time-cent->qcePlayerAngleTime)/(60.0f+Com_Clamp(0,100,cg.time-cent->qcePlayerAngleTime)));
+ cent->qcePlayerAngleTime=cg.time;
+ VectorSet(angles,0,cent->qcePlayerYaw,0);AngleVectors(angles,forward,right,NULL);
  VectorCopy(cent->currentState.pos.trDelta,velocity);f=DotProduct(velocity,forward);s=DotProduct(velocity,right);
+ if(cent->currentState.groundEntityNum==ENTITYNUM_NONE)moveKind=7;
+ else if(legs==LEGS_WALKCR || legs==LEGS_IDLECR)moveKind=VectorLength(velocity)>10?6:5;
+ else if(VectorLength(velocity)>10)moveKind=fabs(s)>fabs(f)?(s>0?4:3):(f<0?2:1);
+ kind=moveKind;
  if(cent->currentState.eFlags&EF_DEAD)kind=10;
  else if(cent->qceMeleeTime>0 && cg.time-cent->qceMeleeTime<1200)kind=8;
  else if(cent->qceGrenadeTime>0 && cg.time-cent->qceGrenadeTime<1266)kind=9;
- else if(cent->currentState.groundEntityNum==ENTITYNUM_NONE)kind=7;
- else if(legs==LEGS_WALKCR || legs==LEGS_IDLECR)kind=VectorLength(velocity)>10?6:5;
- else if(VectorLength(velocity)>10)kind=fabs(s)>fabs(f)?(s>0?4:3):(f<0?2:1);
  i=cent->currentState.weapon==WP_ROCKET_LAUNCHER?22:
    (cent->currentState.weapon==WP_BFG || cent->currentState.weapon==WP_LIGHTNING || cent->currentState.weapon==WP_GRENADE_LAUNCHER)?11:0;
   switch(cent->currentState.weapon) {
@@ -2675,6 +2681,8 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
     (kind==10 && cent->currentState.time2>0 && cent->currentState.time2<=cg.time && cent->qcePlayerStart!=cent->currentState.time2)){
   cent->qcePlayerBlendMs=(kind==0 && cent->qcePlayerClip<33 && cent->qcePlayerClip%11==0)?QCE_IDLE_POSE_BLEND_MS:QCE_POSE_BLEND_MS;
   cent->qcePlayerPreviousFrame=cent->qcePlayerRenderedFrame;
+  cent->qcePlayerPreviousOldFrame=cent->qcePlayerRenderedOldFrame;
+  cent->qcePlayerPreviousBacklerp=cent->qcePlayerRenderedBacklerp;
   cent->qcePlayerClip=pose;cent->qcePlayerStart=kind==10?QCE_DeathStart(cg.time,cent->currentState.time2):cg.time;
  }
  memset(&body,0,sizeof(body));body.hModel=ci->haloModel && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgModel:cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
@@ -2697,7 +2705,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   }
  } else {cent->qceVehicleLast=0;cent->qceVehicleExitTime=0;}
  clip=&cg_qceWorld.playerClips[pose];
- CG_HaloWorldFrames(clip,kind>=7,cg.time-cent->qcePlayerStart,&body.oldframe,&body.frame,&body.backlerp);
+ CG_HaloWorldFrames(clip,kind>=7,kind>=7?cg.time-cent->qcePlayerStart:cg.time+cent->currentState.clientNum*17,&body.oldframe,&body.frame,&body.backlerp);
  if(cent->currentState.otherEntityNum2>0 && ((pose>=49 && pose<=51) || pose==61 || pose==62)) {
   centity_t *car=&cg_entities[cent->currentState.otherEntityNum2];qceViewClip_t *aim=&cg_qceWorld.playerClips[pose==61?63:pose==62?64:58+pose-49];
   float relativePitch=AngleSubtract(cent->lerpAngles[PITCH],car->lerpAngles[PITCH]);
@@ -2712,12 +2720,23 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
    body.qceAimFrames[2]=aim->first+yy*columns+x;body.qceAimFrames[3]=aim->first+yy*columns+xx;
    /* Aim keys are absolute baked poses; the renderer overlay channel is additive. */}
  }
- cent->qcePlayerRenderedFrame=body.backlerp>0.5f?body.oldframe:body.frame;
- /* Halo uses six 30-Hz ticks for normal state changes. The outgoing pose is
-    captured here because this renderer exposes two frames, not four. */
+ cent->qcePlayerRenderedFrame=body.frame;cent->qcePlayerRenderedOldFrame=body.oldframe;cent->qcePlayerRenderedBacklerp=body.backlerp;
  if(!cent->currentState.otherEntityNum2 && cent->qcePlayerPoseValid && kind!=10 && cg.time-cent->qcePlayerStart<cent->qcePlayerBlendMs) {
-  body.oldframe=cent->qcePlayerPreviousFrame;
-  body.backlerp=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
+  body.qceTransitionFrame=cent->qcePlayerPreviousFrame;body.qceTransitionOldFrame=cent->qcePlayerPreviousOldFrame;
+  body.qceTransitionBacklerp=cent->qcePlayerPreviousBacklerp;
+  body.qceTransitionWeight=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
+ }
+ if(!cent->currentState.otherEntityNum2 && kind!=10 && moveKind!=7) {
+  body.qceLowerBody=1;
+  if(cent->qceMovePose!=moveKind+i) {
+   cent->qceMovePreviousFrame=cent->qceMoveFrame;cent->qceMovePreviousOldFrame=cent->qceMoveOldFrame;
+   cent->qceMovePreviousBacklerp=cent->qceMoveBacklerp;cent->qceMoveStart=cg.time;cent->qceMovePose=moveKind+i;
+  }
+  CG_HaloWorldFrames(&cg_qceWorld.playerClips[moveKind+i],0,cg.time+cent->currentState.clientNum*17,&body.qceLowerOldFrame,&body.qceLowerFrame,&body.qceLowerBacklerp);
+  body.qceLowerPreviousFrame=cent->qceMovePreviousFrame;body.qceLowerPreviousOldFrame=cent->qceMovePreviousOldFrame;
+  body.qceLowerPreviousBacklerp=cent->qceMovePreviousBacklerp;
+  body.qceLowerBlend=cent->qcePlayerPoseValid?Com_Clamp(0,1,1-(cg.time-cent->qceMoveStart)/200.0f):0;
+  cent->qceMoveFrame=body.qceLowerFrame;cent->qceMoveOldFrame=body.qceLowerOldFrame;cent->qceMoveBacklerp=body.qceLowerBacklerp;
  }
  cent->qcePlayerPoseValid=qtrue;
  body.customSkin=ci->haloModel==1 && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgBodySkin:cg_qceWorld.bodySkin;

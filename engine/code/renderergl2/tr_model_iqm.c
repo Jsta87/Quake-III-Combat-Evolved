@@ -1420,6 +1420,54 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
   }
  }
 
+ /* Blend the complete outgoing interpolated pose, then preserve the walking legs
+    during upper-body actions. Pelvis and leg descendants come from locomotion. */
+ if(overlay && overlay->qceTransitionWeight>0 && overlay->qceTransitionFrame>=0 && overlay->qceTransitionFrame<data->num_frames &&
+    overlay->qceTransitionOldFrame>=0 && overlay->qceTransitionOldFrame<data->num_frames) {
+  const iqmTransform_t *a=&data->poses[overlay->qceTransitionOldFrame*data->num_poses];
+  const iqmTransform_t *b=&data->poses[overlay->qceTransitionFrame*data->num_poses];
+  float t=1-Com_Clamp(0,1,overlay->qceTransitionBacklerp),weight=Com_Clamp(0,1,overlay->qceTransitionWeight);
+  for(i=0;i<data->num_poses;i++) {
+   quat_t rotation,base;int k;relativeJoint=&relativeJoints[i];
+   for(k=0;k<3;k++) {
+    relativeJoint->translate[k]=relativeJoint->translate[k]*(1-weight)+(a[i].translate[k]*(1-t)+b[i].translate[k]*t)*weight;
+    relativeJoint->scale[k]=relativeJoint->scale[k]*(1-weight)+(a[i].scale[k]*(1-t)+b[i].scale[k]*t)*weight;
+   }
+   QuatSlerp(a[i].rotate,b[i].rotate,t,rotation);QuatCopy(relativeJoint->rotate,base);QuatSlerp(base,rotation,weight,relativeJoint->rotate);
+  }
+ }
+ if(overlay && overlay->qceLowerBody && overlay->qceLowerFrame>=0 && overlay->qceLowerFrame<data->num_frames &&
+    overlay->qceLowerOldFrame>=0 && overlay->qceLowerOldFrame<data->num_frames) {
+  const char *name=data->jointNames;int spine=-1,upper[IQM_MAX_JOINTS];
+  const iqmTransform_t *a=&data->poses[overlay->qceLowerOldFrame*data->num_poses];
+  const iqmTransform_t *b=&data->poses[overlay->qceLowerFrame*data->num_poses];
+  float t=1-Com_Clamp(0,1,overlay->qceLowerBacklerp);
+  for(i=0;i<data->num_poses;i++){if(!strcmp(name,"bip01 spine"))spine=i;name+=strlen(name)+1;}
+  if(spine>=0)for(i=0;i<data->num_poses;i++) {
+   int parent=data->jointParents[i],k;
+   upper[i]=i==spine || (parent>=0 && parent<i && upper[parent]);
+   if(upper[i])continue;
+   relativeJoint=&relativeJoints[i];
+   for(k=0;k<3;k++) {
+    relativeJoint->translate[k]=a[i].translate[k]*(1-t)+b[i].translate[k]*t;
+    relativeJoint->scale[k]=a[i].scale[k]*(1-t)+b[i].scale[k]*t;
+   }
+   QuatSlerp(a[i].rotate,b[i].rotate,t,relativeJoint->rotate);
+   if(overlay->qceLowerBlend>0 && overlay->qceLowerPreviousFrame>=0 && overlay->qceLowerPreviousFrame<data->num_frames &&
+      overlay->qceLowerPreviousOldFrame>=0 && overlay->qceLowerPreviousOldFrame<data->num_frames) {
+    const iqmTransform_t *c=&data->poses[overlay->qceLowerPreviousOldFrame*data->num_poses+i];
+    const iqmTransform_t *d=&data->poses[overlay->qceLowerPreviousFrame*data->num_poses+i];
+    float previous=1-Com_Clamp(0,1,overlay->qceLowerPreviousBacklerp),weight=Com_Clamp(0,1,overlay->qceLowerBlend);
+    quat_t rotation,base;
+    for(k=0;k<3;k++) {
+     relativeJoint->translate[k]=relativeJoint->translate[k]*(1-weight)+(c->translate[k]*(1-previous)+d->translate[k]*previous)*weight;
+     relativeJoint->scale[k]=relativeJoint->scale[k]*(1-weight)+(c->scale[k]*(1-previous)+d->scale[k]*previous)*weight;
+    }
+    QuatSlerp(c->rotate,d->rotate,previous,rotation);QuatCopy(relativeJoint->rotate,base);QuatSlerp(base,rotation,weight,relativeJoint->rotate);
+   }
+  }
+ }
+
 	// multiply by inverse of bind pose and parent 'pose mat' (bind pose transform matrix)
 	relativeJoint = relativeJoints;
 	jointParent = data->jointParents;

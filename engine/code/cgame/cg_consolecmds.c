@@ -493,14 +493,20 @@ static void CG_QceEffectTest_f(void) {
 
 static void CG_QceCamera_f(void) {
  int mode=cg_qceCameraMode.integer;
- if(trap_Argc()>1)mode=atoi(CG_Argv(1));else mode=(mode+1)%3;
- if(mode<0 || mode>2){CG_Printf("qce_camera [0 first person | 1 right shoulder | 2 left shoulder]\n");return;}
+ if(trap_Argc()>1)mode=atoi(CG_Argv(1));else mode=mode?0:1;
+ if(mode==2){trap_Cvar_Set("cg_qceCameraSide","-24");mode=1;} /* Legacy left shoulder. */
+ if(mode<0 || mode>1){CG_Printf("qce_camera [0 first person | 1 third person]\n");return;}
  trap_Cvar_Set("cg_thirdPerson","0");
  trap_Cvar_Set("cg_qceCameraMode",va("%d",mode));
- CG_Printf("Camera: %s\n",mode==0?"first person":mode==1?"right shoulder":"left shoulder");
+ CG_Printf("Camera: %s\n",mode==0?"first person":"third person");
 }
 
+static void CG_QceModels_f(void) {
+ CG_Printf("Spartan: %s. Cyborg: %s.\n",cg_qceWorld.playerModel?"loaded":"unavailable",cg_qceWorld.cyborgModel?"loaded":"unavailable (Spartan fallback)");
+ CG_Printf("Select with qce_playerModel spartan|cyborg|quake. Cyborg requires your local converted zzzz-qce-cyborg.pk3; see docs/FRESH-LINUX-SETUP.md.\n");
+}
 static consoleCommand_t commands[] = {
+ { "qce_models", CG_QceModels_f },
  {"qce_scorepage",CG_QceScorePage_f},
  {"qce_effecttest",CG_QceEffectTest_f},
  {"qce_color",CG_QceColor_f},

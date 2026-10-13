@@ -1036,7 +1036,16 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				VectorMA(es->origin2, 4, cg.refdef.viewaxis[1], es->origin2);
 		}
 
-		CG_RailTrail(ci, es->origin2, es->pos.trBase);
+  if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT] && es->clientNum>=0 && es->clientNum<MAX_CLIENTS &&
+     (es->clientNum!=cg.predictedPlayerState.clientNum || cg.renderingThirdPerson)) {
+   centity_t *shooter=&cg_entities[es->clientNum];vec3_t visualStart;trace_t obstruction;
+   VectorCopy(es->origin2,visualStart);
+   if(shooter->currentValid && shooter->qceWorldMuzzleTime>0 && cg.time-shooter->qceWorldMuzzleTime<100) {
+    CG_Trace(&obstruction,es->origin2,NULL,NULL,shooter->qceWorldMuzzle,es->clientNum,MASK_SOLID);
+    VectorCopy(obstruction.endpos,visualStart);
+   }
+   CG_RailTrail(ci,visualStart,es->pos.trBase);
+  } else CG_RailTrail(ci, es->origin2, es->pos.trBase);
   if(cg.predictedPlayerState.stats[STAT_QCE_COMBAT])break;
 
 		// if the end was on a nomark surface, don't make an explosion

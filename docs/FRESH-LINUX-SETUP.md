@@ -131,11 +131,37 @@ Reconvert Cyborg if the retail animation package changes its frame layout.
 
 ## Cameras and safe spawns
 
-Press **V** to cycle first person → right shoulder → left shoulder. Console
-settings are `set cg_qceCameraMode 0`, `1` or `2`; `qce_camera` cycles and
-`qce_camera <0..2>` selects a mode. Shoulder cameras trace against walls and aim
-at the obstruction along the player's actual firing line. Vehicle/death cameras
-continue to use their own views.
+Press **V** to toggle first person / third person. Console settings are
+`cg_qceCameraMode 0` (first person) and `cg_qceCameraMode 1` (third person).
+`qce_camera` toggles; `qce_camera 0` or `qce_camera 1` selects directly.
+
+Adjust the third-person camera with these archived cvars, in Quake world units:
+
+```text
+cg_qceCameraBack 90
+cg_qceCameraUp 8
+cg_qceCameraSide 24
+```
+
+Back is distance behind the eye along the view direction (0–500). Up is vertical
+world offset (-200–200). Positive side moves right; negative side moves left
+(-200–200). Old camera mode 2 migrates to mode 1 with side -24. Camera placement
+still traces against walls. Vehicle/death cameras use their existing views.
+
+Gameplay firing, collision and damage always use the first-person eye/muzzle,
+independently of the camera. Third-person reticles project the first-person aim
+trace into the offset camera viewport and are hidden within one metre of the eye
+(80 / 3.048 Quake units) or when the aim point is offscreen/behind the camera.
+Reticle coloring and magnetism still use the first-person view. Projectile
+visuals blend from the world gun muzzle to the authoritative trajectory over the
+first 120 ms; their collision path does not move. No asset reconversion is needed
+for the new lower-body movement/action layers.
+
+Run `qce_models` in the console to check whether Cyborg actually loaded. Selecting
+`qce_playerModel cyborg` falls back to Spartan if its optional package is absent
+or invalid. Copy your existing converted `zzzz-qce-cyborg.pk3` into
+`assets/baseq3`, or use the permission-qualified optional conversion steps above,
+then restart the game. Cloning/updating the source does not install this artwork.
 
 If every spawn is occupied, players and bots wait one second, then try free starts
 or a nearby floor position. Candidates require world clearance, 64 units of
