@@ -1,0 +1,43 @@
+--- a/brushbsp.c
++++ b/brushbsp.c
+@@ -977,6 +977,40 @@
+ 	int			epsilonbrush;
+ 	qboolean	hintsplit = false;
+ 
++	/* Spatially partition dense terrain before the quadratic side/brush search.
++	 * This inserts exact axial volume splits, not approximate collision geometry. */
++	if (create_aas && node->volume)
++	{
++		int count = 0, axis = 0, k;
++		vec3_t mins, maxs, normal;
++		float width = 0, distance;
++		side_t *partition;
++		ClearBounds(mins, maxs);
++		for (brush = brushes; brush; brush = brush->next)
++		{
++			count++;
++			AddPointToBounds(brush->mins, mins, maxs);
++			AddPointToBounds(brush->maxs, mins, maxs);
++		}
++		for (k = 0; k < 3; k++)
++			if (maxs[k] - mins[k] > width) { width = maxs[k] - mins[k]; axis = k; }
++		if (count > 64 && width > 1024)
++		{
++			VectorClear(normal); normal[axis] = 1;
++			distance = floor((mins[axis] + maxs[axis]) / 512) * 256;
++			ThreadLock(); pnum = FindFloatPlane(normal, distance); ThreadUnlock();
++			pnum &= ~1;
++			if (CheckPlaneAgainstParents(pnum, node) && CheckPlaneAgainstVolume(pnum, node))
++			{
++				for (brush = brushes; brush; brush = brush->next)
++					brush->side = TestBrushToPlanenum(brush, pnum, &bsplits, &hintsplit, &epsilonbrush);
++				partition = GetClearedMemory(sizeof(side_t));
++				partition->planenum = pnum; partition->texinfo = TEXINFO_NODE;
++				return partition;
++			}
++		}
++	}
++
+ 	bestside = NULL;
+ 	bestvalue = -99999;
+ 

@@ -491,6 +491,15 @@ static void CG_QceEffectTest_f(void) {
  CG_HaloGrenadeExplosion(type,origin);
 }
 
+static void CG_QceCamera_f(void) {
+ int mode=cg_qceCameraMode.integer;
+ if(trap_Argc()>1)mode=atoi(CG_Argv(1));else mode=(mode+1)%3;
+ if(mode<0 || mode>2){CG_Printf("qce_camera [0 first person | 1 right shoulder | 2 left shoulder]\n");return;}
+ trap_Cvar_Set("cg_thirdPerson","0");
+ trap_Cvar_Set("cg_qceCameraMode",va("%d",mode));
+ CG_Printf("Camera: %s\n",mode==0?"first person":mode==1?"right shoulder":"left shoulder");
+}
+
 static consoleCommand_t commands[] = {
  {"qce_scorepage",CG_QceScorePage_f},
  {"qce_effecttest",CG_QceEffectTest_f},
@@ -503,6 +512,7 @@ static consoleCommand_t commands[] = {
 	{ "nextskin", CG_TestModelNextSkin_f },
 	{ "prevskin", CG_TestModelPrevSkin_f },
 	{ "viewpos", CG_Viewpos_f },
+ { "qce_camera", CG_QceCamera_f },
 	{ "+scores", CG_ScoresDown_f },
 	{ "-scores", CG_ScoresUp_f },
 	{ "+zoom", CG_ZoomDown_f },

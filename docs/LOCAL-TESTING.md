@@ -1,5 +1,8 @@
 # Test on your own computer
 
+For a new Linux PC, follow [the complete fresh-install guide](FRESH-LINUX-SETUP.md),
+including Blood Gulch bot navigation, player models and camera controls.
+
 The current build and launch scripts target Linux with a graphical desktop
 (or a working graphical Linux environment). Python 3 with venv support, a C compiler, CMake 3.25
 or newer, Ninja, and SDL2 development headers are required. Windows/macOS launcher

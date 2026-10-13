@@ -330,6 +330,7 @@ typedef struct {
 
 	vec3_t			color1;
  byte haloColor[4], haloVisor[4];
+ int haloModel;
 	vec3_t			color2;
 	
 	byte c1RGBA[4];
@@ -427,6 +428,7 @@ typedef struct {
  int grenadeParticleCounts[3];
  float grenadeParticleWidths[3][64];
  qceViewClip_t playerClips[65];
+ qhandle_t cyborgModel,cyborgBodySkin,cyborgVisorSkin,cyborgHead,cyborgHeadBodySkin,cyborgHeadVisorSkin;
  sfxHandle_t grenadeLoop,grenadeThrow,grenadeExplode[2],grenadeBounce[2];
 } qceWorldMedia_t;
 extern qceWorldMedia_t cg_qceWorld;
@@ -1211,6 +1213,7 @@ extern	vmCvar_t		cg_zoomFov;
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonAngle;
 extern	vmCvar_t		cg_thirdPerson;
+extern vmCvar_t cg_qceCameraMode;
 extern	vmCvar_t		cg_lagometer;
 extern	vmCvar_t		cg_drawAttacker;
 extern	vmCvar_t		cg_synchronousClients;

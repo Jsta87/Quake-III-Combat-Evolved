@@ -293,6 +293,8 @@ struct gclient_s {
 	int qceShieldNextTick;
  qboolean qcePickupLatched;
  usercmd_t qceVehicleCmd;
+ int qceSpawnWaitUntil,qceSpawnRetry;
+ vec3_t qceSpawnOrigin;
  int qceVehicleExitTime,qceVehicleEnterTime;
  int qceGrenadeReleaseTime,qceGrenadeReleaseType;
  int qceShieldRemainder;
@@ -610,6 +612,7 @@ void ClientRespawn(gentity_t *ent);
 void BeginIntermission (void);
 void InitBodyQue (void);
 void ClientSpawn( gentity_t *ent );
+qboolean G_QcePrepareSpawn(gentity_t *ent,vec3_t origin);
 void player_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
 void AddScore( gentity_t *ent, vec3_t origin, int score );
 void CalculateRanks( void );

@@ -126,7 +126,7 @@ vmCvar_t	cg_footsteps;
 vmCvar_t	cg_addMarks;
 vmCvar_t	cg_brassTime;
 vmCvar_t cg_qceFlashlight;
-static vmCvar_t cg_qceColorRGB, cg_qceVisorRGB;
+static vmCvar_t cg_qceColorRGB, cg_qceVisorRGB, cg_qcePlayerModel;
 vmCvar_t cg_qceWeaponScale;
 vmCvar_t cg_qceWorldWeaponScale;
 vmCvar_t cg_qceScorePage;
@@ -145,6 +145,7 @@ vmCvar_t	cg_simpleItems;
 vmCvar_t	cg_fov;
 vmCvar_t	cg_zoomFov;
 vmCvar_t	cg_thirdPerson;
+vmCvar_t cg_qceCameraMode;
 vmCvar_t	cg_thirdPersonRange;
 vmCvar_t	cg_thirdPersonAngle;
 vmCvar_t	cg_lagometer;
@@ -243,6 +244,8 @@ static cvarTable_t cvarTable[] = {
  { &cg_qceWorldWeaponScale, "cg_qceWorldWeaponScale", "1.65", CVAR_ARCHIVE },
  { &cg_qceColorRGB, "qce_colorRGB", "40 180 70", CVAR_ARCHIVE | CVAR_USERINFO },
  { &cg_qceVisorRGB, "qce_visorRGB", "255 190 30", CVAR_ARCHIVE | CVAR_USERINFO },
+ { &cg_qcePlayerModel, "qce_playerModel", "spartan", CVAR_ARCHIVE | CVAR_USERINFO },
+ { &cg_qceCameraMode, "cg_qceCameraMode", "0", CVAR_ARCHIVE },
  { &cg_qceFlashlight, "cg_qceFlashlight", "0", CVAR_ARCHIVE },
 	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
 	{ &cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE },

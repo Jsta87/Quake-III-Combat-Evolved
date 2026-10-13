@@ -53,6 +53,8 @@ def main():
                 for text in ('status', 'game_memory', 'entitylist', 'dumpuser 0', 'sv_cheats 0',
                              'sv_cheats', 'sv_cheats 1', 'gv_save lobby', 'gv_movespeed 0.5'):
                     send(text)
+                for client in range(128):
+                    send(f'dumpuser {client}'); time.sleep(.05)
                 time.sleep(1); send('gv_load lobby'); send('gv_movespeed'); send('map_restart 0')
                 time.sleep(10); send('status'); send('quit'); process.wait(timeout=20)
             finally:
@@ -73,10 +75,13 @@ def main():
         assert 'Saved variants/lobby.cfg' in text and 'Loaded variants/lobby.cfg' in text, log_path
         assert '"gv_movespeed" is:"1' in text and '"sv_cheats" is:"0' in text, log_path
         assert 'Server quit' in text and 'Game memory status:' in text, log_path
+        models=Counter(re.findall(r'^qce_playerModel\s+(spartan|cyborg)$',text,re.MULTILINE))
+        assert models['spartan']>0 and models['cyborg']>0 and sum(models.values())>=128, 'bot model selection was not per-bot'
+        assert 'by a teleporting' not in text, 'spawn caused a telefrag'
         entities = [int(n) for n in re.findall(r'^\s*(\d+):ET_', text, re.MULTILINE)]
         skills = Counter(int(skill) for _, _, skill in first)
         print(f'PASS: {args.mode}, 128 independently randomized Spartan bots, sustained combat, '
-              f'map restart, editable cheats and variant roundtrip; skills={dict(sorted(skills.items()))}; '
+              f'map restart, randomized models={dict(models)}, editable cheats and variant roundtrip; skills={dict(sorted(skills.items()))}; '
               f'highest entity={max(entities, default=0)}; log={log_path}')
 
 if __name__ == '__main__':

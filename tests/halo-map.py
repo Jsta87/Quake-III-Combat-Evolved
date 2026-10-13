@@ -13,6 +13,11 @@ class MapTests(unittest.TestCase):
   self.assertEqual([p[:3] for p in planes[:6]],[(-1,0,0),(1,0,0),(0,-1,0),(0,1,0),(0,0,-1),(0,0,1)])
   inside=lambda p:all(w.dot(n[:3],p)<=n[3]+1e-5 for n in planes)
   self.assertTrue(inside((20,20,-1)));self.assertFalse(inside((20,20,1)));self.assertFalse(inside((20,20,-3)));self.assertFalse(inside((80,80,-1)))
+ def test_filled_terrain_preserves_surface(self):
+  b=w.BSP();b.brush([(0,0,0),(100,0,10),(0,100,0)],b.shader('ground'),-256)
+  first,count,_=struct.unpack('<3i',b.l[8]);planes=[struct.unpack_from('<4f',b.l[2],struct.unpack_from('<i',b.l[9],(first+i)*8)[0]*16) for i in range(count)]
+  inside=lambda point:all(w.dot(plane[:3],point)<=plane[3]+1e-4 for plane in planes)
+  self.assertTrue(inside((20,20,-100)));self.assertTrue(inside((20,20,1)));self.assertFalse(inside((20,20,3)));self.assertFalse(inside((20,20,-257)));self.assertFalse(inside((80,80,-50)))
  def test_plane_pairs_and_dedup(self):
   b=self.triangle()
   for i in range(0,len(b.l[2]),32):
@@ -31,6 +36,12 @@ class MapTests(unittest.TestCase):
  def test_surface_splitting(self):
   v=list(range(1200));parts=w.a.split_surface(v,[list(range(i,i+3)) for i in range(0,1200,3)],'test')
   self.assertEqual(len(parts),2);self.assertTrue(all(len(p['vertices'])<1000 and len(p['triangles'])*3<6000 for p in parts))
+ def test_navigation_boundary_box(self):
+  b=w.BSP();b.box((-100,-200,-300),(100,200,300),b.shader('boundary'))
+  first,count,_=struct.unpack('<3i',b.l[8]);self.assertEqual(count,6)
+  planes=[struct.unpack_from('<4f',b.l[2],struct.unpack_from('<i',b.l[9],(first+i)*8)[0]*16) for i in range(6)]
+  inside=lambda point:all(w.dot(plane[:3],point)<=plane[3] for plane in planes)
+  self.assertTrue(inside((0,0,0)));self.assertFalse(inside((101,0,0)));self.assertFalse(inside((0,-201,0)))
  def test_bsp_pointer_stays_in_cache(self):
   class Cache:
    def check(self,o,n):

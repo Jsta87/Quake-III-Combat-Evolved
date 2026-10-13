@@ -137,3 +137,5 @@ Recent playtest fixes and console controls: [PLAYTEST-FIXES.md](docs/PLAYTEST-FI
 
 A first drivable Warthog and an offline Blood Gulch test-map converter are now
 available. See [vehicle setup and current prototype limits](docs/VEHICLES.md).
+
+Fresh Linux PC setup: [clone, build, convert data and play](docs/FRESH-LINUX-SETUP.md).

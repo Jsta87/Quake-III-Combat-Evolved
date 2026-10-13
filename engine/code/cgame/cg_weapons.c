@@ -2649,6 +2649,12 @@ void CG_RegisterHaloWorld(void) {
   if(i>=49)cg_qceWorld.playerModel=trap_R_RegisterModel("models/qce/halo/player/spartan.iqm");
  }
  if(file)trap_FS_FCloseFile(file);
+ if(trap_FS_FOpenFile("models/qce/halo/player/cyborg.iqm",NULL,FS_READ)>0)cg_qceWorld.cyborgModel=trap_R_RegisterModel("models/qce/halo/player/cyborg.iqm");
+ if(cg_qceWorld.cyborgModel){
+  cg_qceWorld.cyborgBodySkin=trap_R_RegisterSkin("models/qce/halo/player/cyborg-body.skin");cg_qceWorld.cyborgVisorSkin=trap_R_RegisterSkin("models/qce/halo/player/cyborg-visor.skin");
+  cg_qceWorld.cyborgHead=trap_R_RegisterModel("models/qce/halo/player/cyborg-head.md3");cg_qceWorld.cyborgHeadBodySkin=trap_R_RegisterSkin("models/qce/halo/player/cyborg-head-body.skin");cg_qceWorld.cyborgHeadVisorSkin=trap_R_RegisterSkin("models/qce/halo/player/cyborg-head-visor.skin");
+ }
+ if(!cg_qceWorld.cyborgModel)CG_Printf("Optional Cyborg assets unavailable; model selections use Spartan until converted.\n");
  if(trap_FS_FOpenFile("models/qce/halo/player/head.md3",NULL,FS_READ)>0)cg_qceWorld.headModel=trap_R_RegisterModel("models/qce/halo/player/head.md3");
  cg_qceWorld.headBodySkin=trap_R_RegisterSkin("models/qce/halo/player/head-body.skin");
  cg_qceWorld.headVisorSkin=trap_R_RegisterSkin("models/qce/halo/player/head-visor.skin");

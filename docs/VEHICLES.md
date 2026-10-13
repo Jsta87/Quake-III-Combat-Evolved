@@ -209,3 +209,19 @@ export PATH="$PWD/.tools/bin:$PATH"
 ./scripts/build.sh client
 QCE_MAP=qce_bloodgulch ./scripts/run-client.sh
 ```
+
+## Blood Gulch bots
+
+Blood Gulch now imports 71 shared multiplayer starts and 18 roam goals. After
+map conversion, run `./scripts/bootstrap-bspc.sh` and
+`python3 scripts/build-bloodgulch-bots.py` to compile/package navigation. Ground
+and upward cliff faces use filled terrain collision solids; enclosed building
+surfaces retain their shell geometry. Six outer collision slabs close the volume
+for navigation flood-fill. Rendered surfaces remain the source mesh.
+
+AAS compilation uses pinned BSPC with an ancestor-plane guard and exact axial
+partitioning for dense terrain, a larger route-link pool and a fixed-width checksum
+word type. The checksum change is derived from BSPC's RSA Data Security, Inc. MD4
+Message-Digest Algorithm implementation. The navigation script verifies connected areas
+and the full Quake BSP checksum before packaging or reusing a cached output.
+See [fresh Linux setup](FRESH-LINUX-SETUP.md) for the complete commands.

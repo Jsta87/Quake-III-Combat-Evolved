@@ -327,9 +327,10 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
  byte color[4];
 
 	ci = &cgs.clientinfo[ clientNum ];
+ if(ci->haloModel==2)halo=qfalse;
 
 	if ( cg_draw3dIcons.integer || halo ) {
-		cm = halo?cg_qceWorld.headModel:ci->headModel;
+		cm = halo?(ci->haloModel==1 && cg_qceWorld.cyborgHead?cg_qceWorld.cyborgHead:cg_qceWorld.headModel):ci->headModel;
 		if ( !cm ) {
 			return;
 		}
@@ -352,7 +353,7 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, vec3_t head
   if(ci->team==TEAM_RED){color[0]=220;color[1]=40;color[2]=40;}
   if(ci->team==TEAM_BLUE){color[0]=40;color[1]=90;color[2]=230;}
   color[3]=255;
-  CG_Draw3DModelColored(x,y,w,h,cm,halo?cg_qceWorld.headBodySkin:ci->headSkin,origin,headAngles,halo?color:NULL,halo?cg_qceWorld.headVisorSkin:0,halo?ci->haloVisor:NULL);
+  CG_Draw3DModelColored(x,y,w,h,cm,halo?(ci->haloModel==1 && cg_qceWorld.cyborgHead?cg_qceWorld.cyborgHeadBodySkin:cg_qceWorld.headBodySkin):ci->headSkin,origin,headAngles,halo?color:NULL,halo?(ci->haloModel==1 && cg_qceWorld.cyborgHead?cg_qceWorld.cyborgHeadVisorSkin:cg_qceWorld.headVisorSkin):0,halo?ci->haloVisor:NULL);
 	} else if ( cg_drawIcons.integer ) {
 		CG_DrawPic( x, y, w, h, ci->modelIcon );
 	}
@@ -1904,7 +1905,7 @@ static qboolean CG_DrawHaloCrosshair(void) {
  if(!ps->stats[STAT_QCE_COMBAT] || weapon<=WP_NONE || weapon>=WP_NUM_WEAPONS)return qfalse;
  if(!cg_qceWorld.crosshairCount[weapon])return qfalse;
  def=BG_QceWeaponDef(weapon);if(ps->qceZoom&3)zoom=(ps->qceZoom&3)==1?def->zoom_min:def->zoom_max;
- VectorCopy(cg.refdef.vieworg,eye);VectorCopy(cg.refdef.viewaxis[0],dir);
+ VectorCopy(ps->origin,eye);eye[2]+=ps->viewheight;AngleVectors(ps->viewangles,dir,NULL,NULL);
  {trace_t trace;vec3_t end;VectorMA(eye,def->projectile_range>0?def->projectile_range:8192,dir,end);
   CG_Trace(&trace,eye,NULL,NULL,end,ps->clientNum,MASK_SHOT);
   if(trace.entityNum>=0 && trace.entityNum<MAX_CLIENTS && cg_entities[trace.entityNum].currentValid && !(cg_entities[trace.entityNum].currentState.eFlags&EF_DEAD))best=trace.entityNum;
@@ -1955,7 +1956,7 @@ static void CG_DrawCrosshair(void)
 		return;
 	}
 
-	if ( cg.renderingThirdPerson ) {
+	if ( cg.renderingThirdPerson && !(cg_qceCameraMode.integer>=1 && cg_qceCameraMode.integer<=2 && !cg.snap->ps.qceVehicle) ) {
 		return;
 	}
 

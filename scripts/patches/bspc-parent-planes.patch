@@ -1,0 +1,31 @@
+diff --git a/brushbsp.c b/brushbsp.c
+index 68d6e1b..05fa51c 100644
+--- a/brushbsp.c
++++ b/brushbsp.c
+@@ -925,14 +925,15 @@ void LeafNode(node_t *node, bspbrush_t *brushes)
+ // Returns:				-
+ // Changes Globals:		-
+ //===========================================================================
+-void CheckPlaneAgainstParents (int pnum, node_t *node)
++qboolean CheckPlaneAgainstParents (int pnum, node_t *node)
+ {
+ 	node_t	*p;
+ 
+ 	for (p = node->parent; p; p = p->parent)
+ 	{
+-		if (p->planenum == pnum) Error("Tried parent");
++		if (p->planenum == pnum) return false;
+ 	} //end for
++return true;
+ } //end of the function CheckPlaneAgainstParants
+ //===========================================================================
+ //
+@@ -1016,7 +1017,7 @@ side_t *SelectSplitSide (bspbrush_t *brushes, node_t *node)
+ 				pnum = side->planenum;
+ 				pnum &= ~1;	// allways use positive facing plane
+ 
+-				CheckPlaneAgainstParents (pnum, node);
++				if (!CheckPlaneAgainstParents (pnum, node)) continue;
+ 
+ 				if (!CheckPlaneAgainstVolume (pnum, node))
+ 					continue;	// would produce a tiny volume

@@ -80,26 +80,48 @@ SpotWouldTelefrag
 
 ================
 */
+/* Spawn placement checks world clearance AND horizontal player separation.
+ * The latter also prevents spawning on another player's head. */
+static qboolean QceSpawnClear(gentity_t *ent,const vec3_t origin) {
+ trace_t tr;int i;vec3_t delta;
+ trap_Trace(&tr,origin,playerMins,playerMaxs,origin,ent?ent->s.number:ENTITYNUM_NONE,MASK_PLAYERSOLID);
+ if(tr.startsolid || tr.allsolid)return qfalse;
+ for(i=0;i<level.maxclients;i++) {
+  gentity_t *other=&g_entities[i];
+  if(other==ent || !other->inuse || !other->client || !other->r.linked || other->health<=0)continue;
+  VectorSubtract(other->r.currentOrigin,origin,delta);
+  if(fabs(delta[2])<112 && delta[0]*delta[0]+delta[1]*delta[1]<64*64)return qfalse;
+ }
+ return qtrue;
+}
+qboolean G_QcePrepareSpawn(gentity_t *ent,vec3_t origin) {
+ gclient_t *client=ent->client;int ring,j;vec3_t candidate,start,end;trace_t tr;
+ if(client->qceSpawnWaitUntil && level.time<client->qceSpawnWaitUntil)return qfalse;
+ if(QceSpawnClear(ent,origin)){client->qceSpawnWaitUntil=0;return qtrue;}
+ if(!client->qceSpawnWaitUntil) {
+  client->qceSpawnWaitUntil=level.time+1000;VectorCopy(origin,client->qceSpawnOrigin);
+  trap_SendServerCommand(ent->s.number,"print \"Spawn occupied; waiting for room.\n\"");return qfalse;
+ }
+ /* Search outward on the ground, never vertically stack players. A blocked
+    map stays queued rather than falling back to a telefrag or solid position. */
+ for(ring=1;ring<=16;ring++)for(j=0;j<16;j++) {
+  float angle=(j+ent->s.number%16)*M_PI/8;
+  VectorCopy(client->qceSpawnOrigin,candidate);candidate[0]+=cos(angle)*ring*64;candidate[1]+=sin(angle)*ring*64;
+  VectorCopy(candidate,start);start[2]+=32;VectorCopy(candidate,end);end[2]-=96;
+  trap_Trace(&tr,start,playerMins,playerMaxs,end,ent->s.number,MASK_PLAYERSOLID);
+  if(tr.startsolid || tr.allsolid || tr.fraction==1 || tr.plane.normal[2]<.7f)continue;
+  VectorCopy(tr.endpos,candidate);candidate[2]+=1;
+  /* Keep the offset on the same accessible side of nearby walls. */
+  trap_Trace(&tr,client->qceSpawnOrigin,playerMins,playerMaxs,candidate,ent->s.number,MASK_SOLID);
+  if(tr.startsolid || tr.allsolid || tr.fraction<1 || !QceSpawnClear(ent,candidate))continue;
+  VectorCopy(candidate,origin);client->qceSpawnWaitUntil=0;return qtrue;
+ }
+ return qfalse;
+}
+
 qboolean SpotWouldTelefrag( gentity_t *spot ) {
-	int			i, num;
-	int			touch[MAX_GENTITIES];
-	gentity_t	*hit;
-	vec3_t		mins, maxs;
-
-	VectorAdd( spot->s.origin, playerMins, mins );
-	VectorAdd( spot->s.origin, playerMaxs, maxs );
-	num = trap_EntitiesInBox( mins, maxs, touch, MAX_GENTITIES );
-
-	for (i=0 ; i<num ; i++) {
-		hit = &g_entities[touch[i]];
-		//if ( hit->client && hit->client->ps.stats[STAT_HEALTH] > 0 ) {
-		if ( hit->client) {
-			return qtrue;
-		}
-
-	}
-
-	return qfalse;
+ vec3_t origin;VectorCopy(spot->s.origin,origin);origin[2]+=9;
+ return !QceSpawnClear(NULL,origin);
 }
 
 /*
@@ -530,6 +552,7 @@ ClientRespawn
 ================
 */
 void ClientRespawn( gentity_t *ent ) {
+ if(ent->client->qceSpawnWaitUntil)return;
 
 	CopyToBodyQue (ent);
 	ClientSpawn(ent);
@@ -879,6 +902,8 @@ void ClientUserinfoChanged( int clientNum ) {
   input=(ent->r.svFlags&SVF_BOT)?"255 190 30":Info_ValueForKey(userinfo,"qce_visorRGB");
   if(!QCE_ParseRGB(input,color))QCE_ParseRGB("255 190 30",color);
   Com_sprintf(rgb,sizeof(rgb),"%d %d %d",color[0],color[1],color[2]);Info_SetValueForKey(config,"qce_visor",rgb);
+  input=Info_ValueForKey(userinfo,"qce_playerModel");
+  Info_SetValueForKey(config,"qce_model",!Q_stricmp(input,"cyborg")?"cyborg":!Q_stricmp(input,"quake")?"quake":"spartan");
   trap_SetConfigstring(CS_PLAYERS+clientNum,config);
  }
 
@@ -1115,6 +1140,13 @@ void ClientSpawn(gentity_t *ent) {
 				spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 		}
 	}
+ if(client->sess.sessionTeam!=TEAM_SPECTATOR && !level.intermissiontime && !G_QcePrepareSpawn(ent,spawn_origin)) {
+  ent->health=0;ent->takedamage=qfalse;ent->r.contents=0;trap_UnlinkEntity(ent);
+  client->ps.clientNum=index;client->ps.pm_type=PM_FREEZE;client->ps.stats[STAT_HEALTH]=0;
+  client->ps.eFlags|=EF_NODRAW;VectorClear(client->ps.velocity);client->ps.commandTime=level.time;
+  client->qceSpawnRetry=level.time+100;return;
+ }
+ client->qceSpawnWaitUntil=client->qceSpawnRetry=0;
 	client->pers.teamState.state = TEAM_ACTIVE;
 
 	// always clear the kamikaze flag
@@ -1238,7 +1270,7 @@ void ClientSpawn(gentity_t *ent) {
 
 	if (!level.intermissiontime) {
 		if (ent->client->sess.sessionTeam != TEAM_SPECTATOR) {
-			G_KillBox(ent);
+			/* Placement is reserved and checked before linking; never telefrag on spawn. */
 			// force the base weapon up
 			if(!client->ps.stats[STAT_QCE_COMBAT])client->ps.weapon = WP_MACHINEGUN;
 			client->ps.weaponstate = WEAPON_READY;

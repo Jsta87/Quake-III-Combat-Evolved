@@ -295,6 +295,16 @@ static void CG_OffsetThirdPersonView( void ) {
 }
 
 
+static void CG_OffsetQceShoulderView(void) {
+ vec3_t eye,forward,right,target,focus,delta,mins={-4,-4,-4},maxs={4,4,4};trace_t tr;
+ VectorCopy(cg.predictedPlayerState.origin,eye);eye[2]+=cg.predictedPlayerState.viewheight;
+ AngleVectors(cg.predictedPlayerState.viewangles,forward,right,NULL);
+ VectorMA(eye,8192,forward,focus);CG_Trace(&tr,eye,NULL,NULL,focus,cg.predictedPlayerState.clientNum,MASK_SHOT);VectorCopy(tr.endpos,focus);
+ VectorMA(eye,-90,forward,target);VectorMA(target,cg_qceCameraMode.integer==2?-24:24,right,target);target[2]+=8;
+ CG_Trace(&tr,eye,mins,maxs,target,cg.predictedPlayerState.clientNum,MASK_SOLID);VectorCopy(tr.endpos,cg.refdef.vieworg);
+ VectorSubtract(focus,cg.refdef.vieworg,delta);vectoangles(delta,cg.refdefViewAngles);
+}
+
 // this causes a compiler bug on mac MrC compiler
 static void CG_StepOffset( void ) {
 	int		timeDelta;
@@ -690,6 +700,8 @@ static int CG_CalcViewValues( void ) {
   AngleVectors(ps->viewangles,forward,NULL,NULL);VectorMA(cg.refdef.vieworg,-250,forward,target);
   CG_Trace(&tr,cg.refdef.vieworg,mins,maxs,target,ps->clientNum,MASK_SOLID);
   VectorCopy(tr.endpos,cg.refdef.vieworg);
+ } else if ( cg.renderingThirdPerson && cg.predictedPlayerState.stats[STAT_HEALTH]>0 && cg_qceCameraMode.integer>=1 && cg_qceCameraMode.integer<=2 ) {
+  CG_OffsetQceShoulderView();
  } else if ( cg.renderingThirdPerson ) {
 		// back away from character
 		CG_OffsetThirdPersonView();
@@ -818,7 +830,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// decide on third person view
 	cg.renderingThirdPerson = cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR
-							&& (cg_thirdPerson.integer || cg.snap->ps.qceVehicle || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
+							&& (cg_thirdPerson.integer || (cg_qceCameraMode.integer>=1 && cg_qceCameraMode.integer<=2) || cg.snap->ps.qceVehicle || (cg.snap->ps.stats[STAT_HEALTH] <= 0));
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();

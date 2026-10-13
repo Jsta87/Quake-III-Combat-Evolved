@@ -772,6 +772,7 @@ void ClientThink_real( gentity_t *ent ) {
 	usercmd_t	*ucmd;
 
 	client = ent->client;
+ if(client->qceSpawnWaitUntil){client->ps.commandTime=level.time;return;}
 
 	// don't think if the client is not yet connected (and thus not yet spawned in)
 	if (client->pers.connected != CON_CONNECTED) {
@@ -1064,6 +1065,10 @@ void ClientThink( int clientNum ) {
 
 
 void G_RunClient( gentity_t *ent ) {
+ if(ent->client->qceSpawnWaitUntil){
+  if(level.time>=ent->client->qceSpawnRetry)ClientSpawn(ent);
+  if(ent->client->qceSpawnWaitUntil)return;
+ }
 	if ( !(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer ) {
 		return;
 	}
@@ -1133,6 +1138,7 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 void ClientEndFrame( gentity_t *ent ) {
 	int			i;
 
+ if(ent->client->qceSpawnWaitUntil){BG_PlayerStateToEntityState(&ent->client->ps,&ent->s,qtrue);return;}
  G_QceUpdateGrenadeRelease(ent);
 
 	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {

@@ -732,6 +732,7 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
   Info_SetValueForKey(userinfo,"name",va("Spartan %03d",serial));
   Info_SetValueForKey(userinfo,"qce_colorRGB",va("%d %d %d",32+rand()%224,32+rand()%224,32+rand()%224));
   Info_SetValueForKey(userinfo,"handicap","100");
+  Info_SetValueForKey(userinfo,"qce_playerModel",rand()%2?"cyborg":"spartan");
   trap_Cvar_Set("qce_botSerial",va("%d",serial));
  }
 	// register the userinfo

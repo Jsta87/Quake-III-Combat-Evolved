@@ -67,6 +67,10 @@ class World:
    xyz=struct.unpack_from('<3f',self.d,p);angle=struct.unpack_from('<f',self.d,p+12)[0]
    if not all(math.isfinite(t) for t in (*xyz,angle)):raise a.halo.CacheError('Nonfinite spawn')
    result.append({'classname':'info_player_deathmatch','origin':' '.join(f'{v*SCALE+(24 if i==2 else 0):.3f}' for i,v in enumerate(xyz)),'angle':f'{math.degrees(angle):.3f}'})
+  # Starts are shared by humans and bots. Explicit roam goals give bots
+  # useful destinations even when a game variant removes all weapon pickups.
+  for start in result[1::4]:
+   result.append({'classname':'item_botroam','origin':start['origin'],'weight':'1'})
   if len(result)<2:raise a.halo.CacheError('No multiplayer starts')
   palettes=self.ref(self.scenario+588,48,False)
   for p in self.ref(self.scenario+576,120,False):
@@ -92,14 +96,22 @@ class BSP:
    if len(name.encode())>=64:raise ValueError('Shader name too long')
    self.shaders[name]=len(self.shaders);self.l[1]+=struct.pack('<64s2i',name.encode(),4 if name=='qce/bloodgulch/sky' else 0,1 if solid else 0)
   return self.shaders[name]
- def brush(self,points,shader):
+ def box(self,mins,maxs,shader):
+  first=len(self.l[9])//8
+  for axis in range(3):
+   for sign in (-1,1):
+    normal=tuple(sign if j==axis else 0 for j in range(3));distance=sign*(maxs[axis] if sign>0 else mins[axis])
+    self.l[9]+=struct.pack('<2i',self.plane(normal,distance),shader)
+  self.l[8]+=struct.pack('<3i',first,6,shader);self.brushes+=1
+ def brush(self,points,shader,floor=None):
   n=norm(cross(sub(points[1],points[0]),sub(points[2],points[0])))
   if n is None:return
   # Halo render winding is corrected by vertex normals before this call.
-  back=[tuple(p[i]-n[i]*2 for i in range(3)) for p in points];hull=points+back
-  planes=[(n,dot(n,points[0])),(tuple(-x for x in n),-dot(n,back[0]))]
+  filled=floor is not None and n[2]>.01
+  back=[(p[0],p[1],floor) if filled else tuple(p[i]-n[i]*2 for i in range(3)) for p in points];hull=points+back
+  planes=[(n,dot(n,points[0])),((0,0,-1),-floor) if filled else (tuple(-x for x in n),-dot(n,back[0]))]
   for i in range(3):
-   edge=norm(cross(sub(points[(i+1)%3],points[i]),n));planes.append((edge,dot(edge,points[i])))
+   delta=sub(points[(i+1)%3],points[i]);edge=norm((delta[1],-delta[0],0) if filled else cross(delta,n));planes.append((edge,dot(edge,points[i])))
   # Quake's box traces require axial bounds first (CM_LoadBrushes) and edge bevels.
   axial=[]
   for axis in range(3):
@@ -121,7 +133,7 @@ class BSP:
   first=len(self.l[9])//8
   for ix in ids:self.l[9]+=struct.pack('<2i',ix,shader)
   self.l[8]+=struct.pack('<3i',first,len(ids),shader);self.brushes+=1
- def mesh(self,name,verts,indices,solid):
+ def mesh(self,name,verts,indices,solid,floor=None):
   shader=self.shader(name,solid);firstvert=len(self.l[10])//44;firstindex=len(self.l[11])//4
   for p,uv,n in verts:
    self.bounds.append(p);brightness=max(.3,.75+.25*n[2]);color=int(brightness*255)
@@ -132,7 +144,7 @@ class BSP:
    if dot(normal,verts[t[0]][2])<0:t[1],t[2]=t[2],t[1];pts=[verts[j][0] for j in t]
    # Quake draw triangles use the opposite winding to the collision normal.
    corrected.extend((t[0],t[2],t[1]))
-   if solid:self.brush(pts,shader)
+   if solid:self.brush(pts,shader,floor)
   self.l[11]+=struct.pack('<'+'i'*len(corrected),*corrected)
   self.l[13]+=struct.pack('<12i12f2i',shader,-1,3,firstvert,len(verts),firstindex,len(indices),-3,0,0,0,0,*([0.0]*12),0,0);self.surfaces+=1
  def finish(self,entities):
@@ -161,7 +173,8 @@ def convert(path,output,pk3):
   if tag['id'] not in textures:assets.texture(tag);textures.add(tag['id'])
   r=next((r for r in assets.records if r['id']==tag['id'] and r.get('index')==0),None)
   return r['outputs'][0] if r else '$whiteimage'
- for sid,verts,indices in w.meshes():
+ meshes=list(w.meshes());terrain_floor=min(v[0][2] for _,verts,_ in meshes for v in verts)-256
+ for sid,verts,indices in meshes:
   tag=cache.tags.get(sid);name=f'qce/bloodgulch/{sid:08x}';image='$whiteimage';solid=True
   if tag and tag['class']=='senv':
    bitmap=cache.tags.get(w.u(tag['offset']+40+68+28+12))
@@ -179,7 +192,7 @@ def convert(path,output,pk3):
    blend=' blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA\n depthWrite\n alphaFunc GE128\n' if not solid else ''
    shadertext.append(f'{name}\n{{\n cull none\n {{ map {image}\n{blend} rgbGen vertex }}\n}}\n')
   for part in a.split_surface(verts,[indices[i:i+3] for i in range(0,len(indices),3)],name):
-   bsp.mesh(name,part['vertices'],[i for tri in part['triangles'] for i in tri],solid)
+   bsp.mesh(name,part['vertices'],[i for tri in part['triangles'] for i in tri],solid,terrain_floor if tag and tag['path'].endswith(('blood ground','cap_cliff01b')) else None)
  # A simple procedural blue sky closes the unrendered Halo atmosphere volume.
  low=[min(p[i] for p in bsp.bounds)-256 for i in range(3)];high=[max(p[i] for p in bsp.bounds)+256 for i in range(3)];high[2]+=1024
  corners=[tuple(high[i] if n&(1<<i) else low[i] for i in range(3)) for n in range(8)]
@@ -187,6 +200,16 @@ def convert(path,output,pk3):
   pts=[corners[j] for j in quad];nn=norm(cross(sub(pts[1],pts[0]),sub(pts[2],pts[0])))
   bsp.mesh('qce/bloodgulch/sky',[(p,(0,0),nn) for p in pts],[0,1,2,0,2,3],False)
  shadertext.append('qce/bloodgulch/sky\n{\n surfaceparm sky\n surfaceparm noimpact\n skyparms - 512 -\n { map $whiteimage\n rgbGen const ( 0.35 0.60 0.85 ) }\n}\n')
+ # Close the collision volume for BSPC flood-fill/navigation. The six thin
+ # slabs sit outside terrain bounds; the procedural sky remains the visual shell.
+ boundary=bsp.shader('qce/bloodgulch/botboundary')
+ shadertext.append('qce/bloodgulch/botboundary\n{\n surfaceparm nodraw\n}\n')
+ for axis in range(3):
+  for sign in (-1,1):
+   mn=list(low);mx=list(high)
+   if sign<0:mx[axis]=mn[axis]+8
+   else:mn[axis]=mx[axis]-8
+   bsp.box(mn,mx,boundary)
  vehicle=next(t for t in cache.index if t['class']=='vehi' and t['path']=='vehicles\\warthog\\warthog')
  model=cache.tags[w.u(vehicle['offset']+40+12)]
  # Export model dependencies with the existing bounds-checked Xbox model decoder.
@@ -204,7 +227,7 @@ def convert(path,output,pk3):
  entities=w.entities();assets.write('maps/qce_bloodgulch.bsp',bsp.finish(entities),{'role':'terrain prototype'})
  assets.write('scripts/qce-bloodgulch.shader','\n'.join(shadertext).encode(),{'role':'world and vehicle materials'})
  assets.write('scripts/qce-bloodgulch.arena',b'{ map qce_bloodgulch longname "Blood Gulch" type "ffa team" }\n',{'role':'map menu'})
- report={'source':cache.header,'scale':SCALE,'render_surfaces':bsp.surfaces,'collision_brushes':bsp.brushes,'planes':len(bsp.l[2])//16,'entities':entities,'vehicle_model':MODEL,'limitations':['One visibility cluster; no optimized PVS or bot AAS','Render triangles approximate collision; scenery and retail lightmaps not converted','Split Warthog parts with procedural wheels/steering; runtime wheeled physics is a prototype','Procedural blue sky and vertex lighting replace retail atmosphere/lightmaps']}
+ report={'source':cache.header,'scale':SCALE,'render_surfaces':bsp.surfaces,'collision_brushes':bsp.brushes,'planes':len(bsp.l[2])//16,'entities':entities,'vehicle_model':MODEL,'limitations':['One visibility cluster; no optimized PVS; bot AAS generated separately','Render triangles approximate collision; scenery and retail lightmaps not converted','Split Warthog parts with procedural wheels/steering; runtime wheeled physics is a prototype','Procedural blue sky and vertex lighting replace retail atmosphere/lightmaps']}
  output.mkdir(parents=True,exist_ok=True);(output/'map-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
  if pk3:assets.package(pk3)
  print(json.dumps({k:report[k] for k in ('render_surfaces','collision_brushes','planes','vehicle_model')}))

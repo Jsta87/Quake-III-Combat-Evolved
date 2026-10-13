@@ -901,6 +901,7 @@ void CG_NewClientInfo( int clientNum ) {
 	Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
 
 	// colors
+ newInfo.haloModel=!Q_stricmp(Info_ValueForKey(configstring,"qce_model"),"cyborg")?1:!Q_stricmp(Info_ValueForKey(configstring,"qce_model"),"quake")?2:0;
  QCE_ParseRGB(Info_ValueForKey(configstring,"qce_rgb"),newInfo.haloColor);
  if(!QCE_ParseRGB(Info_ValueForKey(configstring,"qce_visor"),newInfo.haloVisor))QCE_ParseRGB("255 190 30",newInfo.haloVisor);
  if(cg_debugAnim.integer)CG_Printf("QCE armor client=%d RGB=%d %d %d\n",clientNum,newInfo.haloColor[0],newInfo.haloColor[1],newInfo.haloColor[2]);
@@ -2651,6 +2652,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  float f,s;int pose,weaponPose=0;
  if(!cg.snap->ps.stats[STAT_QCE_COMBAT] || !cg_qceWorld.playerModel)return qfalse;
  ci=&cgs.clientinfo[cent->currentState.clientNum];
+ if(ci->haloModel==2)return qfalse;
  VectorSet(angles,0,cent->lerpAngles[YAW],0);AngleVectors(angles,forward,right,NULL);
  VectorCopy(cent->currentState.pos.trDelta,velocity);f=DotProduct(velocity,forward);s=DotProduct(velocity,right);
  if(cent->currentState.eFlags&EF_DEAD)kind=10;
@@ -2675,7 +2677,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   cent->qcePlayerPreviousFrame=cent->qcePlayerRenderedFrame;
   cent->qcePlayerClip=pose;cent->qcePlayerStart=kind==10?QCE_DeathStart(cg.time,cent->currentState.time2):cg.time;
  }
- memset(&body,0,sizeof(body));body.hModel=cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
+ memset(&body,0,sizeof(body));body.hModel=ci->haloModel && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgModel:cg_qceWorld.playerModel;body.renderfx=renderfx|RF_LIGHTING_ORIGIN;
  VectorCopy(cent->lerpOrigin,body.origin);body.origin[2]-=24;VectorCopy(body.origin,body.oldorigin);VectorCopy(cent->lerpOrigin,body.lightingOrigin);AnglesToAxis(angles,body.axis);
  memcpy(body.shaderRGBA,ci->haloColor,4);
  if(ci->team==TEAM_RED) {body.shaderRGBA[0]=220;body.shaderRGBA[1]=40;body.shaderRGBA[2]=40;}
@@ -2718,10 +2720,10 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   body.backlerp=1.0f-(cg.time-cent->qcePlayerStart)/(float)cent->qcePlayerBlendMs;
  }
  cent->qcePlayerPoseValid=qtrue;
- body.customSkin=cg_qceWorld.bodySkin;
+ body.customSkin=ci->haloModel==1 && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgBodySkin:cg_qceWorld.bodySkin;
  CG_PlayerSprites(cent);CG_PlayerSplash(cent);CG_AddRefEntityWithPowerups(&body,&cent->currentState,ci->team);
  if(cg_qceWorld.visorSkin) {
-  refEntity_t visor=body;visor.customSkin=cg_qceWorld.visorSkin;memcpy(visor.shaderRGBA,ci->haloVisor,4);
+  refEntity_t visor=body;visor.customSkin=ci->haloModel==1 && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgVisorSkin:cg_qceWorld.visorSkin;memcpy(visor.shaderRGBA,ci->haloVisor,4);
   CG_AddRefEntityWithPowerups(&visor,&cent->currentState,ci->team);
  }
  if(cent->qceShieldTime>cg.time && cg_qceWorld.shieldShader) {
