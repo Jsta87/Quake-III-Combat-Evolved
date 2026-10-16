@@ -19,12 +19,84 @@ def nearest(node,point,best=(float('inf'),None)):
  delta=point[axis]-value[0][axis];first,second=(left,right) if delta<0 else (right,left)
  best=nearest(first,point,best)
  return nearest(second,point,best) if delta*delta<best[0] else best
-def inverse(r):
- a,b,d=r
- def cross(x,y):return (x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0])
- cols=[cross(b,d),cross(d,a),cross(a,b)];det=sum(a[i]*cols[0][i] for i in range(3))
- if abs(det)<1e-8:raise ValueError('Degenerate skin transform')
- return tuple(tuple(cols[j][i]/det for j in range(3)) for i in range(3))
+def nearest_weights(node,point,count=12,bones=None):
+ """Blend nearby bind influences so a reference vertex boundary cannot tear a seam."""
+ import heapq
+ candidates=[];serial=0
+ def visit(node):
+  nonlocal serial
+  if node is None:return
+  value,axis,left,right=node;distance=sum((point[i]-value[0][i])**2 for i in range(3))
+  serial+=1;item=(-distance,-serial,value[1])
+  if len(candidates)<count:heapq.heappush(candidates,item)
+  elif distance<-candidates[0][0]:heapq.heapreplace(candidates,item)
+  delta=point[axis]-value[0][axis];visit(left if delta<0 else right)
+  if len(candidates)<count or delta*delta<-candidates[0][0]:visit(right if delta<0 else left)
+ visit(node);influences={}
+ for neg,_,vertex in candidates:
+  strength=1/max(.04,-neg)
+  for bone,weight in zip(vertex['nodes'],(vertex['node0_weight'],1-vertex['node0_weight'])):
+   if bone>=0 and weight:influences[bone]=influences.get(bone,0)+strength*weight
+ if bones:
+  # Hands sit beside the thighs in bind space. Spatial proximity alone must
+  # never make a thigh follow a hand, or bridge the left/right lower legs.
+  side='bip01 '+('l' if point[1]>=0 else 'r')+' '
+  for bone in list(influences):
+   name=bones[bone]['name'];limb=any(part in name for part in ('thigh','calf','foot'))
+   if point[2]<32 and abs(point[1])<8:
+    if any(part in name for part in ('hand','forearm','upperarm','clavicle','head','neck')):del influences[bone];continue
+    if limb and not name.startswith(side):del influences[bone];continue
+   if point[2]<20 and (not limb or not name.startswith(side)):influences.pop(bone,None)
+  if not influences:raise ValueError('No anatomically valid bind influence')
+ chosen=sorted(influences,key=lambda n:(-influences[n],n))[:2];total=sum(influences[n] for n in chosen)
+ return {'nodes':chosen+[-1]*(2-len(chosen)),'node0_weight':influences[chosen[0]]/total}
+
+def mesh_components(positions,triangles):
+ # UV and hard-normal seams duplicate vertices; weld only for rig assignment.
+ parent=list(range(len(positions)));at={}
+ def root(i):
+  while parent[i]!=i:parent[i]=parent[parent[i]];i=parent[i]
+  return i
+ for i,v in enumerate(positions):
+  key=tuple(round(x,5) for x in v)
+  if key in at:parent[root(i)]=root(at[key])
+  else:at[key]=i
+ for tri in triangles:
+  for i in tri[1:]:parent[root(i)]=root(tri[0])
+ groups={}
+ for i in range(len(positions)):groups.setdefault(root(i),[]).append(i)
+ return list(groups.values())
+
+def rigid_accessories(vertices,triangles,bones):
+ # Separate gloves and backpack must not inherit a nearby limb's weights.
+ # Determine accessory regions only for detached pieces; body joints stay blended.
+ names={b['name']:i for i,b in enumerate(bones)}
+ for group in mesh_components([v['position'] for v in vertices],triangles):
+  if len(group)>len(vertices)/2:continue
+  center=[sum(vertices[i]['position'][k] for i in group)/len(group) for k in range(3)]
+  low=[min(vertices[i]['position'][k] for i in group) for k in range(3)]
+  high=[max(vertices[i]['position'][k] for i in group) for k in range(3)]
+  joint=None
+  if abs(center[1])>8 and high[2]<32:joint='bip01 '+('l' if center[1]>0 else 'r')+' hand'
+  elif center[0]<-5 and low[2]>33 and abs(center[1])<8:joint='bip01 spine1'
+  if joint in names:
+   for i in group:vertices[i]['nodes']=[names[joint],-1];vertices[i]['node0_weight']=1
+
+def visor_indices(positions,indices,low_y,high_y):
+ """Shared collection visor triangles must stay within the selected body's band."""
+ return [v for i in range(0,len(indices),3)
+         if all(low_y<=positions[j][1]<=high_y for j in indices[i:i+3])
+         for v in indices[i:i+3]]
+
+def bind_reference(parts):
+ """The source model JSON already stores mesh vertices in skeleton bind space."""
+ return [(v['position'],v) for part in parts for v in part['vertices']]
+
+def bind_vertex(position,normal,uv,reference):
+ """Transfer influences without pre-applying or undoing an animation pose."""
+ return {'position':tuple(position),'normal':tuple(normal),'uv':uv,
+         'nodes':list(reference['nodes']),'node0_weight':reference['node0_weight']}
+
 def convert(source,retail,output,pk3,variant='armormac'):
  from PIL import Image
  import io
@@ -43,35 +115,43 @@ def convert(source,retail,output,pk3,variant='armormac'):
  meta=next(json.loads(f.read_text()) for f in (retail/'model-sources').glob('cyborg_*.json'))
  bones=meta['bones'];bind=p.globals_for(bones,[(p.qmatrix(b['rotation']),tuple(x*meta['scale'] for x in b['translation'])) for b in bones])
  frames,clips,marker=c.retail_animation(retail/'models/qce/halo/player/spartan.iqm',[b['name'] for b in bones])
- skins=p.skin_matrices(bind,p.globals_for(bones,frames[0]));reference=[]
- for part in meta['parts']:
-  for vertex in part['vertices']:reference.append((p.fast_skin(vertex,skins)['position'],vertex))
+ # Both meshes are authored arms-down in model bind space. Matching against
+ # rifle-idle vertices assigns hands to the hips and then bakes that mismatch
+ # into the inverse skin transform. Animation must only be applied at runtime.
+ reference=bind_reference(meta['parts'])
  lookup=tree(reference);raw=[xyz for primitive,_ in selected for xyz in accessor(primitive['attributes']['POSITION'])]
  low=[min(v[i] for v in raw) for i in range(3)];high=[max(v[i] for v in raw) for i in range(3)]
  refPositions=[v[0] for v in reference];refLow=[min(v[i] for v in refPositions) for i in range(3)];refHigh=[max(v[i] for v in refPositions) for i in range(3)]
  scale=(refHigh[2]-refLow[2])/(high[2]-low[2]);center=(low[1]+high[1])/2;files={}
  def write(name,data):
   files[name]=data;dest=output/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data)
+ # The collection stores three models' visors together in a shared primitive.
+ # Select only triangles inside this body's lateral band; do not omit the Mac visor.
+ if variant in ('armormac','armor','armor01'):
+  selected += [(pr,'visor') for mesh in g['meshes'] for pr in mesh['primitives'] if g['materials'][pr['material']]['name']=='visor']
  surfaces=[];visors=[];errors=[]
  for primitive,name in selected:
   if primitive.get('mode',4)!=4:raise ValueError('Only triangle primitives supported')
   positions=accessor(primitive['attributes']['POSITION']);normals=accessor(primitive['attributes']['NORMAL']);uv=accessor(primitive['attributes']['TEXCOORD_0']);verts=[]
-  for xyz,normal,tex in zip(positions,normals,uv):
+  indices=[v[0] for v in accessor(primitive['indices'])]
+  if name=='visor':indices=visor_indices(positions,indices,low[1],high[1])
+  used=set(indices)
+  for vi,(xyz,normal,tex) in enumerate(zip(positions,normals,uv)):
+   if vi not in used:verts.append(None);continue
    position=(xyz[0]*scale,(xyz[1]-center)*scale,(xyz[2]-low[2])*scale+refLow[2]);distance,ref=nearest(lookup,position);errors.append(math.sqrt(distance))
-   nodes=ref['nodes'];weight=ref['node0_weight'];rr=[[0]*3 for _ in range(3)];tt=[0,0,0]
-   for node,w in zip(nodes,(weight,1-weight)):
-    if not w:continue
-    r,t=skins[node]
-    for i in range(3):
-     tt[i]+=t[i]*w
-     for j in range(3):rr[i][j]+=r[i*3+j]*w
-   inv=inverse(rr);rest=p.rotate(inv,tuple(position[i]-tt[i] for i in range(3)));n=p.rotate(inv,normal);length=math.sqrt(sum(x*x for x in n));n=tuple(x/length for x in n)
-   verts.append({'position':rest,'normal':n,'uv':(tex[0],1-tex[1]),'nodes':nodes,'node0_weight':weight})
-  indices=[v[0] for v in accessor(primitive['indices'])];tris=[]
+   verts.append(bind_vertex(position,normal,(tex[0],1-tex[1]),nearest_weights(lookup,position,bones=bones)))
+  tris=[]
   for i in range(0,len(indices),3):
    tri=indices[i:i+3];a,b,d=[verts[j] for j in tri];x=[b['position'][k]-a['position'][k] for k in range(3)];y=[d['position'][k]-a['position'][k] for k in range(3)];cross=(x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0])
    if sum(cross[k]*a['normal'][k] for k in range(3))>0:tri[1],tri[2]=tri[2],tri[1]
    tris.append(tri)
+  # Compact first: a shared visor primitive contains unused vertices from other models.
+  compact=p.a.split_surface(verts,tris,'temporary')
+  for piece in compact:rigid_accessories(piece['vertices'],piece['triangles'],bones)
+  verts=[v for piece in compact for v in piece['vertices']]
+  tris=[];offset=0
+  for piece in compact:
+   tris.extend([[i+offset for i in tri] for tri in piece['triangles']]);offset+=len(piece['vertices'])
   pieces=p.a.split_surface(verts,tris,'qce/alpha/'+('visor' if 'visor' in name else 'armor'));surfaces+=pieces;visors += ['visor' in name]*len(pieces)
  material=next(g['materials'][pr['material']] for pr,name in selected if 'armor' in name);ext=material['extensions']['KHR_materials_pbrSpecularGlossiness'];texture=g['textures'][ext['diffuseTexture']['index']];uri=g['images'][texture['source']]['uri'];image=Image.open(io.BytesIO(archive.read(uri))).convert('RGBA');write('textures/qce/alpha/diff.tga',p.a.tga(image.width,image.height,image.tobytes()))
  posed=p.PoseFrames(surfaces)
@@ -110,7 +190,7 @@ qce/alpha/visor
 }
 '''
  write('scripts/qce-cyborg.shader',shader.encode());write('models/qce/halo/player/cyborg-source.txt',('alpha-'+variant+'\n').encode());write('credits/alpha-spartan.txt',CREDIT.encode())
- report={'variant':variant,'clips':len(clips),'vertices':len(raw),'triangles':sum(len(s['triangles']) for s in surfaces),'max_transfer_distance':max(errors),'mean_transfer_distance':sum(errors)/len(errors),'rigging':'nearest posed retail vertex, inverse blended skin transform','credit':CREDIT}
+ report={'variant':variant,'clips':len(clips),'vertices':sum(len(s['vertices']) for s in surfaces),'triangles':sum(len(s['triangles']) for s in surfaces),'max_transfer_distance':max(errors),'mean_transfer_distance':sum(errors)/len(errors),'rigging':'blended retail bind-space influences with rigid glove/backpack pieces','credit':CREDIT}
  write('cyborg-alpha-manifest.json',(json.dumps(report,indent=2)+'\n').encode())
  if pk3:
   with zipfile.ZipFile(pk3,'w',zipfile.ZIP_DEFLATED) as z:

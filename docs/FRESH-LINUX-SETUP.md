@@ -248,9 +248,8 @@ After the weapon/player conversion above, save your uploaded ZIP as
 In the console, use `qce_playerModel cyborg`; `qce_playerModel spartan` restores
 retail Chief. The uploaded collection is unrigged: the converter transfers the
 retail skeleton and all 74 animation clips automatically. Some joints may need
-manual weight painting after playtesting. The Mac visor is part of its diffuse
-texture, so separate visor RGB currently applies to retail Chief and models
-with a separate visor surface. This local package takes precedence over an
+manual weight painting after playtesting. The shared visor geometry is filtered to the Mac model and supports separate
+visor RGB, including its HUD portrait. This local package takes precedence over an
 older Digsite Cyborg package with the same filename.
 
 The conversion includes the source's CC-BY-4.0 attribution. See
