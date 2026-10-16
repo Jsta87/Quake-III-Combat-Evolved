@@ -1,7 +1,9 @@
 # Mac 1999 player model
 
 The uploaded `Characters>Spartans>Halo 1 Alpha` collection contains several
-static models. `armormac` is the default chosen for the user's Mac 1999 model.
+static models. The user's reference image labelled Mac 1999 matches
+`99_armor`: tall gold visor, chest harness, shoulder "3" and missile pod.
+It is now the default; `armormac` is a different, simpler armor design.
 `convert-alpha-spartan.py` accepts the original ZIP and the locally converted
 retail Spartan; it transfers weights between the two arms-down meshes in bind space and reuses
 the retail animations and weapon attachment. Matching against a rifle-holding
@@ -14,10 +16,18 @@ hand/torso assignments. This is an automatic rig; it needs visual playtesting an
 weight cleanup around shoulders, elbows and hips. The upload supplies no
 authored animations. It is not an original Halo engine animation rig.
 
-Alternate `--variant` values are `99_armor`, `armor`, `armor01`, and
-`e3_99_armor`. The collection stores the Mac visor together with two other models' visors.
-The converter selects only its triangles and exports a separate RGB visor
-surface, including in the HUD portrait. Armor uses entity RGB,
+Alternate `--variant` values are `armormac`, `armor`, `armor01`, and
+`e3_99_armor`. The default uses the matching `99_visor` material. Some other
+variants store several models' visors in a shared primitive; those triangles
+are filtered by the selected model's bounds. All export separate RGB visor
+surfaces, including in the HUD portrait.
+
+Texture UVs are preserved exactly as authored in glTF. The TGA writer already
+stores rows in the orientation Quake expects; an additional V-coordinate flip
+put texture details on the wrong panels. Armor uses the diffuse image referenced
+by its own glTF material. For the reference's source colors, use
+`qce_color 255 255 255`; other colors intentionally tint the armor.
+`qce_visorRGB "255 190 30"` restores the default gold visor. Armor uses entity RGB,
 world lighting and a view-dependent Quake specular pass. Retail armor now draws
 its specular pass after its color mask, so the paint no longer covers highlights.
 The highlight intensity is calibrated for Quake's lobe. Xbox cubemap reflection

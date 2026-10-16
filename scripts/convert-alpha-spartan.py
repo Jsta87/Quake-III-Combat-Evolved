@@ -7,6 +7,7 @@ import argparse,importlib.util,json,math,struct,zipfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('cyborg',ROOT/'scripts/convert-halo-cyborg.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c);p=c.p
+DEFAULT_VARIANT='99_armor'  # Tall visor, chest harness, shoulder 3 and missile pod in the reference.
 CREDIT='This work is based on "Characters>Spartans>Halo 1 Alpha" (https://sketchfab.com/3d-models/charactersspartanshalo-1-alpha-e7c7949a1e344db4b4fedcdb8f7b5e9e) by Bornstellar Makes Eternallasting (https://sketchfab.com/jameslucino117), licensed under CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/). Rigging, scale and materials adapted for QCE.'
 def tree(points,depth=0):
  if not points:return None
@@ -46,8 +47,10 @@ def nearest_weights(node,point,count=12,bones=None):
    if point[2]<32 and abs(point[1])<8:
     if any(part in name for part in ('hand','forearm','upperarm','clavicle','head','neck')):del influences[bone];continue
     if limb and not name.startswith(side):del influences[bone];continue
-   if point[2]<20 and (not limb or not name.startswith(side)):influences.pop(bone,None)
-  if not influences:raise ValueError('No anatomically valid bind influence')
+   if point[2]<20 and abs(point[1])<8 and (not limb or not name.startswith(side)):influences.pop(bone,None)
+  if not influences:
+   if count<256:return nearest_weights(node,point,count*2,bones)
+   raise ValueError(f'No anatomically valid bind influence at {point}')
  chosen=sorted(influences,key=lambda n:(-influences[n],n))[:2];total=sum(influences[n] for n in chosen)
  return {'nodes':chosen+[-1]*(2-len(chosen)),'node0_weight':influences[chosen[0]]/total}
 
@@ -88,6 +91,11 @@ def visor_indices(positions,indices,low_y,high_y):
          if all(low_y<=positions[j][1]<=high_y for j in indices[i:i+3])
          for v in indices[i:i+3]]
 
+def gltf_uv(uv):
+ # glTF and Quake's normalized TGA loader both address v=0 at the top row.
+ # tga() already writes bottom-up rows for the loader; flipping UVs flips the atlas.
+ return tuple(uv)
+
 def bind_reference(parts):
  """The source model JSON already stores mesh vertices in skeleton bind space."""
  return [(v['position'],v) for part in parts for v in part['vertices']]
@@ -97,7 +105,7 @@ def bind_vertex(position,normal,uv,reference):
  return {'position':tuple(position),'normal':tuple(normal),'uv':uv,
          'nodes':list(reference['nodes']),'node0_weight':reference['node0_weight']}
 
-def convert(source,retail,output,pk3,variant='armormac'):
+def convert(source,retail,output,pk3,variant=DEFAULT_VARIANT):
  from PIL import Image
  import io
  archive=zipfile.ZipFile(source);g=json.loads(archive.read('scene.gltf'));blob=archive.read('scene.bin')
@@ -139,7 +147,7 @@ def convert(source,retail,output,pk3,variant='armormac'):
   for vi,(xyz,normal,tex) in enumerate(zip(positions,normals,uv)):
    if vi not in used:verts.append(None);continue
    position=(xyz[0]*scale,(xyz[1]-center)*scale,(xyz[2]-low[2])*scale+refLow[2]);distance,ref=nearest(lookup,position);errors.append(math.sqrt(distance))
-   verts.append(bind_vertex(position,normal,(tex[0],1-tex[1]),nearest_weights(lookup,position,bones=bones)))
+   verts.append(bind_vertex(position,normal,gltf_uv(tex),nearest_weights(lookup,position,bones=bones)))
   tris=[]
   for i in range(0,len(indices),3):
    tri=indices[i:i+3];a,b,d=[verts[j] for j in tri];x=[b['position'][k]-a['position'][k] for k in range(3)];y=[d['position'][k]-a['position'][k] for k in range(3)];cross=(x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0])
@@ -197,4 +205,4 @@ qce/alpha/visor
    for name,data in files.items():z.writestr(name,data)
  print(json.dumps(report))
 if __name__=='__main__':
- a=argparse.ArgumentParser(description=__doc__);a.add_argument('zip',type=Path);a.add_argument('--variant',choices=('armormac','99_armor','armor','armor01','e3_99_armor'),default='armormac');a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path,required=True);args=a.parse_args();convert(args.zip,args.retail_output,args.output,args.pk3,args.variant)
+ a=argparse.ArgumentParser(description=__doc__);a.add_argument('zip',type=Path);a.add_argument('--variant',choices=('armormac','99_armor','armor','armor01','e3_99_armor'),default=DEFAULT_VARIANT);a.add_argument('--retail-output',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--pk3',type=Path,required=True);args=a.parse_args();convert(args.zip,args.retail_output,args.output,args.pk3,args.variant)

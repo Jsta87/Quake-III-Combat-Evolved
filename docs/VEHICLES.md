@@ -278,3 +278,8 @@ phases). An older 3-bit seat field cannot represent the new exit phases.
 Warthog wheels now integrate actual interpolated travel distance rather than
 throttle speed. Tire effects use shorter intervals and ground traces that reach
 below the sprung wheel positions. They still approximate Halo's effect graph.
+
+For crosshair placement use `qce_spawn warthog`, `qce_spawn ghost`, or
+`qce_spawn scorpion` instead of the older fixed-distance vehicle command.
+See [local testing](LOCAL-TESTING.md#spawn-objects-at-the-crosshair) for weapons,
+other pickups and placement rules.

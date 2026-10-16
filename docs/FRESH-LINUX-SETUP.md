@@ -241,15 +241,18 @@ After the weapon/player conversion above, save your uploaded ZIP as
 ```sh
 .tools/bin/python -m pip install Pillow==12.0.0
 .tools/bin/python scripts/convert-alpha-spartan.py assets/halo/charactersspartanshalo_1_alpha.zip \
-  --variant armormac --retail-output assets/halo/converted/bloodgulch \
+  --variant 99_armor --retail-output assets/halo/converted/bloodgulch \
   --output assets/halo/converted/alpha --pk3 assets/baseq3/zzzz-qce-cyborg.pk3
 ```
 
 In the console, use `qce_playerModel cyborg`; `qce_playerModel spartan` restores
 retail Chief. The uploaded collection is unrigged: the converter transfers the
 retail skeleton and all 74 animation clips automatically. Some joints may need
-manual weight painting after playtesting. The shared visor geometry is filtered to the Mac model and supports separate
-visor RGB, including its HUD portrait. This local package takes precedence over an
+manual weight painting after playtesting. The reference image labelled Mac 1999 matches `99_armor` in this ZIP, not
+`armormac`. The importer preserves the glTF UV orientation and selects that
+material's diffuse texture. Use `qce_color 255 255 255` to reproduce the source
+gray/black armor; other RGB values intentionally tint it. Visor RGB also works,
+including in the HUD portrait. This local package takes precedence over an
 older Digsite Cyborg package with the same filename.
 
 The conversion includes the source's CC-BY-4.0 attribution. See

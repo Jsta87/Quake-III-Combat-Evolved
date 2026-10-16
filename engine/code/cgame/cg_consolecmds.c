@@ -628,6 +628,7 @@ void CG_InitConsoleCommands( void ) {
 #endif
 	trap_AddCommand ("qce_zoom_in");
  trap_AddCommand ("qce_zoom_out");
+ trap_AddCommand ("qce_spawn");
  trap_AddCommand ("give");
 	trap_AddCommand ("god");
 	trap_AddCommand ("notarget");

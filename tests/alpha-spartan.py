@@ -4,6 +4,10 @@ import importlib.util,random,unittest
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('alpha',Path(__file__).resolve().parents[1]/'scripts/convert-alpha-spartan.py');a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 class TransferTests(unittest.TestCase):
+ def test_reference_variant_and_texture_origin(self):
+  self.assertEqual(a.DEFAULT_VARIANT,'99_armor')
+  self.assertEqual(a.gltf_uv((.25,.1)),(.25,.1))
+  self.assertEqual(a.gltf_uv((.8,.9)),(.8,.9))
  def test_nearest_matches_exhaustive_search(self):
   rng=random.Random(1234);points=[(tuple(rng.uniform(-20,20) for _ in range(3)),i) for i in range(100)];tree=a.tree(points[:])
   for _ in range(30):

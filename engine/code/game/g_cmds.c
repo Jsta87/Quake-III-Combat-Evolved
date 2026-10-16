@@ -1802,6 +1802,8 @@ static void Cmd_QceGrenadeType_f(gentity_t *ent) {
   BG_QceToggleGrenade(ps);
 }
 
+#include "g_qce_spawn.h"
+
 void ClientCommand( int clientNum ) {
 	gentity_t *ent;
 	char	cmd[MAX_TOKEN_CHARS];
@@ -1875,7 +1877,8 @@ void ClientCommand( int clientNum ) {
 		return;
 	}
 
-	if(!Q_stricmp(cmd,"qce_vehicle_spawn") || !Q_stricmp(cmd,"qce_vehicle_enter") || !Q_stricmp(cmd,"qce_vehicle_exit") || !Q_stricmp(cmd,"qce_vehicle_status"))G_QceVehicleCommand(ent,cmd);
+	if(!Q_stricmp(cmd,"qce_spawn"))QceSpawnCommand(ent,ConcatArgs(1));
+ else if(!Q_stricmp(cmd,"qce_vehicle_spawn") || !Q_stricmp(cmd,"qce_vehicle_enter") || !Q_stricmp(cmd,"qce_vehicle_exit") || !Q_stricmp(cmd,"qce_vehicle_status"))G_QceVehicleCommand(ent,cmd);
  else if (Q_stricmp(cmd,"qce_status")==0) {
 		playerState_t *ps=&ent->client->ps;
 		trap_SendServerCommand(clientNum,va("print \"QCE combat=%d weapon=%d(%s) slots=%d,%d mag=%d total=%d frag=%d plasma=%d selected=%d shield=%d health=%d state=%d heat=%d,%d overheated=%d charge_ms=%d error=%d,%d rate=%d,%d battery=%d,%d zoom=%d crouch=%d recovery=%d,%d profile=%s\n\"",

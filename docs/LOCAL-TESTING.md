@@ -163,3 +163,40 @@ vehicle guide to refresh seat animations, moving parts and audio. See [vehicle t
 conversion has no bot navigation. The rear turret now aims and fires; hold attack
 after its boarding animation finishes. Seat exits are animated, and protocol 102
 requires matching updated client/server builds.
+
+## Spawn objects at the crosshair
+
+Development maps enable cheats. Aim at a solid surface with enough space, then:
+
+```text
+qce_spawn pistol
+qce_spawn assault rifle
+qce_spawn shotgun
+qce_spawn sniper
+qce_spawn plasma rifle
+qce_spawn plasma pistol
+qce_spawn needler
+qce_spawn rocket launcher
+qce_spawn warthog
+qce_spawn ghost
+qce_spawn scorpion
+qce_spawn item_health_large
+qce_spawn item_armor_body
+qce_spawn ammo_shells
+qce_spawn help
+```
+
+`weapon`, `vehicle`, and `item` prefixes are optional, e.g.
+`qce_spawn vehicle ghost`. Item classnames and pickup names are accepted;
+team objectives and removed Gauntlet/grapple weapons are excluded. These are
+live development objects, not saved map changes. Pickups fall to the floor,
+stay until collected and do not respawn; vehicles keep their normal lifecycle.
+Weapons receive their tagged initial ammo. Game-variant pickup rules still apply.
+
+The server traces the same first-person aim used for firing, including the
+third-person crosshair correction. It places the object's full rotated bounds
+outside the hit plane and rejects solid/player overlap, sky, empty rays, dead
+or spectating callers, occupied vehicles and disabled cheats. Small terrain
+irregularities permit up to 32 units of upward clearance. An entity reserve
+prevents repeated spawning from exhausting the entity pool. `qce_vehicle_spawn`
+retains its older fixed-distance placement; use `qce_spawn` for crosshair placement.
