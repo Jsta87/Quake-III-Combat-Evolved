@@ -25,6 +25,10 @@ PLAYER_CLIPS+=('W-driver unarmed idle','W-passenger rifle idle','W-gunner fixed 
  'W-driver unarmed aim-still','W-passenger rifle aim-still','W-gunner fixed aim-still',
  'W-passenger pistol idle','W-passenger missile idle','W-passenger pistol aim-still','W-passenger missile aim-still')
 
+PLAYER_CLIPS+=('G-driver unarmed idle','G-driver enter','G-driver exit',
+ 'scorpion-driver unarmed idle','scorpion-driver enter','scorpion-driver exit',
+ 'scorpionLF rifle idle','scorpionLF enter','scorpionLF exit')
+
 def bake_seat_aim(decoded,base,bones,head_only=False):
     if len(decoded) not in (9,16) or len(base)!=len(bones) or any(len(f)!=len(base) for f in decoded):raise p.a.halo.CacheError('Invalid seat aim grid')
     reference=decoded[7 if len(decoded)==16 else 4];baked=[]
@@ -144,7 +148,14 @@ def export(cache,assets,report):
         path=f'textures/qce/material/{tag["id"]:08x}_color.tga';write(path,p.a.tga(w,h,color),{'source':multi,'channel':'blue armor color mask'})
         start=shadertext.index(material['runtime_shader']+'\n');end=shadertext.index('\n}\n',start)
         stage=f'\n {{ map {path}\n blendFunc blend\n rgbGen entity\n alphaGen identity\n }}'
-        shadertext=shadertext[:end]+stage+shadertext[end:]
+        block=shadertext[start:end]
+        # Move all existing specular stages after the new paint pass.
+        import re
+        highlights=re.findall(r'\n \{[^{}]*alphaGen lightingSpecular[^{}]*\}',block)
+        for highlight in highlights:block=block.replace(highlight,'')
+        # Quake's specular lobe is weaker than the Xbox reflection contribution.
+        highlights=[re.sub(r'rgbGen const \( [^)]* \)', 'rgbGen const ( .3 .3 .3 )',h) for h in highlights]
+        shadertext=shadertext[:start]+block+stage+''.join(highlights)+shadertext[end:]
     write('scripts/qce-halo.shader',shadertext.encode(),{'generated_for':'weapons, grenades and RGB Spartan armor'})
     aliases={
       'grenade/throw':'sound\\sfx\\weapons\\frag grenade\\throwgren',

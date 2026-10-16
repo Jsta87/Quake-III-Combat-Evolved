@@ -10,9 +10,36 @@
 #define QCE_HOG_ACCEL (0.00275f*30*30*80)
 #define QCE_HOG_BRAKE (0.011f*30*30*80)
 #define QCE_HOG_MODEL "models/qce/halo/warthog.md3"
-#define QCE_HOG_MARKER 0x5143
 typedef struct {vec3_t position;float weight,radius,parallel,perpendicular;int powered,friction,node;} qce_hogpoint_t;
 #include "bg_qce_vehicle_profile.generated.h"
+typedef struct {float mass,depth,damp,friction,air,gravity,k0,k1;vec3_t com,inertia;const qce_hogpoint_t *points;int count;} qce_vehiclephysics_t;
+#include "bg_qce_extra_vehicles.generated.h"
+static const qce_vehiclephysics_t qceWarthogPhysics={3200,QCE_HOG_GROUND_DEPTH,QCE_HOG_GROUND_DAMP,QCE_HOG_GROUND_FRICTION,QCE_HOG_AIR_FRICTION,QCE_HOG_GRAVITY_SCALE,QCE_HOG_NORMAL_K0,QCE_HOG_NORMAL_K1,{0,0,0},{1,1,1},qceHogPoints,QCE_HOG_POINT_COUNT};
+
+/* Source model-space seat and trigger markers shared by simulation/rendering. */
+static const float *QCE_VehicleSeat(int kind,int seat) {
+ if(kind==2)return qceGhostDriver;
+ if(seat==0)return qceScorpionDriver;
+ if(seat==1)return qceScorpionPassengerLb;if(seat==2)return qceScorpionPassengerLf;
+ return seat==3?qceScorpionPassengerRb:qceScorpionPassengerRf;
+}
+static void QCE_ExtraVehicleTransform(const vec3_t origin,const vec3_t hullAngles,int kind,float yaw,float pitch,int secondary,vec3_t turret,vec3_t gun,vec3_t muzzle,vec3_t turretAxis[3],vec3_t gunAxis[3]) {
+ vec3_t hull[3],local[3],angles,delta;int i;
+ AnglesToAxis(hullAngles,hull);VectorCopy(origin,turret);VectorCopy(origin,gun);VectorCopy(origin,muzzle);
+ if(kind==2) {
+  AxisCopy(hull,turretAxis);AxisCopy(hull,gunAxis);
+  for(i=0;i<3;i++)VectorMA(muzzle,qceGhostPrimaryTrigger[i],hull[i],muzzle);
+  VectorCopy(origin,gun);return;
+ }
+ for(i=0;i<3;i++)VectorMA(turret,qceScorpionPivotTurret[i],hull[i],turret);
+ VectorSet(angles,0,yaw,0);AnglesToAxis(angles,local);MatrixMultiply(local,hull,turretAxis);
+ VectorSubtract(qceScorpionPivotGun,qceScorpionPivotTurret,delta);VectorCopy(turret,gun);
+ for(i=0;i<3;i++)VectorMA(gun,delta[i],turretAxis[i],gun);
+ VectorSet(angles,pitch,0,0);AnglesToAxis(angles,local);MatrixMultiply(local,turretAxis,gunAxis);
+ VectorSubtract(secondary?qceScorpionSecondaryTrigger:qceScorpionPrimaryTrigger,qceScorpionPivotGun,delta);VectorCopy(gun,muzzle);
+ for(i=0;i<3;i++)VectorMA(muzzle,delta[i],gunAxis[i],muzzle);
+}
+
 /* source driver/passenger/gunner exit tracks: 26/30/24 frames at 30 Hz */
 static int QCE_HogExitMS(int seat) {return seat==0?867:seat==1?1000:800;}
 /* QVM has no exp syscall. Reciprocal Taylor approximates 1-exp(-rate*dt). */

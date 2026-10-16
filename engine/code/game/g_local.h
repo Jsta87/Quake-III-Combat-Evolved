@@ -91,9 +91,9 @@ struct gentity_s {
  int qceTrackTime, qceOwnerSerial;
  int qceAttachEntity, qceAttachSerial, qceAttachSpawn;
  vec3_t qceAttachOffset;
- int qceVehicle,qceRiders[3],qceVehicleTime,qceVehicleRespawn;
+ int qceVehicle,qceRiders[5],qceVehicleTime,qceVehicleRespawn;
  float qceVehicleSpeed,qceVehicleSteer;vec3_t qceVehicleVelocity,qceVehicleAngularVelocity;
- float qceTurretSpin,qceTurretError,qceVehicleRPM,qceTurretNextShot;vec3_t qceTurretAngles;
+ float qceTurretSpin,qceTurretError,qceVehicleRPM,qceTurretNextShot,qceTurretNextSecondary;vec3_t qceTurretAngles;
  int qceTurretLastShot,qceTurretShots;
 	char		*classname;			// set in QuakeEd
 	int			spawnflags;			// set in QuakeEd
@@ -1005,6 +1005,8 @@ void	trap_SnapVector( float *v );
 #include "g_qce_variant.h"
 
 void SP_qce_warthog(gentity_t *ent);
+void SP_qce_ghost(gentity_t *ent);
+void SP_qce_scorpion(gentity_t *ent);
 qboolean G_QceVehicleUse(gentity_t *ent);
 void G_QceVehicleRelease(gentity_t *ent,qboolean force);
 void G_QceVehicleInput(gentity_t *ent,usercmd_t *cmd);

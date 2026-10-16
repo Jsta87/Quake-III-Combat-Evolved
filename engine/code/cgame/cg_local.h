@@ -173,7 +173,7 @@ typedef struct centity_s {
  qboolean qcePlayerPoseValid;
  int qcePlayerRenderedOldFrame,qcePlayerPreviousOldFrame,qcePlayerAngleTime;
  float qcePlayerRenderedBacklerp,qcePlayerPreviousBacklerp,qcePlayerYaw;
- vec3_t qceWorldMuzzle,qceProjectileVisualOffset;
+ vec3_t qceWorldMuzzle,qceProjectileVisualOffset,qceLastWheelOrigin;
  int qceWorldMuzzleTime,qceProjectileVisualStart;
  float qceProjectileVisualWeight;
  int qceMovePose,qceMoveStart,qceMoveFrame,qceMoveOldFrame,qceMovePreviousFrame,qceMovePreviousOldFrame;
@@ -435,7 +435,7 @@ typedef struct {
  qhandle_t grenadeParticleShaders[3][64];
  int grenadeParticleCounts[3];
  float grenadeParticleWidths[3][64];
- qceViewClip_t playerClips[65];
+ qceViewClip_t playerClips[74];
  qhandle_t cyborgModel,cyborgBodySkin,cyborgVisorSkin,cyborgHead,cyborgHeadBodySkin,cyborgHeadVisorSkin;
  sfxHandle_t grenadeLoop,grenadeThrow,grenadeExplode[2],grenadeBounce[2];
 } qceWorldMedia_t;

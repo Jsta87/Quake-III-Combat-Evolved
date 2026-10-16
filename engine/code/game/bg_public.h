@@ -821,6 +821,12 @@ void BG_QceCoolWeapons(playerState_t *ps,int elapsed);
 qboolean BG_QceOverheated(const playerState_t *ps,int weapon);
 void BG_QceHeatShot(playerState_t *ps);
 void BG_QceRayEnd(const vec3_t start, vec3_t end, int weapon);
+#define QCE_HOG_MARKER 0x5143
+#define QCE_GHOST_MARKER (QCE_HOG_MARKER+1)
+#define QCE_SCORPION_MARKER (QCE_HOG_MARKER+2)
+#define QCE_GHOST_BOLT_WEAPON 33
+#define QCE_SCORPION_SHELL_WEAPON 34
+#define QCE_SCORPION_BULLET_WEAPON 35
 #define QCE_HOG_TURRET_WEAPON 32 /* Projectile profile only; never an inventory weapon. */
 const qce_weapondef_t *BG_QceWeaponDef(int weapon);
 const qce_grenadedef_t *BG_QceGrenadeDef(int type);

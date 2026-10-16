@@ -2655,14 +2655,16 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  if(!cg.snap->ps.stats[STAT_QCE_COMBAT] || !cg_qceWorld.playerModel)return qfalse;
  ci=&cgs.clientinfo[cent->currentState.clientNum];
  if(ci->haloModel==2)return qfalse;
- if(!cent->qcePlayerPoseValid || cg.time<cent->qcePlayerAngleTime)cent->qcePlayerYaw=cent->lerpAngles[YAW];
- else cent->qcePlayerYaw+=AngleSubtract(cent->lerpAngles[YAW],cent->qcePlayerYaw)*(Com_Clamp(0,100,cg.time-cent->qcePlayerAngleTime)/(60.0f+Com_Clamp(0,100,cg.time-cent->qcePlayerAngleTime)));
- cent->qcePlayerAngleTime=cg.time;
- VectorSet(angles,0,cent->qcePlayerYaw,0);AngleVectors(angles,forward,right,NULL);
+ VectorSet(angles,0,cent->lerpAngles[YAW],0);AngleVectors(angles,forward,right,NULL);
  VectorCopy(cent->currentState.pos.trDelta,velocity);f=DotProduct(velocity,forward);s=DotProduct(velocity,right);
  if(cent->currentState.groundEntityNum==ENTITYNUM_NONE)moveKind=7;
  else if(legs==LEGS_WALKCR || legs==LEGS_IDLECR)moveKind=VectorLength(velocity)>10?6:5;
  else if(VectorLength(velocity)>10)moveKind=fabs(s)>fabs(f)?(s>0?4:3):(f<0?2:1);
+ if(cent->qceMovePose>=0 && moveKind>=1 && moveKind<=4) {
+  int previous=cent->qceMovePose%11;
+  if((previous==3 || previous==4) && fabs(s)*1.25f>fabs(f))moveKind=s>0?4:3;
+  else if((previous==1 || previous==2) && fabs(f)*1.25f>fabs(s))moveKind=f<0?2:1;
+ }
  kind=moveKind;
  if(cent->currentState.eFlags&EF_DEAD)kind=10;
  else if(cent->qceMeleeTime>0 && cg.time-cent->qceMeleeTime<1200)kind=8;
@@ -2692,7 +2694,7 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
  if(ci->team==TEAM_BLUE){body.shaderRGBA[0]=40;body.shaderRGBA[1]=90;body.shaderRGBA[2]=230;}
  body.shaderRGBA[3]=255;
  if(cent->currentState.otherEntityNum2>0 && !(cent->currentState.eFlags&EF_DEAD)) {
-  int vehicle=cent->currentState.otherEntityNum2,seat=cent->currentState.otherEntityNum%3,exiting=cent->currentState.otherEntityNum>=3;centity_t *car;
+  int vehicle=cent->currentState.otherEntityNum2,seat=(cent->currentState.otherEntityNum&7),exiting=(cent->currentState.otherEntityNum&8);centity_t *car;
   if(vehicle<MAX_GENTITIES && seat>=0 && seat<3 && cg_qceWorld.playerClips[49+seat].count>0) {
    if(cent->qceVehicleLast!=vehicle || cent->qceVehicleSeatLast!=seat){cent->qceVehicleEnterTime=cent->currentState.time;cent->qceVehicleLast=vehicle;cent->qceVehicleSeatLast=seat;
     if(!exiting && cg.time-cent->qceVehicleEnterTime<200){sfxHandle_t sound=trap_S_RegisterSound(va("sound/qce/halo/warthog/seat-%d-enter.wav",seat),qfalse);trap_S_StartSound(NULL,cent->currentState.number,CHAN_BODY,sound);}
@@ -2702,6 +2704,17 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
    if(cg.time-cent->qceVehicleEnterTime<cg_qceWorld.playerClips[52+seat].count*1000/30){pose=52+seat;kind=7;}
    if(exiting){if(!cent->qceVehicleExitTime && cg.time-cent->currentState.time<200){sfxHandle_t sound=trap_S_RegisterSound(va("sound/qce/halo/warthog/seat-%d-exit.wav",seat),qfalse);trap_S_StartSound(NULL,cent->currentState.number,CHAN_BODY,sound);}cent->qceVehicleExitTime=cent->currentState.time;pose=55+seat;kind=7;cent->qcePlayerStart=cent->qceVehicleExitTime;}
    else cent->qceVehicleExitTime=0;
+  }
+  if(vehicle<MAX_GENTITIES && seat<5) {
+   car=&cg_entities[vehicle];
+   if(car->currentState.generic1==QCE_GHOST_MARKER || car->currentState.generic1==QCE_SCORPION_MARKER) {
+    int base=car->currentState.generic1==QCE_GHOST_MARKER?65:seat==0?68:71;
+    if(cg_qceWorld.playerClips[base].count>0) {
+     pose=base;kind=0;cent->qcePlayerStart=cent->currentState.time;
+     if(exiting){pose=base+2;kind=7;}else if(cg.time-cent->currentState.time<cg_qceWorld.playerClips[base+1].count*1000/30){pose=base+1;kind=7;}
+     AnglesToAxis(car->lerpAngles,body.axis);VectorCopy(cent->lerpOrigin,body.origin);VectorCopy(body.origin,body.oldorigin);
+    }
+   }
   }
  } else {cent->qceVehicleLast=0;cent->qceVehicleExitTime=0;}
  clip=&cg_qceWorld.playerClips[pose];
@@ -2738,6 +2751,8 @@ qboolean CG_HaloPlayer(centity_t *cent,int renderfx) {
   body.qceLowerBlend=cent->qcePlayerPoseValid?Com_Clamp(0,1,1-(cg.time-cent->qceMoveStart)/200.0f):0;
   cent->qceMoveFrame=body.qceLowerFrame;cent->qceMoveOldFrame=body.qceLowerOldFrame;cent->qceMoveBacklerp=body.qceLowerBacklerp;
  }
+ body.qcePlayerAim=kind!=10 && !cent->currentState.otherEntityNum2;
+ body.qcePlayerPitch=Com_Clamp(-60,60,AngleNormalize180(cent->lerpAngles[PITCH]));
  cent->qcePlayerPoseValid=qtrue;
  body.customSkin=ci->haloModel==1 && cg_qceWorld.cyborgModel?cg_qceWorld.cyborgBodySkin:cg_qceWorld.bodySkin;
  CG_PlayerSprites(cent);CG_PlayerSplash(cent);CG_AddRefEntityWithPowerups(&body,&cent->currentState,ci->team);

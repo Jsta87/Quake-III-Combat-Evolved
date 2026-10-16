@@ -40,6 +40,11 @@ static void setup(int weapon) {
 static void run(gentity_t *e,int ms) {level.previousTime=level.time;level.time+=ms;G_RunMissile(e);}
 int main(void) {
  vec3_t start={0,0,1000},dir={1,0,0},end={3200,0,1000};gentity_t *e;gentity_t copy;int i;
+ setup(WP_PLASMAGUN);e=fire_plasma(&g_entities[0],start,dir);e->qceProjectileWeapon=QCE_GHOST_BOLT_WEAPON;VectorScale(dir,4000,e->s.pos.trDelta);
+ run(e,100);assert(e->r.currentOrigin[0]>390 && e->r.currentOrigin[0]<400 && fabs(e->r.currentOrigin[2]-1000)<.01f);
+ setup(WP_ROCKET_LAUNCHER);e=fire_rocket(&g_entities[0],start,dir);e->qceProjectileWeapon=QCE_SCORPION_SHELL_WEAPON;VectorScale(dir,8000,e->s.pos.trDelta);
+ run(e,100);assert(fabs(e->r.currentOrigin[0]-800)<.1f && fabs(e->r.currentOrigin[2]-1000)<.01f);
+ assert(BG_QceWeaponDef(QCE_SCORPION_BULLET_WEAPON)->damage==10 && BG_QceWeaponDef(QCE_SCORPION_BULLET_WEAPON)->projectile_range==3200);
  setup(WP_MACHINEGUN);wall=500;collisionEntity=1;G_QceFireBullet(&g_entities[0],start,end,WP_MACHINEGUN,MOD_MACHINEGUN,1);e=&g_entities[2];
  run(e,16);assert(!damage_calls && e->r.currentOrigin[0]>414 && e->r.currentOrigin[0]<415);
  run(e,8);assert(damage_calls==1 && amount==10); /* Damage occurs after flight, not on trigger press. */

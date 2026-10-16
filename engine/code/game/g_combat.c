@@ -1063,7 +1063,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
   case MOD_BFG: case MOD_BFG_SPLASH: weapon=WP_BFG;break;
   }
   def=BG_QceWeaponDef(weapon);
-  if(inflictor && inflictor->qceProjectileWeapon==QCE_HOG_TURRET_WEAPON)def=BG_QceWeaponDef(QCE_HOG_TURRET_WEAPON);
+  if(inflictor && inflictor->qceProjectileWeapon>=QCE_HOG_TURRET_WEAPON && inflictor->qceProjectileWeapon<=QCE_SCORPION_BULLET_WEAPON)def=BG_QceWeaponDef(inflictor->qceProjectileWeapon);
   if(weapon!=WP_NONE && mod!=MOD_QCE_OVERCHARGE && inflictor==attacker && attacker->client &&
      attacker->client->ps.stats[STAT_QCE_COMBAT] && !(dflags&DAMAGE_RADIUS) &&
      BG_QceCapacity(attacker->client->ps.weapon))def=BG_QceWeaponDef(attacker->client->ps.weapon);

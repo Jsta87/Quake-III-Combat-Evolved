@@ -39,7 +39,7 @@ int main(void) {
   }
  }
  fragment_test();
- assert(PROTOCOL_VERSION==101);
+ assert(PROTOCOL_VERSION==102);
  assert(MAX_CLIENTS==128);assert(MAX_RELIABLE_COMMANDS==512);assert(MAX_GENTITIES==4096);state.qceVariantScale[0]=4001;state.qceVariantScale[1]=501;state.qceVariantScale[2]=1;state.qceVariantFlags=15;state.qceMaxShield=600;state.clientNum=127;state.qceReloadCommit=-1;state.qceReloadEmpty=1;
  VectorSet(state.qceCameraAngles,25.25f,359.5f,-10.5f);state.commandTime=12345;state.weapon=8;state.qceHeat[0]=10000;state.qceHeat[1]=2500;
  state.qceHeatRemainder[0]=999;state.qceHeatRemainder[1]=1;state.qceError[0]=10000;state.qceError[1]=3456;state.qceErrorRemainder[0]=-999;state.qceErrorRemainder[1]=998;state.qceOverheated=3;state.qceChargeMs=600;
@@ -55,7 +55,7 @@ int main(void) {
   if(i==0){state.qceHeat[0]=2499;state.qceHeatRemainder[0]=0;state.qceOverheated=2;state.qceChargeMs=123;}
   if(i==1){state.qceReloadCommit=state.qceReloadEmpty=0;state.qceRate[0]=state.qceRate[1]=state.qceRateRemainder[0]=state.qceRateRemainder[1]=state.qceBattery[0]=state.qceBattery[1]=state.qceZoom=state.qceCrouch=state.qceOverheatTime[0]=state.qceOverheatTime[1]=0;state.qceHeat[0]=state.qceHeat[1]=state.qceHeatRemainder[0]=state.qceHeatRemainder[1]=state.qceError[0]=state.qceError[1]=state.qceErrorRemainder[0]=state.qceErrorRemainder[1]=0;state.qceOverheated=0;state.qceChargeMs=0;}
  }
- for(i=0;i<6;i++) {
+ for(i=0;i<13;i++) {
   state.qceVehicleSeat=i;state.qceVehicleTime+=123;
   MSG_Init(&msg,buffer,sizeof(buffer));MSG_Bitstream(&msg);MSG_WriteDeltaPlayerstate(&msg,&base,&state);
   MSG_BeginReading(&msg);MSG_ReadDeltaPlayerstate(&msg,&base,&decoded);assert(!memcmp(&state,&decoded,sizeof(state)));base=state;
@@ -75,5 +75,5 @@ int main(void) {
   MSG_Init(&msg,buffer,sizeof(buffer));MSG_Bitstream(&msg);MSG_WriteDeltaUsercmdKey(&msg,456,&from,&to);
   MSG_BeginReading(&msg);MSG_ReadDeltaUsercmdKey(&msg,456,&from,&read);assert(!memcmp(&to,&read,sizeof(to)));
  }
- puts("PASS: protocol-101 player-state heat/charge/spread/rate/battery/zoom/crouch/recovery/reload-phase delta serialization, recovery transitions and zero/reset state");return 0;
+ puts("PASS: protocol-102 player-state heat/charge/spread/rate/battery/zoom/crouch/recovery/reload-phase delta serialization, recovery transitions and zero/reset state");return 0;
 }

@@ -37,6 +37,8 @@ python3 scripts/convert-halo-assets.py assets/halo/bloodgulch.map \
   --output assets/halo/converted/bloodgulch --pk3 assets/baseq3/zzz-qce-halo.pk3
 python3 scripts/animate-halo-weapons.py assets/halo/bloodgulch.map \
   --output assets/halo/converted/bloodgulch --pk3 assets/baseq3/zzz-qce-halo.pk3
+python3 scripts/convert-extra-vehicles.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/vehicles --pk3 assets/baseq3/zz-qce-extra-vehicles.pk3
 python3 scripts/convert-halo-map.py assets/halo/bloodgulch.map \
   --output assets/halo/converted/map --pk3 assets/baseq3/zz-qce-bloodgulch.pk3
 ./scripts/bootstrap-bspc.sh
@@ -163,7 +165,7 @@ Projectiles still spawn at the first-person eye-side muzzle. They collide with
 walls on that path, even when the shoulder camera can see around a corner. The
 short forward muzzle offset is also clipped against world/players, so it cannot
 place a projectile beyond a wall immediately in front of the eye. This revision
-uses protocol **101**; rebuild the client and any dedicated server together.
+uses protocol **102**; rebuild the client and any dedicated server together.
 
 Observers and third-person players see projectiles launch from the displayed
 gun's authored primary-trigger marker. The offset decreases smoothly with travel
@@ -230,3 +232,26 @@ python3 scripts/convert-halo-combat.py assets/halo/bloodgulch.map \
 This updates effects without rebaking weapon/player animation. Restart the game
 after repackaging. Older packages use the corrected barrel alignment without the
 new center layer; no random AR billboard rotation is applied.
+
+## Uploaded Mac 1999 Spartan
+
+After the weapon/player conversion above, save your uploaded ZIP as
+`assets/halo/charactersspartanshalo_1_alpha.zip`, then run:
+
+```sh
+.tools/bin/python -m pip install Pillow==12.0.0
+.tools/bin/python scripts/convert-alpha-spartan.py assets/halo/charactersspartanshalo_1_alpha.zip \
+  --variant armormac --retail-output assets/halo/converted/bloodgulch \
+  --output assets/halo/converted/alpha --pk3 assets/baseq3/zzzz-qce-cyborg.pk3
+```
+
+In the console, use `qce_playerModel cyborg`; `qce_playerModel spartan` restores
+retail Chief. The uploaded collection is unrigged: the converter transfers the
+retail skeleton and all 74 animation clips automatically. Some joints may need
+manual weight painting after playtesting. The Mac visor is part of its diffuse
+texture, so separate visor RGB currently applies to retail Chief and models
+with a separate visor surface. This local package takes precedence over an
+older Digsite Cyborg package with the same filename.
+
+The conversion includes the source's CC-BY-4.0 attribution. See
+[model credits](ALPHA-SPARTAN.md). Original and converted game media remain local.

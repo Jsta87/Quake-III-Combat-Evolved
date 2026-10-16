@@ -92,7 +92,7 @@ recovery priority, interpolation and once-per-instance sound scheduling.
 IQM meshes include orthogonal tangents required by OpenGL 2. Renderer tests
 exercise actual IQM tag interpolation in OpenGL 1 and 2, including
 endpoints, reverse interpolation and child bind transforms. Gameplay tests cover
-shotgun phases, interruption, conservation, prediction and protocol-101 state.
+shotgun phases, interruption, conservation, prediction and protocol-102 state.
 
 Native/QVM client and dedicated-server builds pass. Local offscreen runs in
 OpenGL 1 and 2 validate source audio loading,
@@ -110,3 +110,11 @@ reload interruption, new material conversion and scoreboard controls.
 The [latest playtest pass](GAME-VARIANTS.md) adds independent additive retail
 movement tracks in both renderers and attachment queries. Gunshots are dispatched
 separately from mechanical animation audio, and camera walk bob is removed.
+
+The AR now selects alternate directional/core images once per shot instead of
+playing its six direction variants as an animation. Its attached flare fades
+within 75 ms, so the center bitmap cannot remain attached for 300 ms after a
+shot. This is a calibrated attachment envelope; the full detached Halo particle
+graph is still not reproduced. Fast-turn body yaw no longer has a second
+smoothing filter, and locomotion direction has hysteresis. Both IQM renderers
+apply vertical spine/neck aim to the skin and weapon attachment together.

@@ -5,7 +5,7 @@
 #include <stdio.h>
 level_locals_t level;
 gentity_t g_entities[MAX_GENTITIES];
-gclient_t clients[2];
+gclient_t clients[6];
 vmCvar_t g_cheats,g_gravity;float qceVariantValues[GV_COUNT];
 void PM_UpdateViewAngles(playerState_t *ps,const usercmd_t *cmd){int i;for(i=0;i<3;i++)ps->viewangles[i]=SHORT2ANGLE(cmd->angles[i]+ps->delta_angles[i]);}
 static float rampSlope,crestX=1000000;
@@ -23,7 +23,9 @@ int G_ModelIndex(char *name){return 1;}
 gentity_t *G_TempEntity(vec3_t origin,int event){return &eventEntity;}
 void G_Damage(gentity_t *t,gentity_t *i,gentity_t *a,vec3_t d,vec3_t p,int damage,int flags,int mod){}
 void BG_PlayerStateToEntityState(playerState_t *ps,entityState_t *es,qboolean snap){VectorCopy(ps->origin,es->pos.trBase);}
-gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad){assert(weapon==QCE_HOG_TURRET_WEAPON);shots++;VectorCopy(start,lastMuzzle);VectorCopy(end,lastEnd);return &eventEntity;}
+gentity_t *G_QceFireBullet(gentity_t *owner,vec3_t start,vec3_t end,int weapon,int mod,int quad){assert(weapon==QCE_HOG_TURRET_WEAPON || weapon==QCE_SCORPION_BULLET_WEAPON);shots++;VectorCopy(start,lastMuzzle);VectorCopy(end,lastEnd);return &eventEntity;}
+gentity_t *fire_plasma(gentity_t *p,vec3_t start,vec3_t dir){shots++;memset(&eventEntity,0,sizeof(eventEntity));VectorCopy(start,lastMuzzle);return &eventEntity;}
+gentity_t *fire_rocket(gentity_t *p,vec3_t start,vec3_t dir){return fire_plasma(p,start,dir);}
 int main(void){
  gentity_t *p=&g_entities[0],*v=&g_entities[MAX_CLIENTS];int i;float s=0,s2=0;
  for(i=0;i<300;i++)s=QCE_HogSpeed(s,1,1.0f/30);assert(fabs(s-QCE_HOG_FORWARD)<.01f);
@@ -37,7 +39,7 @@ int main(void){
  v->s.number=MAX_CLIENTS;v->inuse=1;v->qceVehicle=1;v->health=500;
  assert(G_QceVehicleUse(p));assert(p->client->ps.qceVehicle==MAX_CLIENTS);assert(v->qceRiders[0]==1);assert(p->r.contents==CONTENTS_BODY);assert(p->client->ps.pm_type==PM_FREEZE);
  blocked=1;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicle==MAX_CLIENTS);
- blocked=0;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==3 && v->qceRiders[0]==1);
+ blocked=0;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==8 && v->qceRiders[0]==1);
  G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicle);level.time=QCE_HogExitMS(0);G_QceVehicleRelease(p,qfalse);assert(!p->client->ps.qceVehicle);assert(!v->qceRiders[0]);assert(p->r.contents==CONTENTS_BODY);
  VectorSet(p->client->ps.origin,0,-60,30);v->qceRiders[0]=2;assert(G_QceVehicleUse(p));assert(p->client->ps.qceVehicleSeat==1);
  blocked=1;G_QceVehicleRelease(p,qtrue);assert(!p->client->ps.qceVehicle);assert(!v->qceRiders[1]);
@@ -71,10 +73,10 @@ int main(void){
  }
  assert(lastMuzzle[2]>70 && lastEnd[1]>lastMuzzle[1]);
  riderCollision=0;
- {int previous=shots;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==5 && v->qceRiders[2]);
+ {int previous=shots;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==10 && v->qceRiders[2]);
   for(i=0;i<10;i++){level.time+=50;v->think(v);}assert(shots==previous);assert(v->qceRiders[2]);
   blocked=1;level.time+=400;G_QceVehicleRelease(p,qfalse);assert(v->qceRiders[2] && p->client->ps.qceVehicleSeat==2 && !p->client->qceVehicleExitTime);
-  blocked=0;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==5);G_QceVehicleRelease(p,qtrue);assert(!v->qceRiders[2]);
+  blocked=0;G_QceVehicleRelease(p,qfalse);assert(p->client->ps.qceVehicleSeat==10);G_QceVehicleRelease(p,qtrue);assert(!v->qceRiders[2]);
   for(i=0;i<80;i++){level.time+=50;v->think(v);}assert(v->qceTurretSpin<.001f);
  }
  riderCollision=0;
@@ -118,5 +120,28 @@ int main(void){
     level.time+=tick;v->think(v);assert(VectorLength(v->qceVehicleVelocity)>30);}
   }
  }
- assert(linked>0);puts("PASS: Warthog speed/braking frame independence, seat ownership, blocked exit, forced release, full/dead/spectator entry, timed exits, turret control/spin/aim, force-supported ground motion and ballistic crest departure");return 0;
+ /* Additional vehicle seat ownership, source markers and independent weapons. */
+ rampSlope=0;crestX=1000000;
+ memset(v,0,sizeof(*v));memset(clients,0,sizeof(clients));v->s.number=MAX_CLIENTS;v->inuse=1;v->s.origin[2]=20;SP_qce_ghost(v);
+ p->client=&clients[0];VectorSet(p->client->ps.origin,0,40,35);assert(G_QceVehicleUse(p));assert(p->client->ps.qceVehicleSeat==0);
+ {usercmd_t cmd={0};int before=shots;cmd.buttons=BUTTON_ATTACK;G_QceVehicleInput(p,&cmd);
+  for(i=0;i<100;i++){level.time+=20;v->think(v);}assert(shots>before);
+  assert(eventEntity.qceProjectileWeapon==QCE_GHOST_BOLT_WEAPON && eventEntity.splashDamage==0);
+  assert(v->r.currentOrigin[2]>15 && v->r.currentOrigin[2]<80); /* active antigrav */
+ }
+ G_QceVehicleRelease(p,qtrue);
+ memset(v,0,sizeof(*v));v->s.number=MAX_CLIENTS;v->inuse=1;v->s.origin[2]=20;SP_qce_scorpion(v);
+ for(i=0;i<5;i++) {
+  gentity_t *r=&g_entities[i];r->s.number=i;r->inuse=1;r->health=100;r->client=&clients[i];r->client->ps.qceVehicle=0;
+  VectorSet(r->client->ps.origin,0,0,40);assert(G_QceVehicleUse(r));
+ }
+ assert(v->qceRiders[0] && v->qceRiders[1] && v->qceRiders[2] && v->qceRiders[3] && v->qceRiders[4]);
+ {
+  usercmd_t cmd={0};int before=shots;cmd.buttons=BUTTON_ATTACK;G_QceVehicleInput(p,&cmd);
+  for(i=0;i<120;i++){level.time+=20;v->think(v);}assert(shots>before && eventEntity.qceProjectileWeapon==QCE_SCORPION_SHELL_WEAPON);
+  before=shots;cmd.buttons=BUTTON_QCE_GRENADE;G_QceVehicleInput(p,&cmd);level.time+=20;v->think(v);
+  assert(shots>before); /* machine gun is usable while cannon chambers */
+ }
+ for(i=0;i<5;i++){G_QceVehicleRelease(&g_entities[i],qtrue);assert(!g_entities[i].client->ps.qceVehicle);}
+ assert(linked>0);puts("PASS: Warthog speed/braking frame independence, seat ownership, blocked exit, forced release, full/dead/spectator entry, timed exits, turret control/spin/aim, force-supported ground motion ballistic crest departure, Ghost hover/firing and all five Scorpion seats");return 0;
 }

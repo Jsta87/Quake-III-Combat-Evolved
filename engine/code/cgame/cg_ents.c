@@ -171,7 +171,7 @@ void CG_QceVehicleAim(centity_t *car,vec3_t aim) {
  VectorClear(aim);
  aim[YAW]=car->currentState.origin2[0]+f*AngleSubtract(car->nextState.origin2[0],car->currentState.origin2[0]);
  aim[PITCH]=car->currentState.origin2[1]+f*(car->nextState.origin2[1]-car->currentState.origin2[1]);
- if(cg.predictedPlayerState.qceVehicle==car->currentState.number && cg.predictedPlayerState.qceVehicleSeat==2)
+ if(cg.predictedPlayerState.qceVehicle==car->currentState.number && (cg.predictedPlayerState.qceVehicleSeat==(car->currentState.generic1==QCE_SCORPION_MARKER?0:2)))
   QCE_HogTurretAim(car->lerpAngles,cg.predictedPlayerState.viewangles,aim);
 }
 static void CG_Warthog(centity_t *cent) {
@@ -194,7 +194,12 @@ static void CG_Warthog(centity_t *cent) {
  if(!on && cent->qceEngineOn)trap_S_StartSound(NULL,cent->currentState.number,CHAN_AUTO,stop);
  cent->qceEngineOn=on;cent->qceRPM+=(cent->currentState.frame/255.0f-cent->qceRPM)*QCE_HogFilter(dt,6);
  i=(int)Com_Clamp(0,16,cent->qceRPM*16+.5f);if(on)trap_S_AddLoopingSound(cent->currentState.number,cent->lerpOrigin,vec3_origin,rpm[i]?rpm[i]:engine);
- cent->qceWheelRoll=AngleNormalize360(cent->qceWheelRoll+speed*dt*360/80);
+ {vec3_t forward,travel;AngleVectors(cent->lerpAngles,forward,NULL,NULL);
+  VectorSubtract(cent->lerpOrigin,cent->qceLastWheelOrigin,travel);
+  if(cent->qceWheelTime && VectorLength(travel)<200)speed=dt>0?DotProduct(travel,forward)/dt:0;else speed=0;
+  VectorCopy(cent->lerpOrigin,cent->qceLastWheelOrigin);
+  cent->qceWheelRoll=AngleNormalize360(cent->qceWheelRoll+speed*dt*360/80);
+ }
  cent->qceTurretRoll=AngleNormalize360(cent->qceTurretRoll+cent->currentState.origin2[2]*2700*dt);
  CG_QceVehicleAim(cent,aim);cent->qceTurretYaw=aim[YAW];cent->qceTurretPitch=aim[PITCH];cent->qceWheelTime=cg.time;
  AnglesToAxis(cent->lerpAngles,axis);
@@ -225,8 +230,8 @@ static void CG_Warthog(centity_t *cent) {
   if(i==7){VectorCopy(gun,ent.origin);AxisCopy(gunAxis,ent.axis);}
   if(i==8){VectorCopy(gun,ent.origin);VectorMA(ent.origin,6.334f,gunAxis[0],ent.origin);VectorMA(ent.origin,7.688f,gunAxis[2],ent.origin);VectorSet(angles,0,0,cent->qceTurretRoll);AnglesToAxis(angles,local);MatrixMultiply(local,gunAxis,ent.axis);}
   VectorCopy(ent.origin,ent.oldorigin);trap_R_AddRefEntityToScene(&ent);
-  if(i>0 && i<5 && fabs(speed)>60 && cg.time-cent->qceTireTime>70) {
-   trace_t tr;vec3_t end,velocity;VectorCopy(ent.origin,end);end[2]-=35;CG_Trace(&tr,ent.origin,NULL,NULL,end,cent->currentState.number,MASK_SOLID);
+  if(i>0 && i<5 && fabs(speed)>15 && cg.time-cent->qceTireTime>45) {
+   trace_t tr;vec3_t end,velocity;VectorCopy(ent.origin,end);end[2]-=55;CG_Trace(&tr,ent.origin,NULL,NULL,end,cent->currentState.number,MASK_SOLID);
    if(tr.fraction<1 && tr.plane.normal[2]>.3f && !(tr.surfaceFlags&SURF_METALSTEPS)) {
     localEntity_t *le;VectorCopy(tr.endpos,origin);origin[2]+=2;VectorScale(axis[0],-speed*.08f,velocity);velocity[2]=18;
     CG_SmokePuff(origin,velocity,7,.55f,.45f,.30f,.30f,500,cg.time,0,0,dust);
@@ -238,11 +243,43 @@ static void CG_Warthog(centity_t *cent) {
   int count=cg_qceWorld.muzzleCounts[WP_MACHINEGUN];trap_R_AddLightToScene(muzzle,90,1,.75f,.35f);
   if(count){int frame=(cg.time-cent->qceTurretShotTime)*count/65;memset(&ent,0,sizeof(ent));ent.reType=RT_SPRITE;ent.customShader=cg_qceWorld.muzzleShaders[WP_MACHINEGUN][frame];ent.radius=cg_qceWorld.muzzleRadius[WP_MACHINEGUN];VectorCopy(muzzle,ent.origin);memset(ent.shaderRGBA,255,4);trap_R_AddRefEntityToScene(&ent);}
  }
- if(cg.time-cent->qceTireTime>70)cent->qceTireTime=cg.time;
+ if(cg.time-cent->qceTireTime>45)cent->qceTireTime=cg.time;
  if(cg.time-cent->qceHogImpactTime>800 && ((cent->currentState.angles2[2] && !cent->qceHogContacts) || fabs(AngleSubtract(cent->lerpAngles[PITCH],cent->qceHogPitch))>8)) {
   if(fabs(speed)>30){trap_S_StartSound(NULL,cent->currentState.number,CHAN_AUTO,suspension);cent->qceHogImpactTime=cg.time;}
  }
  cent->qceHogContacts=(int)cent->currentState.angles2[2];cent->qceHogPitch=cent->lerpAngles[PITCH];
+}
+
+/* Articulated vehicle parts share the server's model marker transform. */
+static void CG_ExtraVehicle(centity_t *cent) {
+ refEntity_t ent;vec3_t aim,turret,gun,muzzle,turn[3],barrel[3],axis[3];int tank=cent->currentState.generic1==QCE_SCORPION_MARKER,i;
+ const char *name=tank?"scorpion":"ghost";sfxHandle_t sound;
+ if(cent->currentState.eFlags&EF_NODRAW)return;
+ CG_QceVehicleAim(cent,aim);AnglesToAxis(cent->lerpAngles,axis);
+ QCE_ExtraVehicleTransform(cent->lerpOrigin,cent->lerpAngles,tank?3:2,aim[YAW],aim[PITCH],0,turret,gun,muzzle,turn,barrel);
+ for(i=0;i<(tank?3:1);i++) {
+  memset(&ent,0,sizeof(ent));ent.hModel=trap_R_RegisterModel(va("models/qce/halo/%s/%s.md3",name,i==0?"body":i==1?"turret":"gun"));if(!ent.hModel)continue;
+  if(i==0){VectorCopy(cent->lerpOrigin,ent.origin);AxisCopy(axis,ent.axis);}
+  else if(i==1){VectorCopy(turret,ent.origin);AxisCopy(turn,ent.axis);}
+  else {VectorCopy(gun,ent.origin);AxisCopy(barrel,ent.axis);}
+  VectorCopy(ent.origin,ent.oldorigin);
+  trap_R_AddRefEntityToScene(&ent);
+ }
+ if(cent->currentState.clientNum&1) {
+  sound=trap_S_RegisterSound(va("sound/qce/halo/%s/engine.wav",name),qfalse);
+  if(sound)trap_S_AddLoopingSound(cent->currentState.number,cent->lerpOrigin,cent->currentState.pos.trDelta,sound);
+ }
+ if(cent->currentState.time2>cent->qceTurretShotTime) {
+  cent->qceTurretShotTime=cent->currentState.time2;
+  if(cg.time-cent->currentState.time2<200) {
+   sound=trap_S_RegisterSound(va("sound/qce/halo/%s/%s.wav",name,tank && cent->currentState.weapon==WP_MACHINEGUN?"secondary":"fire"),qfalse);
+   if(sound)trap_S_StartSound(muzzle,cent->currentState.number,CHAN_WEAPON,sound);
+  }
+ }
+ if(cent->qceTurretShotTime>0 && cg.time-cent->qceTurretShotTime>=0 && cg.time-cent->qceTurretShotTime<67) {
+  centity_t flash;memset(&flash,0,sizeof(flash));flash.muzzleFlashTime=cent->qceTurretShotTime;
+  CG_HaloMuzzle(&flash,tank?WP_ROCKET_LAUNCHER:WP_PLASMAGUN,muzzle,barrel,0);
+ }
 }
 
 static void CG_General( centity_t *cent ) {
@@ -1169,7 +1206,7 @@ static void CG_AddCEntity( centity_t *cent ) {
 	case ET_TELEPORT_TRIGGER:
 		break;
 	case ET_GENERAL:
-  if(cent->currentState.generic1==QCE_HOG_MARKER)CG_Warthog(cent);else CG_General( cent );
+  if(cent->currentState.generic1==QCE_HOG_MARKER)CG_Warthog(cent);else if(cent->currentState.generic1==QCE_GHOST_MARKER || cent->currentState.generic1==QCE_SCORPION_MARKER)CG_ExtraVehicle(cent);else CG_General( cent );
 		break;
 	case ET_PLAYER:
 		CG_Player( cent );

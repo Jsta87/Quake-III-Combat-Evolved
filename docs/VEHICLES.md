@@ -56,10 +56,10 @@ Warthogs at its original scenario placements. Vehicle bodies currently have
 are tuning choices, not a claim about retail Halo CE vehicle durability.
 
 The vehicle state is server authoritative. Seat identity, exit phase and animation time are
-replicated in QCE protocol **100**; rebuild the engine and every game module
-on both ends. Mixed older builds are incompatible. The hull uses swept box
-collision, four ground probes, terrain alignment, gravity, acceleration and
-braking. The source Warthog tag supplies forward/reverse speed and acceleration
+replicated in QCE protocol **102**; rebuild the engine and every game module
+on both ends. Mixed older builds are incompatible. The hull uses source mass-point
+spring/friction forces, point sweeps with multi-plane sliding, gravity and angular
+inertia. It preserves momentum across crests and supports explosive tipping. The source Warthog tag supplies forward/reverse speed and acceleration
 values, converted from 30-Hz ticks using the project's 80-unit world scale.
 Steering, hull dimensions, terrain contact and chase-camera distances are
 prototype approximations.
@@ -235,3 +235,46 @@ limited by normal support load and is disabled during powered movement, fast
 sliding, airborne travel and rapid chassis rotation. Suspension and explosion
 impulses retain their existing simulation. Regression tests cover slope rest at
 8/16/32-ms server steps and blast motion after parking.
+
+## Ghost and Scorpion
+
+Refresh the world/player package for the additional source seat poses, then
+build the additional vehicle media from the owner's Xbox map:
+
+```sh
+python3 scripts/convert-halo-world.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/bloodgulch --pk3 assets/baseq3/zzz-qce-halo.pk3
+python3 scripts/convert-extra-vehicles.py assets/halo/bloodgulch.map \
+  --output assets/halo/converted/vehicles --pk3 assets/baseq3/zz-qce-extra-vehicles.pk3
+```
+
+With development cheats enabled, use `qce_vehicle_spawn ghost` or
+`qce_vehicle_spawn scorpion` in an open area. Move near the vehicle and press E.
+Ghost has one pilot seat; Scorpion has a driver and four fender rider seats.
+W/S controls forward/reverse and mouse yaw steers. Ghost also strafes with A/D.
+Space brakes. Left fire launches plasma/cannon shots; the Scorpion's grenade
+button (RMB in the default controls) fires its secondary machine gun. Cannon
+and machine-gun cooldowns are independent. E exits through the source seat
+exit animation; blocked exits keep the seat occupied.
+
+The converter reads model geometry, textures, articulated turret parts, seat
+and muzzle markers, firing audio dependencies, mass points and inertia directly
+from the cache. The Ghost uses tagged antigravity height/strength/damping;
+Scorpion uses differential track drive. Projectile profiles are separate from
+handheld weapons: Ghost bolts travel at 4000 toward 2000 units/s over 4000 units;
+tank shells travel at 8000 units/s with a 4-second chamber cycle. Damage values
+are source-based; vehicle durability (250/1500) and respawn are prototype tuning.
+
+These are playable first implementations, not exact Halo vehicle parity.
+BSP contacts differ from Halo's collision solver. Scorpion track animation,
+independent machine-gun articulation, suspension detailing, a Scorpion engine
+loop, full vehicle-specific particle graphs and firing spread still need work.
+Fender riders currently have seated poses but only the first passenger seat
+can fire a carried weapon. Ghost flaps are static. New vehicles are spawned
+with the console commands; the existing Blood Gulch placements remain Warthogs.
+All clients/servers must rebuild together for protocol 102 (five seats plus exit
+phases). An older 3-bit seat field cannot represent the new exit phases.
+
+Warthog wheels now integrate actual interpolated travel distance rather than
+throttle speed. Tire effects use shorter intervals and ground traces that reach
+below the sprung wheel positions. They still approximate Halo's effect graph.

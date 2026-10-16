@@ -3,21 +3,23 @@
  */
 #include "g_local.h"
 #include "bg_qce_vehicle.h"
+static int SeatCount(gentity_t *v){return v->qceVehicle==2?1:v->qceVehicle==3?5:3;}
 static const vec3_t seatOffsets[3]={{-1.904f,13.260f,31.260f},{-9.296f,-12.692f,46.243f},{-49.827f,0,60.445f}};
 static gentity_t *Vehicle(gentity_t *player) {
- int n=player->client->ps.qceVehicle,seat=player->client->ps.qceVehicleSeat%3;
- if(n<=0 || n>=level.num_entities || seat<0 || seat>=3)return NULL;
- if(!g_entities[n].inuse || !g_entities[n].qceVehicle || g_entities[n].health<=0 || g_entities[n].qceRiders[seat]!=player->s.number+1)return NULL;
+ int n=player->client->ps.qceVehicle,seat=(player->client->ps.qceVehicleSeat&7);
+ if(n<=0 || n>=level.num_entities || seat<0 || seat>=5)return NULL;
+ if(!g_entities[n].inuse || !g_entities[n].qceVehicle || seat>=SeatCount(&g_entities[n]) || g_entities[n].health<=0 || g_entities[n].qceRiders[seat]!=player->s.number+1)return NULL;
  return &g_entities[n];
 }
 static void SeatOrigin(gentity_t *v,int seat,vec3_t result) {
  vec3_t axis[3];int i;AnglesToAxis(v->r.currentAngles,axis);VectorCopy(v->r.currentOrigin,result);
- for(i=0;i<3;i++)VectorMA(result,seatOffsets[seat][i],axis[i],result);
+ if(v->qceVehicle==1){for(i=0;i<3;i++)VectorMA(result,seatOffsets[seat][i],axis[i],result);}
+ else {const float *offset=QCE_VehicleSeat(v->qceVehicle,seat);for(i=0;i<3;i++)VectorMA(result,offset[i],axis[i],result);}
 }
 void G_QceVehicleRelease(gentity_t *p,qboolean force) {
  gentity_t *v;trace_t tr;vec3_t dest,exitStart,mins={-15,-15,-24},maxs={15,15,32},axis[3];int seat,i,found=0;
  if(!p->client || !p->client->ps.qceVehicle)return;
- v=Vehicle(p);seat=p->client->ps.qceVehicleSeat%3;
+ v=Vehicle(p);seat=(p->client->ps.qceVehicleSeat&7);
  if(!force && p->client->qceVehicleExitTime && level.time<p->client->qceVehicleExitTime)return;
  if(v) {
   AnglesToAxis(v->r.currentAngles,axis);
@@ -36,10 +38,10 @@ void G_QceVehicleRelease(gentity_t *p,qboolean force) {
    trap_SendServerCommand(p->s.number,"print \"Exit blocked. Move the Warthog to open ground.\n\"");return;
   }
   if(!force && !p->client->qceVehicleExitTime) {
-   p->client->qceVehicleExitTime=level.time+QCE_HogExitMS(seat);
-   p->client->ps.qceVehicleSeat=seat+3;p->client->ps.qceVehicleTime=level.time;return;
+   p->client->qceVehicleExitTime=level.time+(v->qceVehicle==2?800:v->qceVehicle==3?(seat?733:1833):QCE_HogExitMS(seat));
+   p->client->ps.qceVehicleSeat=seat+8;p->client->ps.qceVehicleTime=level.time;return;
   }
-  if(seat>=0 && seat<3 && v->qceRiders[seat]==p->s.number+1)v->qceRiders[seat]=0;
+  if(seat>=0 && seat<SeatCount(v) && v->qceRiders[seat]==p->s.number+1)v->qceRiders[seat]=0;
   if(found){VectorCopy(dest,p->client->ps.origin);VectorCopy(dest,p->r.currentOrigin);}
  }
  p->client->qceVehicleExitTime=0;p->client->ps.qceVehicle=p->client->ps.qceVehicleSeat=p->client->ps.qceVehicleTime=0;
@@ -54,11 +56,11 @@ qboolean G_QceVehicleUse(gentity_t *p) {
  for(i=MAX_CLIENTS;i<level.num_entities;i++) {
   v=&g_entities[i];if(!v->inuse || !v->qceVehicle || v->health<=0)continue;
   VectorSubtract(v->r.currentOrigin,p->client->ps.origin,delta);
-  if(VectorLengthSquared(delta)<closest && (!v->qceRiders[0]||!v->qceRiders[1]||!v->qceRiders[2])){closest=VectorLengthSquared(delta);best=v;}
+  if(VectorLengthSquared(delta)<closest && (v->qceVehicle==2?!v->qceRiders[0]:v->qceVehicle==3?(!v->qceRiders[0]||!v->qceRiders[1]||!v->qceRiders[2]||!v->qceRiders[3]||!v->qceRiders[4]):(!v->qceRiders[0]||!v->qceRiders[1]||!v->qceRiders[2]))){closest=VectorLengthSquared(delta);best=v;}
  }
  if(!best)return qfalse;
  closest=150*150;
- for(i=0;i<3;i++)if(!best->qceRiders[i]) {
+ for(i=0;i<SeatCount(best);i++)if(!best->qceRiders[i]) {
   vec3_t boarding,axis[3];AnglesToAxis(best->r.currentAngles,axis);VectorCopy(best->r.currentOrigin,boarding);
   if(i<2)VectorMA(boarding,i==0?48:-48,axis[1],boarding);else VectorMA(boarding,-95,axis[0],boarding);
   VectorSubtract(boarding,p->client->ps.origin,delta);
@@ -73,7 +75,7 @@ qboolean G_QceVehicleUse(gentity_t *p) {
  p->client->ps.qceZoom=0;p->client->ps.pm_type=PM_FREEZE;p->client->ps.eFlags^=EF_TELEPORT_BIT;
  VectorClear(p->client->ps.velocity);SeatOrigin(best,seat,p->client->ps.origin);
  p->r.contents=CONTENTS_BODY;p->client->qcePickupLatched=qtrue;
- trap_SendServerCommand(p->s.number,va("print \"Warthog %s: E exits; %s.\n\"",seat==0?"driver":seat==1?"passenger":"gunner",seat==0?"mouse steers, W/S throttle, Space brakes":seat==1?"use your held weapon":"mouse aims, hold fire to spin up the turret"));
+ trap_SendServerCommand(p->s.number,va("print \"%s %s: E exits; %s.\n\"",best->qceVehicle==2?"Ghost":best->qceVehicle==3?"Scorpion":"Warthog",seat==0?"driver":seat==1?"passenger":"rider",best->qceVehicle==2?"W/S throttle, A/D strafe, mouse steers, fire shoots plasma":best->qceVehicle==3 && seat==0?"W/S throttle, mouse aims/steers, fire cannon, grenade button machine gun":seat==0?"mouse steers, W/S throttle, Space brakes":seat==1?"use your held weapon":"mouse aims, hold fire to spin up the turret"));
  return qtrue;
 }
 void G_QceVehicleInput(gentity_t *p,usercmd_t *cmd) {
@@ -92,9 +94,38 @@ static void VehicleDie(gentity_t *v,gentity_t *inflictor,gentity_t *attacker,int
  int i;gentity_t *p;vec3_t origin;VectorCopy(v->r.currentOrigin,origin);
  /* Release before health changes invalidate Vehicle(). G_Damage already subtracted it. */
  v->health=1;
- for(i=0;i<3;i++)if(v->qceRiders[i]){p=&g_entities[v->qceRiders[i]-1];G_QceVehicleRelease(p,qtrue);G_Damage(p,v,attacker,NULL,NULL,60,DAMAGE_NO_KNOCKBACK,MOD_ROCKET_SPLASH);}
+ for(i=0;i<SeatCount(v);i++)if(v->qceRiders[i]){p=&g_entities[v->qceRiders[i]-1];G_QceVehicleRelease(p,qtrue);G_Damage(p,v,attacker,NULL,NULL,60,DAMAGE_NO_KNOCKBACK,MOD_ROCKET_SPLASH);}
  v->health=0;v->takedamage=qfalse;v->s.eFlags|=EF_NODRAW;v->r.contents=0;v->qceVehicleRespawn=level.time+15000;
  G_TempEntity(origin,EV_MISSILE_MISS)->s.weapon=WP_ROCKET_LAUNCHER;trap_LinkEntity(v);
+}
+static void ExtraVehicleFire(gentity_t *v,float dt) {
+ gentity_t *p,*bolt;vec3_t axis[3],gunAxis[3],turretAxis[3],turret,dir,muzzle,start;trace_t trace;int tank=v->qceVehicle==3,i,secondary;float *nextShot;
+ if(!v->qceRiders[0])return;p=&g_entities[v->qceRiders[0]-1];
+ if(!p->inuse || !p->client || p->health<=0 || p->client->qceVehicleExitTime || level.time-p->client->qceVehicleEnterTime<(tank?2167:1167))return;
+ QCE_HogTurretAim(v->r.currentAngles,p->client->ps.viewangles,v->qceTurretAngles);
+ secondary=tank && (p->client->qceVehicleCmd.buttons&BUTTON_QCE_GRENADE);
+ v->qceTurretSpin=QCE_HogRamp(v->qceTurretSpin,(p->client->qceVehicleCmd.buttons&BUTTON_ATTACK)!=0,1,.25f,dt);
+ if(!(p->client->qceVehicleCmd.buttons&BUTTON_ATTACK) && !secondary)return;
+ nextShot=secondary?&v->qceTurretNextSecondary:&v->qceTurretNextShot;
+ if(level.time<*nextShot)return;
+ *nextShot=level.time+(secondary?67:tank?4000:(int)(1000/(5+v->qceTurretSpin)));
+ v->s.weapon=secondary?WP_MACHINEGUN:tank?WP_ROCKET_LAUNCHER:WP_PLASMAGUN;
+ AngleVectors(p->client->ps.viewangles,dir,NULL,NULL);AnglesToAxis(v->r.currentAngles,axis);
+ for(i=0;i<1;i++) {
+  QCE_ExtraVehicleTransform(v->r.currentOrigin,v->r.currentAngles,v->qceVehicle,v->qceTurretAngles[YAW],v->qceTurretAngles[PITCH],secondary,turret,start,muzzle,turretAxis,gunAxis);
+  if(!tank && (v->qceTurretShots&1))VectorMA(muzzle,-2*qceGhostPrimaryTrigger[1],axis[1],muzzle);
+  VectorCopy(gunAxis[0],dir);
+  trap_Trace(&trace,start,NULL,NULL,muzzle,v->s.number,MASK_SHOT&~CONTENTS_BODY);if(trace.startsolid || trace.fraction<1)continue;
+  if(secondary){vec3_t end;VectorMA(muzzle,8000,dir,end);G_QceFireBullet(p,muzzle,end,QCE_SCORPION_BULLET_WEAPON,MOD_MACHINEGUN,1);}
+  else {
+   int weapon=p->client->ps.weapon;p->client->ps.weapon=tank?WP_ROCKET_LAUNCHER:WP_PLASMAGUN;
+   bolt=tank?fire_rocket(p,muzzle,dir):fire_plasma(p,muzzle,dir);p->client->ps.weapon=weapon;
+   bolt->s.otherEntityNum2=0; /* vehicle launch already uses its real muzzle */
+   bolt->qceProjectileWeapon=tank?QCE_SCORPION_SHELL_WEAPON:QCE_GHOST_BOLT_WEAPON;bolt->damage=tank?351:12;bolt->splashDamage=tank?351:0;bolt->splashRadius=tank?260:0;
+   VectorScale(dir,tank?8000:4000,bolt->s.pos.trDelta);
+  }
+  v->qceTurretShots++;v->qceTurretLastShot=level.time;
+ }
 }
 static void TurretThink(gentity_t *v,float dt) {
  gentity_t *p=NULL,*bolt;vec3_t gun,muzzle,gunAxis[3],dir,end;trace_t tr;
@@ -131,20 +162,21 @@ static void HogWorldPoint(const vec3_t origin,vec3_t axis[3],const vec3_t local,
  vec3_t copy;int i;VectorCopy(local,copy);VectorCopy(origin,out);for(i=0;i<3;i++)VectorMA(out,copy[i],axis[i],out);
 }
 static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *contacts) {
+ const qce_vehiclephysics_t *physics=v->qceVehicle==2?&qceGhostPhysics:v->qceVehicle==3?&qceScorpionPhysics:&qceWarthogPhysics;
  vec3_t axis[3],newAxis[3],acceleration,torque,com,oldCOM,newCOM,point,lever,velocity,force,start,end;
  vec3_t supportNormal={0,0,0},normal,tangent,wheelForward,wheelLeft,angles,rotationAxis,localTorque,angularAcceleration,cross,delta,nextOrigin;
  trace_t tr,hit;float depth,normalSpeed,friction,alignment,fraction,target,parallel,rate,angle,speed,earliest;int i,pass;
- AnglesToAxis(v->r.currentAngles,axis);HogWorldPoint(vec3_origin,axis,qceHogCOM,com);VectorCopy(com,oldCOM);
- VectorSet(acceleration,0,0,-gravity*QCE_HOG_GRAVITY_SCALE);VectorClear(torque);*contacts=0;
- for(i=0;i<QCE_HOG_POINT_COUNT;i++) {
-  const qce_hogpoint_t *p=&qceHogPoints[i];
-  HogWorldPoint(v->r.currentOrigin,axis,p->position,point);VectorSubtract(p->position,qceHogCOM,lever);HogWorldPoint(vec3_origin,axis,lever,lever);
+ AnglesToAxis(v->r.currentAngles,axis);HogWorldPoint(vec3_origin,axis,v->qceVehicle==1?qceHogCOM:physics->com,com);VectorCopy(com,oldCOM);
+ VectorSet(acceleration,0,0,-gravity*physics->gravity);VectorClear(torque);*contacts=0;
+ for(i=0;i<physics->count;i++) {
+  const qce_hogpoint_t *p=&physics->points[i];
+  HogWorldPoint(v->r.currentOrigin,axis,p->position,point);VectorSubtract(p->position,(v->qceVehicle==1?qceHogCOM:physics->com),lever);HogWorldPoint(vec3_origin,axis,lever,lever);
   CrossProduct(v->qceVehicleAngularVelocity,lever,velocity);VectorAdd(velocity,v->qceVehicleVelocity,velocity);
-  VectorSet(angles,0,p->powered==0?steer:p->powered==1?-steer:0,0);AngleVectors(angles,wheelForward,NULL,NULL);
+  VectorSet(angles,0,v->qceVehicle==1?(p->powered==0?steer:p->powered==1?-steer:0):0,0);AngleVectors(angles,wheelForward,NULL,NULL);
   HogWorldPoint(vec3_origin,axis,wheelForward,wheelForward);CrossProduct(axis[2],wheelForward,wheelLeft);
   if(p->friction==1){parallel=DotProduct(velocity,wheelForward);VectorScale(wheelForward,parallel*p->parallel,tangent);VectorMA(velocity,-parallel,wheelForward,cross);VectorMA(tangent,p->perpendicular,cross,tangent);}
   else VectorCopy(velocity,tangent);
-  VectorScale(tangent,-p->weight*QCE_HOG_AIR_FRICTION,force);
+  VectorScale(tangent,-p->weight*physics->air,force);
   VectorCopy(point,start);start[2]+=p->radius+.625f;VectorCopy(point,end);end[2]-=p->radius+.625f;
   trap_Trace(&tr,start,NULL,NULL,end,v->s.number,MASK_SOLID);
   if(tr.fraction<1 && !tr.startsolid && !tr.allsolid) {
@@ -152,13 +184,19 @@ static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *
    if(depth>0) {
     if(p->node==14)*contacts|=4;if(p->node==15)*contacts|=8;if(p->node==16)*contacts|=1;if(p->node==17)*contacts|=2;
     if(p->powered>=0)VectorAdd(supportNormal,normal,supportNormal);
+    if(v->qceVehicle!=1 && p->powered>=0)*contacts|=1<<(i%4);
     normalSpeed=DotProduct(velocity,normal);
-    VectorMA(force,gravity/QCE_HOG_GROUND_DEPTH*depth-normalSpeed*QCE_HOG_GROUND_DAMP,normal,force);
+    VectorMA(force,gravity/physics->depth*depth-normalSpeed*physics->damp,normal,force);
     VectorMA(velocity,-normalSpeed,normal,tangent);
-    friction=p->weight*QCE_HOG_GROUND_FRICTION;
+    friction=p->weight*physics->friction;
     if(p->powered>=0) {
-     alignment=Com_Clamp(0,1,DotProduct(axis[2],normal));fraction=Com_Clamp(0,1,(normal[2]-QCE_HOG_NORMAL_K0)/(QCE_HOG_NORMAL_K1-QCE_HOG_NORMAL_K0));
+     alignment=Com_Clamp(0,1,DotProduct(axis[2],normal));fraction=Com_Clamp(0,1,(normal[2]-physics->k0)/(physics->k1-physics->k0));
      target=v->qceVehicleSpeed*alignment*alignment*fraction*fraction;
+     if(v->qceVehicle==3)target+=(p->powered==0?-1:1)*steer*2.5f;
+     if(v->qceVehicle==2 && v->qceRiders[0]) {
+      float slide=g_entities[v->qceRiders[0]-1].client->qceVehicleCmd.rightmove/127.0f*360;
+      VectorMA(tangent,slide,axis[1],tangent);
+     }
      VectorMA(wheelForward,-DotProduct(wheelForward,normal),normal,cross);VectorMA(tangent,-target,cross,tangent);
     }
     if(p->friction==1) {
@@ -166,6 +204,15 @@ static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *
      VectorMA(tangent,-parallel,wheelForward,tangent);VectorMA(cross,p->perpendicular,tangent,cross);
      VectorMA(force,-friction,cross,force);
     } else VectorMA(force,-friction,tangent,force);
+   }
+  }
+  if(v->qceVehicle==2 && v->qceRiders[0] && p->powered>=0 && axis[2][2]>0) {
+   const float *power=qceGhostAntigrav[p->powered];float height=power[2]*80,alignment=Com_Clamp(0,1,(axis[2][2]-power[5])/(power[4]-power[5]));
+   VectorCopy(point,end);end[2]-=p->radius+height;trap_Trace(&tr,point,NULL,NULL,end,v->s.number,MASK_SOLID);
+   if(tr.fraction<1 && !tr.startsolid && !tr.allsolid) {
+    float gap=tr.fraction*(p->radius+height)-p->radius,effect=gap>0?Com_Clamp(0,1,1-gap/height):1;
+    float lift=(effect*effect*gravity-DotProduct(tr.plane.normal,velocity)*power[3]*30)*power[0]*alignment;
+    VectorMA(force,lift,tr.plane.normal,force);*contacts|=1<<(i%4);
    }
   }
   VectorAdd(acceleration,force,acceleration);CrossProduct(lever,force,cross);VectorAdd(torque,cross,torque);
@@ -180,25 +227,36 @@ static void HogPhysicsStep(gentity_t *v,float dt,float steer,float gravity,int *
   if(VectorLength(tangent)<20) {
    VectorMA(acceleration,-DotProduct(acceleration,supportNormal),supportNormal,force);
    VectorScale(tangent,-1/dt,cross);VectorSubtract(cross,force,cross);
-   load=DotProduct(acceleration,supportNormal)+gravity*QCE_HOG_GRAVITY_SCALE*supportNormal[2];
+   load=DotProduct(acceleration,supportNormal)+gravity*physics->gravity*supportNormal[2];
    limit=.65f*(load>0?load:0);needed=VectorLength(cross);
    if(needed>limit && needed>0)VectorScale(cross,limit/needed,cross);
    VectorAdd(acceleration,cross,acceleration);
   }
  }
- for(i=0;i<3;i++)localTorque[i]=DotProduct(torque,axis[i])/qceHogInertiaPerMass[i];
+ /* Alien scout magic force targets local planar velocity while antigraving.
+    Source tick acceleration is converted to Quake units/second squared. */
+ if(v->qceVehicle==2 && v->qceRiders[0] && *contacts && axis[2][2]>0) {
+  vec3_t desired;float length,yawRate,targetYaw,error;gclient_t *driver=g_entities[v->qceRiders[0]-1].client;
+  VectorScale(axis[0],v->qceVehicleSpeed-DotProduct(v->qceVehicleVelocity,axis[0]),desired);
+  VectorMA(desired,-driver->qceVehicleCmd.rightmove/127.0f*540-DotProduct(v->qceVehicleVelocity,axis[1]),axis[1],desired);
+  length=VectorLength(desired);if(length>360)VectorScale(desired,360/length,desired);VectorAdd(acceleration,desired,acceleration);
+  yawRate=DotProduct(v->qceVehicleAngularVelocity,axis[2]);targetYaw=steer*DEG2RAD(2.0f)*30;
+  error=Com_Clamp(-.0034906587f*900,.0034906587f*900,(targetYaw-yawRate)*30);
+  VectorMA(torque,error*physics->inertia[2],axis[2],torque);
+ }
+ for(i=0;i<3;i++)localTorque[i]=DotProduct(torque,axis[i])/(v->qceVehicle==1?qceHogInertiaPerMass[i]:physics->inertia[i]);
  HogWorldPoint(vec3_origin,axis,localTorque,angularAcceleration);VectorMA(v->qceVehicleAngularVelocity,dt,angularAcceleration,v->qceVehicleAngularVelocity);
  VectorMA(v->qceVehicleVelocity,dt,acceleration,v->qceVehicleVelocity);
  VectorCopy(v->qceVehicleAngularVelocity,rotationAxis);rate=VectorNormalize(rotationAxis);angle=RAD2DEG(rate*dt);
  for(i=0;i<3;i++){if(rate>0.000001f)RotatePointAroundVector(newAxis[i],rotationAxis,axis[i],angle);else VectorCopy(axis[i],newAxis[i]);}
- HogWorldPoint(vec3_origin,newAxis,qceHogCOM,newCOM);VectorSubtract(oldCOM,newCOM,delta);VectorMA(delta,dt,v->qceVehicleVelocity,delta);
+ HogWorldPoint(vec3_origin,newAxis,v->qceVehicle==1?qceHogCOM:physics->com,newCOM);VectorSubtract(oldCOM,newCOM,delta);VectorMA(delta,dt,v->qceVehicleVelocity,delta);
  VectorAdd(v->r.currentOrigin,delta,nextOrigin);
  /* Retail sweeps mass-point centers, not a vehicle-sized axis-aligned box.
     Slide over multiple contact planes instead of discarding all movement. */
  for(pass=0;pass<4;pass++) {
   earliest=1;memset(&hit,0,sizeof(hit));
-  for(i=0;i<QCE_HOG_POINT_COUNT;i++) {
-   HogWorldPoint(v->r.currentOrigin,axis,qceHogPoints[i].position,start);HogWorldPoint(nextOrigin,newAxis,qceHogPoints[i].position,end);
+  for(i=0;i<physics->count;i++) {
+   HogWorldPoint(v->r.currentOrigin,axis,physics->points[i].position,start);HogWorldPoint(nextOrigin,newAxis,physics->points[i].position,end);
    trap_Trace(&tr,start,NULL,NULL,end,v->s.number,MASK_SOLID);
    if(tr.startsolid || tr.allsolid) {
     /* Small recovery handles numerical overlap at terrain triangle joins. */
@@ -228,30 +286,34 @@ static void VehicleThink(gentity_t *v) {
   if(level.time<v->qceVehicleRespawn)return;
   VectorCopy(v->pos1,v->r.currentOrigin);VectorCopy(v->pos2,v->r.currentAngles);VectorClear(v->qceVehicleVelocity);VectorClear(v->qceVehicleAngularVelocity);v->qceVehicleSpeed=v->qceVehicleSteer=0;
   v->qceTurretSpin=v->qceTurretError=v->qceVehicleRPM=0;v->qceTurretLastShot=v->qceTurretShots=0;VectorClear(v->qceTurretAngles);
-  v->health=500;v->takedamage=qtrue;v->s.eFlags&=~EF_NODRAW;v->r.contents=CONTENTS_SOLID;
+  v->health=v->qceVehicle==2?250:v->qceVehicle==3?1500:500;v->takedamage=qtrue;v->s.eFlags&=~EF_NODRAW;v->r.contents=CONTENTS_SOLID;
  }
- for(i=0;i<3;i++)if(v->qceRiders[i]) {
+ for(i=0;i<SeatCount(v);i++)if(v->qceRiders[i]) {
   p=&g_entities[v->qceRiders[i]-1];
-  if(!p->inuse || !p->client || p->health<=0 || p->client->ps.qceVehicle!=v->s.number || p->client->ps.qceVehicleSeat%3!=i){v->qceRiders[i]=0;continue;}
-  if(i==0 && !p->client->qceVehicleExitTime && level.time-p->client->qceVehicleEnterTime>=1667){throttle=QCE_HogThrottle(p->client->qceVehicleCmd.forwardmove,p->client->qceVehicleCmd.rightmove,p->client->qceVehicleCmd.upmove);steer=QCE_HogSteer(v->r.currentAngles[YAW],p->client->ps.viewangles[YAW]);}
+  if(!p->inuse || !p->client || p->health<=0 || p->client->ps.qceVehicle!=v->s.number || (p->client->ps.qceVehicleSeat&7)!=i){v->qceRiders[i]=0;continue;}
+  if(i==0 && !p->client->qceVehicleExitTime && level.time-p->client->qceVehicleEnterTime>=(v->qceVehicle==2?1167:v->qceVehicle==3?2167:1667)){throttle=QCE_HogThrottle(p->client->qceVehicleCmd.forwardmove,p->client->qceVehicleCmd.rightmove,p->client->qceVehicleCmd.upmove);steer=QCE_HogSteer(v->r.currentAngles[YAW],p->client->ps.viewangles[YAW]);}
  }
  /* Preserve linear/angular momentum through crests and drops. Contact
     springs can support the hull, but never replace its velocity. */
  desiredSteer=steer*30;
  while(remaining>.00001f) {
   step=remaining>1.0f/120?1.0f/120:remaining;remaining-=step;
-  v->qceVehicleSpeed=QCE_HogSpeed(v->qceVehicleSpeed,throttle,step);
+  if(v->qceVehicle==1)v->qceVehicleSpeed=QCE_HogSpeed(v->qceVehicleSpeed,throttle,step);
+  else {float target=throttle*(v->qceVehicle==2?540:(throttle>=0?336:288)),rate=v->qceVehicle==2?360:(throttle==0?432:144),change=rate*step;
+   if(v->qceVehicleSpeed<target)v->qceVehicleSpeed=Com_Clamp(v->qceVehicleSpeed,target,v->qceVehicleSpeed+change);
+   else v->qceVehicleSpeed=Com_Clamp(target,v->qceVehicleSpeed,v->qceVehicleSpeed-change);
+  }
   if(v->qceVehicleSteer<desiredSteer)v->qceVehicleSteer=Com_Clamp(-30,desiredSteer,v->qceVehicleSteer+180*step);
   else v->qceVehicleSteer=Com_Clamp(desiredSteer,30,v->qceVehicleSteer-180*step);
   HogPhysicsStep(v,step,v->qceVehicleSteer,gravity,&contacts);
  }
- TurretThink(v,dt);
+ if(v->qceVehicle==1)TurretThink(v,dt);else ExtraVehicleFire(v,dt);
  v->qceVehicleRPM+=(Com_Clamp(0,1,fabs(v->qceVehicleSpeed)/QCE_HOG_FORWARD+fabs(throttle)*.18f)-v->qceVehicleRPM)*Com_Clamp(0,1,dt*4);
  v->s.frame=(int)(v->qceVehicleRPM*255);v->s.time2=v->qceTurretLastShot;
  v->s.origin2[0]=v->qceTurretAngles[YAW];v->s.origin2[1]=v->qceTurretAngles[PITCH];v->s.origin2[2]=v->qceTurretSpin;
  v->s.pos.trType=TR_INTERPOLATE;v->s.pos.trTime=level.time;VectorCopy(v->r.currentOrigin,v->s.pos.trBase);VectorCopy(v->qceVehicleVelocity,v->s.pos.trDelta);
  v->s.clientNum=(v->qceRiders[0]?1:0)|(v->qceRiders[1]?2:0)|(v->qceRiders[2]?4:0);v->s.apos.trType=TR_INTERPOLATE;v->s.angles2[0]=v->qceVehicleSteer;v->s.angles2[1]=v->qceVehicleSpeed;v->s.angles2[2]=contacts;VectorCopy(v->r.currentAngles,v->s.apos.trBase);trap_LinkEntity(v);
- for(i=0;i<3;i++)if(v->qceRiders[i]) {
+ for(i=0;i<SeatCount(v);i++)if(v->qceRiders[i]) {
   p=&g_entities[v->qceRiders[i]-1];SeatOrigin(v,i,p->client->ps.origin);VectorCopy(p->client->ps.origin,p->r.currentOrigin);VectorClear(p->client->ps.velocity);p->r.contents=CONTENTS_BODY;
   BG_PlayerStateToEntityState(&p->client->ps,&p->s,qtrue);trap_LinkEntity(p);
  }
@@ -276,10 +338,14 @@ void G_QceVehicleCommand(gentity_t *p,const char *cmd) {
  }
  if(!g_cheats.integer){trap_SendServerCommand(p->s.number,"print \"Vehicle spawning requires sv_cheats.\n\"");return;}
  if(p->health>0 && p->client->sess.sessionTeam!=TEAM_SPECTATOR) {
-  gentity_t *v;vec3_t f,end,mins={-76,-49,20},maxs={76,49,66};trace_t tr;
-  AngleVectors(p->client->ps.viewangles,f,NULL,NULL);f[2]=0;VectorNormalize(f);VectorMA(p->client->ps.origin,190,f,end);end[2]+=24;
+  gentity_t *v;vec3_t f,end,mins={-76,-49,20},maxs={76,49,66};trace_t tr;char variant[MAX_TOKEN_CHARS];
+  trap_Argv(1,variant,sizeof(variant));if(!Q_stricmp(variant,"scorpion")){VectorSet(mins,-130,-95,0);VectorSet(maxs,135,95,107);}
+  AngleVectors(p->client->ps.viewangles,f,NULL,NULL);f[2]=0;VectorNormalize(f);VectorMA(p->client->ps.origin,250,f,end);end[2]+=24;
   trap_Trace(&tr,end,mins,maxs,end,p->s.number,MASK_SOLID);
   if(tr.startsolid || tr.allsolid){trap_SendServerCommand(p->s.number,"print \"Not enough room to spawn a Warthog.\n\"");return;}
-  v=G_Spawn();VectorCopy(end,v->s.origin);v->s.angles[YAW]=p->client->ps.viewangles[YAW];SP_qce_warthog(v);
+  v=G_Spawn();VectorCopy(end,v->s.origin);v->s.angles[YAW]=p->client->ps.viewangles[YAW];if(!Q_stricmp(variant,"ghost"))SP_qce_ghost(v);else if(!Q_stricmp(variant,"scorpion"))SP_qce_scorpion(v);else SP_qce_warthog(v);
  }
 }
+
+void SP_qce_ghost(gentity_t *v){SP_qce_warthog(v);v->qceVehicle=2;v->classname="qce_ghost";v->s.generic1=QCE_GHOST_MARKER;v->s.modelindex=G_ModelIndex("models/qce/halo/ghost/body.md3");v->health=250;VectorSet(v->r.mins,-25,-30,-4);VectorSet(v->r.maxs,45,30,30);trap_LinkEntity(v);}
+void SP_qce_scorpion(gentity_t *v){SP_qce_warthog(v);v->qceVehicle=3;v->classname="qce_scorpion";v->s.generic1=QCE_SCORPION_MARKER;v->s.modelindex=G_ModelIndex("models/qce/halo/scorpion/body.md3");v->health=1500;VectorSet(v->r.mins,-95,-65,0);VectorSet(v->r.maxs,100,65,65);trap_LinkEntity(v);}

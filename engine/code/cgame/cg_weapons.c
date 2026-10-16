@@ -1330,11 +1330,12 @@ sound should only be done on the world model case.
 void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,vec3_t axis[3],int renderfx) {
  refEntity_t flash;int frame,count=cg_qceWorld.muzzleCounts[weapon],elapsed=cg.time-cent->muzzleFlashTime;
  int duration=weapon==WP_MACHINEGUN?75:67;
- if(!count || elapsed<0 || elapsed>=(weapon==WP_MACHINEGUN && cg_qceWorld.arMuzzleLayers?300:duration))return;
+ if(!count || elapsed<0 || elapsed>=duration)return;
  memset(&flash,0,sizeof(flash));flash.reType=RT_SPRITE;flash.renderfx=renderfx;
  VectorCopy(origin,flash.origin);memset(flash.shaderRGBA,255,4);
  if(elapsed<duration) {
-  frame=elapsed*count/duration;if(frame>=count)frame=count-1;
+  frame=weapon==WP_MACHINEGUN?(cent->qceFireSequence*73+19)%count:elapsed*count/duration;if(frame>=count)frame=count-1;
+  if(weapon==WP_MACHINEGUN)flash.shaderRGBA[3]=(byte)(255*(1-elapsed/(float)duration));
   flash.customShader=cg_qceWorld.muzzleShaders[weapon][frame];flash.radius=cg_qceWorld.muzzleRadius[weapon];
   if(weapon==WP_MACHINEGUN) {
    float aspect=cg_qceWorld.arMuzzleLayers?cg_qceWorld.arMuzzleAspect[frame]:1.875f;
@@ -1347,7 +1348,7 @@ void CG_HaloMuzzle(centity_t *cent,int weapon,const vec3_t origin,vec3_t axis[3]
   trap_R_AddRefEntityToScene(&flash);
  }
  if(weapon==WP_MACHINEGUN && cg_qceWorld.arMuzzleLayers) {
-  frame=elapsed*3/300;if(frame>2)frame=2;
+  frame=(cent->qceFireSequence*37+7)%3;
   flash.qceOrientedSprite=0;flash.rotation=0;flash.radius=3;
   flash.customShader=cg_qceWorld.arMuzzleCore[frame];VectorCopy(origin,flash.origin);trap_R_AddRefEntityToScene(&flash);
  }
@@ -1568,7 +1569,7 @@ static void CG_HaloBrass( orientation_t *port, int weapon ) {
 static void CG_HaloEffects( refEntity_t *gun, weaponInfo_t *weapon, centity_t *cent ) {
  orientation_t marker;
  qceViewPlayback_t *view=&cg.haloView;
- if(cent->qceFireWeapon==cg.predictedPlayerState.weapon && cent->muzzleFlashTime>0 && cg.time-cent->muzzleFlashTime<(cg.predictedPlayerState.weapon==WP_MACHINEGUN?300:67) && CG_HaloAttachment(gun,"tag_flash",&marker)) {
+ if(cent->qceFireWeapon==cg.predictedPlayerState.weapon && cent->muzzleFlashTime>0 && cg.time-cent->muzzleFlashTime<(cg.predictedPlayerState.weapon==WP_MACHINEGUN?75:67) && CG_HaloAttachment(gun,"tag_flash",&marker)) {
   CG_HaloMuzzle(cent,cg.predictedPlayerState.weapon,marker.origin,marker.axis,gun->renderfx);
  }
  /* The fire sequence identifies a shot even when several render frames share its time. */
@@ -2703,7 +2704,7 @@ void CG_RegisterHaloWorld(void) {
  length=trap_FS_FOpenFile("models/qce/halo/player/spartan.cfg",&file,FS_READ);
  if(length>0 && length<(int)sizeof(buffer)) {
   trap_FS_Read(buffer,length,file);buffer[length]=0;text=buffer;
-  for(i=0;i<65;i++) {
+  for(i=0;i<74;i++) {
    int values[4];
    for(j=0;j<4;j++){token=COM_Parse(&text);values[j]=atoi(token);}
    if(values[0]<0 || values[1]<1 || values[0]+values[1]>4096 || values[2]<1 || values[2]>100)break;

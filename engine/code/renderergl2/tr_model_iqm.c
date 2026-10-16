@@ -1486,6 +1486,25 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
 			Matrix34Multiply( mat1, invBindMat, poseMat );
 		}
 	}
+ if(overlay && overlay->qcePlayerAim) {
+  const char *name=data->jointNames;int joint,stage;
+  for(stage=0;stage<2;stage++) {
+   int pivot=-1;name=data->jointNames;
+   for(joint=0;joint<data->num_poses;joint++){if(!strcmp(name,stage?"bip01 neck":"bip01 spine"))pivot=joint;name+=strlen(name)+1;}
+   if(pivot>=0) {
+    vec3_t bind,origin;float angle=DEG2RAD(Com_Clamp(-60,60,overlay->qcePlayerPitch)*(stage?.3f:.7f)),c=cos(angle),s=sin(angle);int upper[IQM_MAX_JOINTS],k;
+    const float *m=&poseMats[pivot*12],*b=&data->bindJoints[pivot*12];VectorSet(bind,b[3],b[7],b[11]);
+    for(k=0;k<3;k++)origin[k]=m[k*4]*bind[0]+m[k*4+1]*bind[1]+m[k*4+2]*bind[2]+m[k*4+3];
+    for(joint=0;joint<data->num_poses;joint++) {
+     int parent=data->jointParents[joint];float *matrix=&poseMats[joint*12];
+     upper[joint]=joint==pivot || (parent>=0 && parent<joint && upper[parent]);if(!upper[joint])continue;
+     for(k=0;k<4;k++){float x=matrix[k],z=matrix[8+k];matrix[k]=c*x+s*z;matrix[8+k]=-s*x+c*z;}
+     matrix[3]+=origin[0]-c*origin[0]-s*origin[2];matrix[11]+=origin[2]+s*origin[0]-c*origin[2];
+    }
+   }
+  }
+ }
+
 }
 
 static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,

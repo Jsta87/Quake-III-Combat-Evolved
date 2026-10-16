@@ -1634,12 +1634,41 @@ const qce_materialdef_t *BG_QceMaterialDef(int weapon,int material) {
   if(material==4 || material==5 || material==6 || material==11 || (material>=13 && material<=15) || material==17 || material==21 || material==23 || material==24)return &pass;
   return &stop;
  }
+ if(weapon==QCE_SCORPION_BULLET_WEAPON)weapon=WP_MACHINEGUN;
+ if(weapon==QCE_GHOST_BOLT_WEAPON)weapon=WP_PLASMAGUN;
+ if(weapon==QCE_SCORPION_SHELL_WEAPON)weapon=WP_ROCKET_LAUNCHER;
  if(weapon<0 || weapon>=WP_NUM_WEAPONS)weapon=0;if(material<0 || material>=33)material=2;
  return &qce_materialdefs[weapon][material];
 }
 const qce_movementdef_t *BG_QceMovementDef(void) {return &qce_movementdef;}
 const qce_playerdef_t *BG_QcePlayerDef(void) {return &qce_playerdef;}
 const qce_weapondef_t *BG_QceWeaponDef(int weapon) {
+ if(weapon==QCE_SCORPION_BULLET_WEAPON) {
+  static qce_weapondef_t bullet;static qboolean initialized;
+  if(!initialized) {
+   bullet=qce_weapondefs[WP_MACHINEGUN];bullet.damage=bullet.damage_minimum=bullet.damage_maximum=10;
+   bullet.shield_multiplier=bullet.health_multiplier=1;bullet.headshot_mode=0;
+   bullet.projectile_speed=bullet.projectile_final_speed=25920;bullet.projectile_range=3200;
+   bullet.projectile_gravity=1;bullet.water_gravity=.4f;bullet.falloff_start=400;bullet.falloff_end=1200;
+   bullet.water_falloff_start=0;bullet.water_falloff_end=400;initialized=qtrue;
+  }
+  return &bullet;
+ }
+ if(weapon==QCE_GHOST_BOLT_WEAPON || weapon==QCE_SCORPION_SHELL_WEAPON) {
+  static qce_weapondef_t ghost,shell;static qboolean initialized;
+  if(!initialized) {
+   ghost=qce_weapondefs[WP_PLASMAGUN];ghost.damage=ghost.damage_minimum=10;ghost.damage_maximum=14;
+   ghost.shield_multiplier=2;ghost.health_multiplier=.5f;ghost.projectile_speed=4000;ghost.projectile_final_speed=2000;
+   ghost.projectile_range=4000;ghost.projectile_gravity=0;ghost.falloff_start=0;ghost.falloff_end=4000;
+   ghost.splash_damage=0;ghost.splash_radius=0;ghost.headshot_mode=0;
+   shell=qce_weapondefs[WP_ROCKET_LAUNCHER];shell.damage=shell.damage_minimum=80;shell.damage_maximum=351;
+   shell.shield_multiplier=shell.health_multiplier=1;shell.projectile_speed=shell.projectile_final_speed=8000;
+   shell.projectile_range=80000;shell.projectile_gravity=0;shell.splash_damage=351;shell.splash_radius=260;shell.splash_inner=120;
+   initialized=qtrue;
+  }
+  return weapon==QCE_GHOST_BOLT_WEAPON?&ghost:&shell;
+ }
+
  if(weapon==QCE_HOG_TURRET_WEAPON) {
   static qce_weapondef_t turret;static qboolean initialized;
   if(!initialized) {

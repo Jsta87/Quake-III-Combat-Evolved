@@ -39,9 +39,9 @@ int main(void){
   for(i=0;i<6;i++){cg_qceWorld.muzzleShaders[WP_MACHINEGUN][i]=100+i;cg_qceWorld.arMuzzleAspect[i]=1.875f;cg_qceWorld.arMuzzlePivot[i][0]=.222222f;cg_qceWorld.arMuzzlePivot[i][1]=.5f;}
   for(i=0;i<3;i++)cg_qceWorld.arMuzzleCore[i]=10+i;
   cg.time=115;CG_HaloMuzzle(&shooter,WP_MACHINEGUN,muzzle,axis,0);
-  assert(flashCount==2 && flashes[0].customShader==101 && flashes[0].qceOrientedSprite && flashes[0].rotation==0 && flashes[0].origin[0]>6);
-  assert(flashes[1].customShader==10 && !flashes[1].qceOrientedSprite);
-  flashCount=0;cg.time=200;CG_HaloMuzzle(&shooter,WP_MACHINEGUN,muzzle,axis,0);assert(flashCount==1 && flashes[0].customShader==11);
+  assert(flashCount==2 && flashes[0].customShader==((shooter.qceFireSequence*73+19)%6+100) && flashes[0].qceOrientedSprite && flashes[0].rotation==0 && flashes[0].origin[0]>6);
+  assert(flashes[1].customShader==((shooter.qceFireSequence*37+7)%3+10) && !flashes[1].qceOrientedSprite);
+  flashCount=0;cg.time=200;CG_HaloMuzzle(&shooter,WP_MACHINEGUN,muzzle,axis,0);assert(flashCount==0);
   flashCount=0;cg.time=400;CG_HaloMuzzle(&shooter,WP_MACHINEGUN,muzzle,axis,0);assert(flashCount==0);
  }
  puts("PASS: barrel launch, late snapshot retention, distance convergence, PVS cache, monotonic ricochet handling, wall clipping, first-person preservation and sniper curve endpoints");return 0;

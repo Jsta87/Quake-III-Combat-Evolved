@@ -115,7 +115,7 @@ still outstanding; see [Weapon presentation](WEAPON-PRESENTATION.md).
 ## Updating and multiplayer
 
 After pulling gameplay changes, rebuild client/server modules together. This
-pass uses QCE protocol **100**, including vehicle exit phases/timestamps, the larger entity pool and replicated variant traits; older
+pass uses QCE protocol **102**, including vehicle exit phases/timestamps, the larger entity pool and replicated variant traits; older
 project builds and stock Quake/ioquake3 clients are incompatible. The client build
 also produces a dedicated server, or build it separately with
 `./scripts/build.sh server`. Every participating machine needs its own Quake data
@@ -139,7 +139,7 @@ cvars, save/load, Spartan bot batches and the current large-lobby limits.
 
 ## Combat presentation pass
 
-Reconvert the Halo assets and rebuild both engines/modules for protocol **100**.
+Reconvert the Halo assets and rebuild both engines/modules for protocol **102**.
 Try `set qce_visorRGB "30 160 255"` for a blue visor. Bots always use gold.
 `set gv_maxHeldWeapons 0` followed by `map_restart 0` enables all eight Halo guns;
 `give weapons` fills them when cheats are enabled. Restore `2` and restart for
@@ -161,5 +161,5 @@ Use E from either side or the rear to enter/exit. Mouse yaw steers, W/S provide
 throttle, and Space brakes. Reconvert both packages as described in the
 vehicle guide to refresh seat animations, moving parts and audio. See [vehicle testing and current limits](VEHICLES.md). This first map
 conversion has no bot navigation. The rear turret now aims and fires; hold attack
-after its boarding animation finishes. Seat exits are animated, and protocol 101
+after its boarding animation finishes. Seat exits are animated, and protocol 102
 requires matching updated client/server builds.

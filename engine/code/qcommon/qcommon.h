@@ -244,7 +244,7 @@ PROTOCOL
 ==============================================================
 */
 
-#define	PROTOCOL_VERSION	101 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
+#define	PROTOCOL_VERSION	102 /* QCE replicated combat and movement state; incompatible with ioquake3 71. */
 #define PROTOCOL_LEGACY_VERSION 0 /* QCE wire layouts require matching protocol-100 peers. */
 // 1.31 - 67
 

@@ -62,6 +62,11 @@ int main(void) {
   assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"bip01 l thigh",&overlay));assert(fabs(tag.origin[0]-9)<.0001);
   overlay.qceLowerPreviousFrame=overlay.qceLowerPreviousOldFrame=1;overlay.qceLowerBlend=.5f;
   assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"bip01 l thigh",&overlay));assert(fabs(tag.origin[0]-8)<.0001);
+  memset(&overlay,0,sizeof(overlay));overlay.qcePlayerAim=1;overlay.qcePlayerPitch=45;
+  assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"tag_hand",&overlay));
+  assert(tag.origin[2]<-1 && tag.origin[0]<74); /* pitched spine moves hands */
+  assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"bip01 l thigh",&overlay));assert(fabs(tag.origin[0]-40)<.0001);
+  memset(&overlay,0,sizeof(overlay));
   overlay.qceLowerBody=0;overlay.qceTransitionOldFrame=1;overlay.qceTransitionFrame=2;overlay.qceTransitionBacklerp=.5f;overlay.qceTransitionWeight=.5f;
   assert(R_IQMLerpTagRef(&tag,&data,0,0,0,"bip01 l thigh",&overlay));assert(fabs(tag.origin[0]-24.5f)<.0001);
   overlay.qceTransitionFrame=999;

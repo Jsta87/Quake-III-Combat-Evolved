@@ -1147,7 +1147,7 @@ netField_t	playerStateFields[] =
 { PSF(qceVariantFlags), 4 },
 { PSF(qceMaxShield), 10 },
 { PSF(qceVehicle), GENTITYNUM_BITS },
-{ PSF(qceVehicleSeat), 3 },
+{ PSF(qceVehicleSeat), 4 },
 { PSF(qceVehicleTime), 32 },
 { PSF(qceMaxHeldWeapons), 4 },
 { PSF(qceCameraAngles[0]), 0 },

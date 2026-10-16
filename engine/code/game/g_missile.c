@@ -70,7 +70,7 @@ static qboolean G_QceMissileSplash(gentity_t *ent,gentity_t *ignore) {
   const qce_grenadedef_t *g=BG_QceGrenadeDef(ent->qceGrenadeType-1);
   return G_QceRadiusDamage(ent->r.currentOrigin,ent->parent,ent->splashDamage,g->damage_minimum,g->damage_maximum,g->splash_inner,ent->splashRadius,ignore,ent->splashMethodOfDeath);
  }
- if(ent->qceProjectileWeapon==WP_ROCKET_LAUNCHER) {
+ if(ent->qceProjectileWeapon==WP_ROCKET_LAUNCHER || ent->qceProjectileWeapon==QCE_SCORPION_SHELL_WEAPON) {
   const qce_weapondef_t *w=BG_QceWeaponDef(ent->qceProjectileWeapon);
   return G_QceRadiusDamage(ent->r.currentOrigin,ent->parent,ent->splashDamage,w->damage_minimum,w->damage_maximum,w->splash_inner,ent->splashRadius,ignore,ent->splashMethodOfDeath);
  }
@@ -414,7 +414,7 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
    event=G_TempEntity(trace->endpos,other->client?EV_BULLET_HIT_FLESH:EV_BULLET_HIT_WALL);
    event->s.eventParm=other->client?other->s.number:DirToByte(trace->plane.normal);event->s.otherEntityNum=ent->r.ownerNum;
    event->s.weapon=ent->qceProjectileWeapon;event->s.time2=ent->s.time2;
-   if(ent->qceProjectileWeapon==QCE_HOG_TURRET_WEAPON){VectorCopy(ent->s.origin2,event->s.origin2);event->s.generic1=ent->s.generic1;}
+   if(ent->qceProjectileWeapon==QCE_HOG_TURRET_WEAPON || ent->qceProjectileWeapon==QCE_SCORPION_BULLET_WEAPON){event->s.weapon=QCE_HOG_TURRET_WEAPON;VectorCopy(ent->s.origin2,event->s.origin2);event->s.generic1=ent->s.generic1;}
   }
   if(G_QceContinueProjectile(ent,trace,other,G_QceMaterialResponse(ent,trace,other))) {
    VectorCopy(trace->endpos,ent->s.origin2);return;

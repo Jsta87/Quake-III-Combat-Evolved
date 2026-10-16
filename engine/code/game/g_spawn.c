@@ -187,6 +187,8 @@ spawn_t	spawns[] = {
 	{"info_player_start", SP_info_player_start},
 	{"info_player_deathmatch", SP_info_player_deathmatch},
  {"qce_warthog", SP_qce_warthog},
+ {"qce_ghost", SP_qce_ghost},
+ {"qce_scorpion", SP_qce_scorpion},
 	{"info_player_intermission", SP_info_player_intermission},
 	{"info_null", SP_info_null},
 	{"info_notnull", SP_info_notnull},		// use target_position instead
